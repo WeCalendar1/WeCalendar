@@ -46,10 +46,6 @@ A responsive web app for desktop and mobile browsers, including:
 - Bi-directional sync with Google Calendar or Outlook
 - Expense splitting module
 
-## Roadmap
-
-_Timeline of development and deployment — TBD._
-
 ## Tech stack (planned)
 
 - **Frontend:** Next.js / React + Vercel
