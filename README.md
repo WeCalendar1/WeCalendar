@@ -15,15 +15,46 @@ A responsive web app for desktop and mobile browsers, including:
 - Basic scheduling conflict detection
 - Interactive collaborative modules (grocery lists, to-dos, wishlists)
 
+## Getting started
+
+### Prerequisites
+
+- Node.js 20+
+- A [Supabase](https://supabase.com) project (free tier is fine)
+
+### Setup
+
+```bash
+npm install
+cp .env.example .env.local
+```
+
+Fill in `.env.local` with your Supabase project URL and anon key (Project Settings → API).
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+### Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start local development server |
+| `npm run build` | Production build |
+| `npm run start` | Run production build |
+| `npm run lint` | Run ESLint |
+
 ## Architecture
 
 | Layer | Choice | Role |
 | --- | --- | --- |
-| Frontend / UI | Next.js or React | App UI, deployed on Vercel |
+| Frontend / UI | Next.js (App Router) | App UI, deployed on Vercel |
 | Backend / Real-time | Supabase | Auth, database, row-level security, WebSocket updates |
-| Object storage | AWS S3 | Image uploads (wishlist items, event flyers) |
+| Object storage | AWS S3 (later) | Image uploads (wishlist items, event flyers) |
 
-**Hosting:** Vercel for the web app initially; Supabase for accounts and data; AWS for media storage (and possible backend hosting later).
+**Hosting:** Vercel for the web app initially; Supabase for accounts and data; AWS for media storage when needed.
 
 ### Data model (high level)
 
@@ -31,6 +62,15 @@ A responsive web app for desktop and mobile browsers, including:
 - **Groups / pairs** — relational links between user IDs for shared access
 - **Events** — timestamp, description, group ID, conflict flags
 - **Lists** — group ID, item state (checked/unchecked), category (grocery, wishlist, etc.)
+
+## Project structure
+
+```
+src/
+  app/                 # Next.js App Router pages
+  lib/supabase/        # Browser, server, and middleware clients
+  middleware.ts        # Session refresh for Supabase auth
+```
 
 ## Main features
 
@@ -46,8 +86,8 @@ A responsive web app for desktop and mobile browsers, including:
 - Bi-directional sync with Google Calendar or Outlook
 - Expense splitting module
 
-## Tech stack (planned)
+## Tech stack
 
-- **Frontend:** Next.js / React + Vercel
+- **Frontend:** Next.js + TypeScript + Tailwind CSS + Vercel
 - **Backend & auth:** Supabase (RLS + real-time)
-- **Storage:** Amazon S3
+- **Storage:** Amazon S3 (planned)
