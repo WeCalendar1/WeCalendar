@@ -63,13 +63,29 @@ Open [http://localhost:3000](http://localhost:3000).
 - **Events** — timestamp, description, group ID, conflict flags
 - **Lists** — group ID, item state (checked/unchecked), category (grocery, wishlist, etc.)
 
+Full schema, RLS notes, and how to apply migrations: [docs/schema.md](docs/schema.md).
+
+### Apply database schema (Phase 2)
+
+1. Open Supabase → **SQL Editor**
+2. Run `supabase/migrations/20260730120000_init_schema.sql`
+3. Confirm the six tables appear in **Table Editor**
+
+Or with the CLI: `npx supabase link` then `npx supabase db push`.
+
 ## Project structure
 
 ```
 src/
   app/                 # Next.js App Router pages
+  components/          # Calendar UI shell
   lib/supabase/        # Browser, server, and middleware clients
+  types/database.ts    # Generated/hand-written DB types
   middleware.ts        # Session refresh for Supabase auth
+supabase/
+  migrations/          # Versioned SQL schema
+docs/
+  schema.md            # Phase 2 schema guide
 ```
 
 ## Main features

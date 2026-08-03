@@ -1,0 +1,2 @@
+-- Optional seed data for local `supabase db reset`.
+-- Keep empty until auth users exist; create groups via create_group() RPC after signup.
