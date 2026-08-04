@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import type { CalendarMode, ScreenView } from "@/lib/calendar";
 
@@ -256,19 +257,21 @@ export function Navbar({
           })}
         </div>
 
-        <div
-          className="flex h-8 w-8 cursor-pointer items-center justify-center text-sm font-semibold"
-          aria-label="Profile"
+        <Link
+          href="/profile"
+          className="btn-bounce flex h-8 w-8 cursor-pointer items-center justify-center text-sm font-semibold"
+          aria-label="Go to profile"
           title="Profile"
           style={{
             borderRadius: "var(--radius-full)",
             background: "var(--accent-muted)",
             color: "var(--accent-text)",
             fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+            transition: "all var(--transition-base)",
           }}
         >
           M
-        </div>
+        </Link>
       </div>
     </header>
   );
