@@ -5,6 +5,7 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 type CalendarGridProps = {
   viewDate: Date;
+  activeTagIds: string[];
 };
 
 export function CalendarGrid({ viewDate }: CalendarGridProps) {

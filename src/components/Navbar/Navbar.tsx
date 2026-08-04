@@ -7,12 +7,14 @@ type NavbarProps = {
   calendarMode: CalendarMode;
   screenView: ScreenView;
   sidebarOpen: boolean;
+  searchQuery: string;
   onToggleSidebar: () => void;
   onToday: () => void;
   onPrev: () => void;
   onNext: () => void;
   onCalendarModeChange: (mode: CalendarMode) => void;
   onScreenViewChange: (view: ScreenView) => void;
+  onSearchChange: (query: string) => void;
 };
 
 const MODES: { id: CalendarMode; label: string }[] = [
@@ -60,12 +62,14 @@ export function Navbar({
   calendarMode,
   screenView,
   sidebarOpen,
+  searchQuery,
   onToggleSidebar,
   onToday,
   onPrev,
   onNext,
   onCalendarModeChange,
   onScreenViewChange,
+  onSearchChange,
 }: NavbarProps) {
   return (
     <header
@@ -196,8 +200,57 @@ export function Navbar({
         </h1>
       </div>
 
-      {/* Right: mode picker + view switcher + avatar */}
+      {/* Right: search + mode picker + view switcher + avatar */}
       <div className="flex items-center gap-2">
+        {/* Search bar */}
+        <div
+          className="hidden items-center gap-2 sm:flex"
+          style={{
+            borderRadius: "var(--radius-full)",
+            border: "1.5px solid var(--border)",
+            background: "var(--surface)",
+            boxShadow: "var(--shadow-sm)",
+            padding: "0 12px",
+            transition: "border-color var(--transition-base), box-shadow var(--transition-base)",
+          }}
+          onFocusCapture={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px var(--accent-muted)";
+          }}
+          onBlurCapture={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+            (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)";
+          }}
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-muted)" }}>
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input
+            id="calendar-search"
+            type="search"
+            placeholder="Search events…"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="h-8 w-36 bg-transparent text-sm font-medium outline-none lg:w-48"
+            style={{ color: "var(--foreground)" }}
+            aria-label="Search events"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              aria-label="Clear search"
+              className="cursor-pointer"
+              style={{ color: "var(--text-muted)", lineHeight: 1 }}
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
         <label className="sr-only" htmlFor="calendar-mode">
           Calendar mode
         </label>
