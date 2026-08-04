@@ -9,24 +9,43 @@ export function CalendarCell({ day }: CalendarCellProps) {
 
   return (
     <div
-      className={`min-h-24 border-b border-r border-border p-2 transition-colors sm:min-h-28 ${
-        day.inCurrentMonth ? "bg-surface" : "bg-stone-50/70"
-      }`}
+      className="group min-h-24 p-2 sm:min-h-28"
+      style={{
+        borderBottom: "1px solid var(--border)",
+        borderRight: "1px solid var(--border)",
+        background: day.inCurrentMonth ? "var(--surface)" : "var(--surface-2)",
+        transition: "background var(--transition-fast)",
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.background = day.inCurrentMonth
+          ? "var(--surface)"
+          : "var(--surface-2)";
+      }}
     >
       <div className="flex justify-end">
         <span
-          className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
-            day.isToday
-              ? "bg-accent font-semibold text-white shadow-sm"
-              : day.inCurrentMonth
-                ? "font-medium text-foreground"
-                : "text-stone-400"
+          className={`flex h-7 w-7 items-center justify-center text-sm font-semibold ${
+            day.isToday ? "today-badge text-white" : ""
           }`}
+          style={{
+            borderRadius: "var(--radius-full)",
+            background: day.isToday ? "var(--accent)" : "transparent",
+            color: day.isToday
+              ? "#fff"
+              : day.inCurrentMonth
+                ? "var(--foreground)"
+                : "var(--text-muted)",
+            transition: "all var(--transition-fast)",
+          }}
         >
           {dayNumber}
         </span>
       </div>
-      {/* Event placeholders will render here later */}
+      {/* Event chips will render here */}
     </div>
   );
 }
