@@ -7,21 +7,27 @@ import {
   isSameDay,
   type CalendarDay,
 } from "@/lib/calendar";
+import {
+  eventPosition,
+  eventsForDay,
+  formatEventTime,
+  type CalendarEvent,
+} from "@/lib/events";
 
 export const HOUR_HEIGHT_PX = 52;
 
 type TimeGridProps = {
   days: CalendarDay[];
+  events: CalendarEvent[];
 };
 
-export function TimeGrid({ days }: TimeGridProps) {
+export function TimeGrid({ days, events }: TimeGridProps) {
   const now = new Date();
   const showNowLine = days.some((d) => d.isToday);
   const nowTop = (getMinutesSinceMidnight(now) / 60) * HOUR_HEIGHT_PX;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      {/* Day headers */}
       <div
         className="grid shrink-0"
         style={{
@@ -61,7 +67,6 @@ export function TimeGrid({ days }: TimeGridProps) {
         })}
       </div>
 
-      {/* Scrollable hours */}
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="relative" style={{ minHeight: DAY_HOURS.length * HOUR_HEIGHT_PX }}>
           {DAY_HOURS.map((hour) => (
@@ -97,6 +102,44 @@ export function TimeGrid({ days }: TimeGridProps) {
             </div>
           ))}
 
+          {/* Event overlays per day column */}
+          <div
+            className="pointer-events-none absolute top-0 right-0 bottom-0"
+            style={{ left: "4rem" }}
+          >
+            <div
+              className="grid h-full"
+              style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}
+            >
+              {days.map((day) => (
+                <div key={day.date.toISOString()} className="relative">
+                  {eventsForDay(events, day.date).map((event) => {
+                    const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
+                    return (
+                      <div
+                        key={event.id}
+                        className="pointer-events-auto absolute right-1 left-1 overflow-hidden px-1.5 py-1 text-[11px] font-semibold text-white"
+                        title={`${event.title} · ${formatEventTime(event.starts_at)}`}
+                        style={{
+                          top,
+                          height,
+                          borderRadius: "var(--radius-sm)",
+                          background: "var(--accent)",
+                          boxShadow: "var(--shadow-sm)",
+                        }}
+                      >
+                        <div className="truncate">{event.title}</div>
+                        <div className="truncate opacity-90">
+                          {formatEventTime(event.starts_at)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+
           {showNowLine && (
             <div
               className="pointer-events-none absolute right-0 z-10"
@@ -116,7 +159,6 @@ export function TimeGrid({ days }: TimeGridProps) {
   );
 }
 
-/** Single-day wrapper used by DayView. */
 export function dayAsCalendarDay(date: Date, today = new Date()): CalendarDay {
   return {
     date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
