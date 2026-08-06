@@ -4,7 +4,7 @@ type MiniCalendarProps = {
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
-/** Compact month placeholder for the sidebar — navigation lives in the main grid for now. */
+/** Compact month calendar for the sidebar. */
 export function MiniCalendar({ viewDate }: MiniCalendarProps) {
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -23,11 +23,31 @@ export function MiniCalendar({ viewDate }: MiniCalendarProps) {
   });
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-3 shadow-sm">
-      <p className="mb-2 text-sm font-semibold text-foreground">{label}</p>
-      <div className="grid grid-cols-7 gap-y-1 text-center text-[11px]">
+    <div
+      className="p-3"
+      style={{
+        borderRadius: "var(--radius-xl)",
+        border: "1.5px solid var(--border)",
+        background: "var(--surface)",
+        boxShadow: "var(--shadow-sm)",
+      }}
+    >
+      <p
+        className="mb-2 text-sm font-semibold"
+        style={{
+          color: "var(--foreground)",
+          fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+        }}
+      >
+        {label}
+      </p>
+      <div className="grid grid-cols-7 gap-y-0.5 text-center text-[11px]">
         {WEEKDAYS.map((day, i) => (
-          <span key={`${day}-${i}`} className="py-1 font-medium text-stone-400">
+          <span
+            key={`${day}-${i}`}
+            className="py-1 font-semibold"
+            style={{ color: "var(--text-muted)" }}
+          >
             {day}
           </span>
         ))}
@@ -42,11 +62,15 @@ export function MiniCalendar({ viewDate }: MiniCalendarProps) {
           return (
             <span
               key={day}
-              className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full ${
-                isToday
-                  ? "bg-accent font-semibold text-white"
-                  : "text-stone-700"
+              className={`mx-auto flex h-6 w-6 items-center justify-center text-xs font-semibold ${
+                isToday ? "today-badge text-white" : "cursor-pointer"
               }`}
+              style={{
+                borderRadius: "var(--radius-full)",
+                background: isToday ? "var(--accent)" : "transparent",
+                color: isToday ? "#fff" : "var(--foreground)",
+                transition: "background var(--transition-fast)",
+              }}
             >
               {day}
             </span>
