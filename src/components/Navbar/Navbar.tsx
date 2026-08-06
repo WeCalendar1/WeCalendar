@@ -8,6 +8,7 @@ type NavbarProps = {
   screenView: ScreenView;
   sidebarOpen: boolean;
   searchQuery: string;
+  userInitials: string;
   onToggleSidebar: () => void;
   onToday: () => void;
   onPrev: () => void;
@@ -63,6 +64,7 @@ export function Navbar({
   screenView,
   sidebarOpen,
   searchQuery,
+  userInitials,
   onToggleSidebar,
   onToday,
   onPrev,
@@ -169,7 +171,7 @@ export function Navbar({
               key={label}
               type="button"
               onClick={onClick}
-              aria-label={`${label} month`}
+              aria-label={label}
               className="btn-bounce flex h-8 w-8 cursor-pointer items-center justify-center"
               style={{
                 borderRadius: "var(--radius-md)",
@@ -323,7 +325,7 @@ export function Navbar({
             transition: "all var(--transition-base)",
           }}
         >
-          M
+          {userInitials}
         </Link>
       </div>
     </header>
