@@ -1,34 +1,40 @@
 "use client";
 
-import { useState } from "react";
 import { CalendarGrid } from "@/components/CalendarGrid";
+import { DayView } from "@/components/DayView";
+import { WeekView } from "@/components/WeekView";
+import { YearView } from "@/components/YearView";
 import type { CalendarMode } from "@/lib/calendar";
 
 type CalendarProps = {
   viewDate: Date;
   calendarMode: CalendarMode;
   activeTagIds: string[];
+  onViewDateChange: (date: Date) => void;
+  onCalendarModeChange: (mode: CalendarMode) => void;
 };
 
-export function Calendar({ viewDate, calendarMode, activeTagIds }: CalendarProps) {
+export function Calendar({
+  viewDate,
+  calendarMode,
+  activeTagIds,
+  onViewDateChange,
+  onCalendarModeChange,
+}: CalendarProps) {
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-3 sm:p-4">
-      {calendarMode === "month" ? (
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+      {calendarMode === "day" && <DayView viewDate={viewDate} />}
+      {calendarMode === "week" && <WeekView viewDate={viewDate} />}
+      {calendarMode === "month" && (
         <CalendarGrid viewDate={viewDate} activeTagIds={activeTagIds} />
-      ) : (
-        <div
-          className="flex h-full items-center justify-center text-sm"
-          style={{
-            borderRadius: "var(--radius-xl)",
-            border: "1.5px dashed var(--border)",
-            background: "var(--surface)",
-            color: "var(--text-secondary)",
-            boxShadow: "var(--shadow-sm)",
-          }}
-        >
-          {calendarMode.charAt(0).toUpperCase() + calendarMode.slice(1)} view
-          coming soon
-        </div>
+      )}
+      {calendarMode === "year" && (
+        <YearView
+          viewDate={viewDate}
+          onSelectMonth={onViewDateChange}
+          onSelectDay={onViewDateChange}
+          onModeChange={onCalendarModeChange}
+        />
       )}
     </section>
   );
