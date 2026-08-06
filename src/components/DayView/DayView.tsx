@@ -1,10 +1,12 @@
 import { TimeGrid, dayAsCalendarDay } from "@/components/TimeGrid";
+import type { CalendarEvent } from "@/lib/events";
 
 type DayViewProps = {
   viewDate: Date;
+  events: CalendarEvent[];
 };
 
-export function DayView({ viewDate }: DayViewProps) {
+export function DayView({ viewDate, events }: DayViewProps) {
   return (
     <div
       className="flex h-full min-h-0 flex-col overflow-hidden"
@@ -15,7 +17,7 @@ export function DayView({ viewDate }: DayViewProps) {
         boxShadow: "var(--shadow-md)",
       }}
     >
-      <TimeGrid days={[dayAsCalendarDay(viewDate)]} />
+      <TimeGrid days={[dayAsCalendarDay(viewDate)]} events={events} />
     </div>
   );
 }

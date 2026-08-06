@@ -1,25 +1,25 @@
 "use client";
 
 import { MiniCalendar } from "./MiniCalendar";
+import { SharedWorkspace } from "@/components/SharedWorkspace";
+import type { Tables } from "@/types/database";
 
-// ─── Tag definitions ─────────────────────────────────────────────────────────
+type Group = Tables<"groups">;
 
 export type Tag = {
   id: string;
   label: string;
-  color: string; // hex
+  color: string;
 };
 
 const DEFAULT_TAGS: Tag[] = [
-  { id: "personal",   label: "Personal",   color: "#6366f1" },
-  { id: "work",       label: "Work",       color: "#0ea5e9" },
-  { id: "birthdays",  label: "Birthdays",  color: "#f43f5e" },
-  { id: "holidays",   label: "Holidays",   color: "#f59e0b" },
-  { id: "reminders",  label: "Reminders",  color: "#10b981" },
-  { id: "shared",     label: "Shared",     color: "#8b5cf6" },
+  { id: "personal", label: "Personal", color: "#6366f1" },
+  { id: "work", label: "Work", color: "#0ea5e9" },
+  { id: "birthdays", label: "Birthdays", color: "#f43f5e" },
+  { id: "holidays", label: "Holidays", color: "#f59e0b" },
+  { id: "reminders", label: "Reminders", color: "#10b981" },
+  { id: "shared", label: "Shared", color: "#8b5cf6" },
 ];
-
-// ─── Props ───────────────────────────────────────────────────────────────────
 
 type SidebarProps = {
   open: boolean;
@@ -27,9 +27,13 @@ type SidebarProps = {
   onCreateEvent: () => void;
   activeTagIds: string[];
   onTagToggle: (id: string) => void;
+  groups: Group[];
+  activeGroupId: string | null;
+  onSelectGroup: (groupId: string) => void;
+  onCreateGroup: (name: string) => Promise<void>;
+  onJoinGroup: (inviteCode: string) => Promise<void>;
+  canCreateEvent: boolean;
 };
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 export function Sidebar({
   open,
@@ -37,6 +41,12 @@ export function Sidebar({
   onCreateEvent,
   activeTagIds,
   onTagToggle,
+  groups,
+  activeGroupId,
+  onSelectGroup,
+  onCreateGroup,
+  onJoinGroup,
+  canCreateEvent,
 }: SidebarProps) {
   const allOn = activeTagIds.length === DEFAULT_TAGS.length;
 
@@ -63,36 +73,47 @@ export function Sidebar({
         background: "var(--surface)",
       }}
     >
-      <div className="flex h-full w-64 flex-col gap-4 p-4 animate-fade-in">
-        {/* Create Event button */}
+      <div className="flex h-full w-64 flex-col gap-4 overflow-y-auto p-4 animate-fade-in">
         <button
           type="button"
           onClick={onCreateEvent}
-          className="btn-bounce flex w-full cursor-pointer items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white"
+          disabled={!canCreateEvent}
+          title={
+            canCreateEvent
+              ? "Create event"
+              : "Join or create a workspace first"
+          }
+          className="btn-bounce flex w-full cursor-pointer items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           style={{
             borderRadius: "var(--radius-xl)",
             background: "var(--accent)",
             boxShadow: "var(--shadow-md)",
-            transition: "all var(--transition-base)",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "var(--accent-hover)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "var(--accent)";
           }}
         >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          >
             <path d="M12 5v14M5 12h14" />
           </svg>
           Create Event
         </button>
 
-        {/* Mini calendar */}
+        <SharedWorkspace
+          groups={groups}
+          activeGroupId={activeGroupId}
+          onSelectGroup={onSelectGroup}
+          onCreateGroup={onCreateGroup}
+          onJoinGroup={onJoinGroup}
+        />
+
         <MiniCalendar viewDate={viewDate} />
 
-        {/* ── Tag Filters ─────────────────────────────────── */}
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <p
               className="text-xs font-semibold uppercase tracking-wider"
@@ -104,17 +125,14 @@ export function Sidebar({
               type="button"
               onClick={toggleAll}
               className="cursor-pointer text-xs font-semibold"
-              style={{
-                color: "var(--accent)",
-                transition: "opacity var(--transition-fast)",
-              }}
+              style={{ color: "var(--accent)" }}
             >
               {allOn ? "Clear all" : "Select all"}
             </button>
           </div>
 
           <div
-            className="flex flex-col gap-1 overflow-hidden p-2"
+            className="flex flex-col gap-1 p-2"
             style={{
               borderRadius: "var(--radius-xl)",
               border: "1.5px solid var(--border)",
@@ -129,30 +147,27 @@ export function Sidebar({
                   htmlFor={`tag-${tag.id}`}
                   className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-1.5 text-sm font-medium"
                   style={{
-                    transition: "background var(--transition-fast)",
                     background: active ? `${tag.color}18` : "transparent",
                   }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = `${tag.color}18`;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = active
-                      ? `${tag.color}18`
-                      : "transparent";
-                  }}
                 >
-                  {/* Custom checkbox */}
                   <span
                     className="relative flex h-4 w-4 shrink-0 items-center justify-center"
                     style={{
                       borderRadius: "var(--radius-sm)",
                       border: active ? "none" : `2px solid ${tag.color}`,
                       background: active ? tag.color : "transparent",
-                      transition: "all var(--transition-fast)",
                     }}
                   >
                     {active && (
-                      <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        viewBox="0 0 12 12"
+                        className="h-2.5 w-2.5"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <path d="M2 6l3 3 5-5" />
                       </svg>
                     )}
@@ -164,7 +179,6 @@ export function Sidebar({
                     onChange={() => onTagToggle(tag.id)}
                     className="sr-only"
                   />
-                  {/* Color dot */}
                   <span
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ background: tag.color }}
