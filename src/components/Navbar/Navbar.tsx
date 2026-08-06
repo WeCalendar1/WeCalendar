@@ -8,6 +8,7 @@ type NavbarProps = {
   screenView: ScreenView;
   sidebarOpen: boolean;
   searchQuery: string;
+  userInitials: string;
   onToggleSidebar: () => void;
   onToday: () => void;
   onPrev: () => void;
@@ -63,6 +64,7 @@ export function Navbar({
   screenView,
   sidebarOpen,
   searchQuery,
+  userInitials,
   onToggleSidebar,
   onToday,
   onPrev,
@@ -323,7 +325,7 @@ export function Navbar({
             transition: "all var(--transition-base)",
           }}
         >
-          M
+          {userInitials}
         </Link>
       </div>
     </header>

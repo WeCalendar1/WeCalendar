@@ -73,6 +73,17 @@ Full schema, RLS notes, and how to apply migrations: [docs/schema.md](docs/schem
 
 Or with the CLI: `npx supabase link` then `npx supabase db push`.
 
+### Authentication (account creation)
+
+1. In Supabase go to **Authentication → Providers** and enable **Email**
+2. For local testing, under **Authentication → Providers → Email**, you can turn **off** “Confirm email” so signup signs you in immediately
+3. Under **Authentication → URL Configuration**, add:
+   - Site URL: `http://localhost:3000`
+   - Redirect URLs: `http://localhost:3000/auth/callback`
+4. Open `/login`, create an account, then confirm a `profiles` row appears in **Table Editor**
+
+Protected routes redirect to `/login` when signed out.
+
 ## Project structure
 
 ```
