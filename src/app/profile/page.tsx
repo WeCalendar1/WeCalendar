@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -265,8 +267,11 @@ function DangerButton({
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [pronouns, setPronouns] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -277,6 +282,47 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUser() {
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      if (!mounted || !user) return;
+
+      setEmail(user.email ?? "");
+      setDisplayName(
+        (user.user_metadata?.display_name as string | undefined) ||
+          user.user_metadata?.full_name ||
+          "",
+      );
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name, theme_preferences")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      if (profile?.display_name) {
+        setDisplayName(profile.display_name);
+      }
+
+      const theme = profile?.theme_preferences as
+        | { favorite_color?: string; pronouns?: string; birthday?: string }
+        | null;
+      if (theme?.favorite_color) setFavoriteColor(theme.favorite_color);
+      if (theme?.pronouns) setPronouns(theme.pronouns);
+      if (theme?.birthday) setBirthday(theme.birthday);
+    }
+
+    void loadUser();
+    return () => {
+      mounted = false;
+    };
+  }, [supabase]);
+
   // Avatar upload handler
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -285,24 +331,62 @@ export default function ProfilePage() {
     setAvatarUrl(url);
   }
 
-  function handleSaveProfile(e: React.FormEvent) {
+  async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: wire to Supabase profiles table
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const theme_preferences = {
+      favorite_color: favoriteColor,
+      pronouns,
+      birthday,
+    };
+
+    const { error } = await supabase.from("profiles").upsert({
+      id: user.id,
+      display_name: displayName.trim() || null,
+      theme_preferences,
+    });
+
+    if (!error) {
+      await supabase.auth.updateUser({
+        data: { display_name: displayName.trim() || undefined },
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    }
   }
 
-  function handleChangePassword(e: React.FormEvent) {
+  async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: wire to Supabase auth.updateUser
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    if (!newPassword || newPassword !== confirmPassword) return;
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (!error) {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
   }
 
   const initials = displayName
-    ? displayName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
-    : "?";
+    ? displayName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : email
+      ? email[0]!.toUpperCase()
+      : "?";
 
   return (
     <div
@@ -662,9 +746,12 @@ export default function ProfilePage() {
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
               }
-              title="Sign out all devices"
-              description="Revoke all active sessions — you'll need to sign in again everywhere"
-              confirmLabel="Sign out all"
+              title="Sign out"
+              description="Sign out of WeCalendar on this device"
+              confirmLabel="Sign out"
+              onClick={() => {
+                void handleSignOut();
+              }}
             />
             <DangerButton
               id="unsync-calendar-btn"
