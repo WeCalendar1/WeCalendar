@@ -24,6 +24,9 @@ type Group = Tables<"groups">;
 const ALL_TAG_IDS = ["personal", "work", "birthdays", "holidays", "reminders", "shared"];
 const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
 
+// All tag IDs — kept in sync with DEFAULT_TAGS in Sidebar
+const ALL_TAG_IDS = ["personal", "work", "birthdays", "holidays", "reminders", "shared"];
+
 export function AppShell() {
   const [viewDate, setViewDate] = useState(() => startOfDay(new Date()));
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
