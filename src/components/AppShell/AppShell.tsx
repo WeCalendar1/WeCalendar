@@ -6,9 +6,9 @@ import { Navbar } from "@/components/Navbar";
 import { RightPanel } from "@/components/RightPanel";
 import { Sidebar } from "@/components/Sidebar";
 import {
-  addMonths,
-  formatMonthYear,
-  startOfMonth,
+  formatViewLabel,
+  shiftViewDate,
+  startOfDay,
   type CalendarMode,
   type ScreenView,
 } from "@/lib/calendar";
@@ -17,7 +17,7 @@ import {
 const ALL_TAG_IDS = ["personal", "work", "birthdays", "holidays", "reminders", "shared"];
 
 export function AppShell() {
-  const [viewDate, setViewDate] = useState(() => startOfMonth(new Date()));
+  const [viewDate, setViewDate] = useState(() => startOfDay(new Date()));
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [screenView, setScreenView] = useState<ScreenView>("calendar");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -28,22 +28,22 @@ export function AppShell() {
 
   function handleTagToggle(id: string) {
     setActiveTagIds((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
     );
   }
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <Navbar
-        monthLabel={formatMonthYear(viewDate)}
+        monthLabel={formatViewLabel(viewDate, calendarMode)}
         calendarMode={calendarMode}
         screenView={screenView}
         sidebarOpen={sidebarOpen}
         searchQuery={searchQuery}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
-        onToday={() => setViewDate(startOfMonth(new Date()))}
-        onPrev={() => setViewDate((d) => addMonths(d, -1))}
-        onNext={() => setViewDate((d) => addMonths(d, 1))}
+        onToday={() => setViewDate(startOfDay(new Date()))}
+        onPrev={() => setViewDate((d) => shiftViewDate(d, calendarMode, -1))}
+        onNext={() => setViewDate((d) => shiftViewDate(d, calendarMode, 1))}
         onCalendarModeChange={setCalendarMode}
         onScreenViewChange={setScreenView}
         onSearchChange={setSearchQuery}
@@ -60,11 +60,13 @@ export function AppShell() {
           onTagToggle={handleTagToggle}
         />
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-auto p-4">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
           <Calendar
             viewDate={viewDate}
             calendarMode={calendarMode}
             activeTagIds={activeTagIds}
+            onViewDateChange={setViewDate}
+            onCalendarModeChange={setCalendarMode}
           />
         </main>
 

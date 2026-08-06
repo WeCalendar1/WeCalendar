@@ -169,7 +169,7 @@ export function Navbar({
               key={label}
               type="button"
               onClick={onClick}
-              aria-label={`${label} month`}
+              aria-label={label}
               className="btn-bounce flex h-8 w-8 cursor-pointer items-center justify-center"
               style={{
                 borderRadius: "var(--radius-md)",
