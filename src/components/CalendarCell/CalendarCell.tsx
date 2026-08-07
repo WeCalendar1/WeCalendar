@@ -1,11 +1,15 @@
 import type { CalendarDay } from "@/lib/calendar";
+import { eventsForDay, formatEventTime, type CalendarEvent } from "@/lib/events";
 
 type CalendarCellProps = {
   day: CalendarDay;
+  events: CalendarEvent[];
 };
 
-export function CalendarCell({ day }: CalendarCellProps) {
+export function CalendarCell({ day, events }: CalendarCellProps) {
   const dayNumber = day.date.getDate();
+  const dayEvents = eventsForDay(events, day.date).slice(0, 3);
+  const extra = Math.max(eventsForDay(events, day.date).length - 3, 0);
 
   return (
     <div
@@ -35,7 +39,6 @@ export function CalendarCell({ day }: CalendarCellProps) {
             : "var(--surface-2)";
       }}
     >
-      {/* Today accent bar along the top */}
       {day.isToday && (
         <div
           className="absolute left-0 right-0 top-0 h-0.5"
@@ -56,7 +59,6 @@ export function CalendarCell({ day }: CalendarCellProps) {
               : day.inCurrentMonth
                 ? "var(--foreground)"
                 : "var(--text-muted)",
-            // Slightly larger & bolder for today
             fontSize: day.isToday ? "0.8125rem" : undefined,
             transition: "all var(--transition-fast)",
           }}
@@ -64,7 +66,28 @@ export function CalendarCell({ day }: CalendarCellProps) {
           {dayNumber}
         </span>
       </div>
-      {/* Event chips will render here later */}
+
+      <div className="mt-1 space-y-1">
+        {dayEvents.map((event) => (
+          <div
+            key={event.id}
+            className="truncate px-1.5 py-0.5 text-[10px] font-semibold leading-tight"
+            title={`${event.title} · ${formatEventTime(event.starts_at)}`}
+            style={{
+              borderRadius: "var(--radius-sm)",
+              background: "var(--accent)",
+              color: "#fff",
+            }}
+          >
+            {formatEventTime(event.starts_at)} {event.title}
+          </div>
+        ))}
+        {extra > 0 && (
+          <p className="px-1 text-[10px] font-semibold" style={{ color: "var(--text-muted)" }}>
+            +{extra} more
+          </p>
+        )}
+      </div>
     </div>
   );
 }

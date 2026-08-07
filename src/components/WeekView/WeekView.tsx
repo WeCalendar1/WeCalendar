@@ -1,11 +1,13 @@
 import { TimeGrid } from "@/components/TimeGrid";
 import { getWeekDays } from "@/lib/calendar";
+import type { CalendarEvent } from "@/lib/events";
 
 type WeekViewProps = {
   viewDate: Date;
+  events: CalendarEvent[];
 };
 
-export function WeekView({ viewDate }: WeekViewProps) {
+export function WeekView({ viewDate, events }: WeekViewProps) {
   const days = getWeekDays(viewDate);
 
   return (
@@ -18,7 +20,7 @@ export function WeekView({ viewDate }: WeekViewProps) {
         boxShadow: "var(--shadow-md)",
       }}
     >
-      <TimeGrid days={days} />
+      <TimeGrid days={days} events={events} />
     </div>
   );
 }
