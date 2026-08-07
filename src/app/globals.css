@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────
-   DESIGN TOKENS — override to retheme
+   DESIGN TOKENS - override to retheme
    The user can provide a hex code for
    --theme-primary and the rest cascades.
    ───────────────────────────────────────── */
@@ -37,14 +37,14 @@
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
 
-  /* Spacing & shape — bubbly feel */
+  /* Spacing & shape - bubbly feel */
   --radius-sm: 0.5rem;    /* 8px  */
   --radius-md: 0.875rem;  /* 14px */
   --radius-lg: 1.25rem;   /* 20px */
   --radius-xl: 1.75rem;   /* 28px */
   --radius-full: 9999px;
 
-  /* Shadows — soft and lifted */
+  /* Shadows - soft and lifted */
   --shadow-sm: 0 1px 3px 0 rgb(99 102 241 / 0.08), 0 1px 2px -1px rgb(99 102 241 / 0.06);
   --shadow-md: 0 4px 12px 0 rgb(99 102 241 / 0.10), 0 2px 6px -2px rgb(99 102 241 / 0.08);
   --shadow-lg: 0 8px 24px 0 rgb(99 102 241 / 0.12), 0 4px 10px -4px rgb(99 102 241 / 0.10);
@@ -138,7 +138,7 @@ body {
 }
 
 /* ─────────────────────────────────────────
-   SCROLLBAR — thin & themed
+   SCROLLBAR - thin & themed
    ───────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -149,7 +149,7 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ─────────────────────────────────────────
-   FOCUS STYLES — accessible & on-brand
+   FOCUS STYLES - accessible & on-brand
    ───────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--accent);
