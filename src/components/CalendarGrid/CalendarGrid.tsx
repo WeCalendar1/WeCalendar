@@ -1,14 +1,16 @@
 import { CalendarCell } from "@/components/CalendarCell";
 import { getMonthGrid } from "@/lib/calendar";
+import type { CalendarEvent } from "@/lib/events";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 type CalendarGridProps = {
   viewDate: Date;
   activeTagIds: string[];
+  events: CalendarEvent[];
 };
 
-export function CalendarGrid({ viewDate }: CalendarGridProps) {
+export function CalendarGrid({ viewDate, events }: CalendarGridProps) {
   const days = getMonthGrid(viewDate);
 
   return (
@@ -21,7 +23,6 @@ export function CalendarGrid({ viewDate }: CalendarGridProps) {
         boxShadow: "var(--shadow-md)",
       }}
     >
-      {/* Weekday header */}
       <div
         className="grid grid-cols-7"
         style={{ borderBottom: "1.5px solid var(--border)", background: "var(--surface-2)" }}
@@ -38,10 +39,9 @@ export function CalendarGrid({ viewDate }: CalendarGridProps) {
         ))}
       </div>
 
-      {/* Day cells */}
-      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6">
+      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 overflow-auto">
         {days.map((day) => (
-          <CalendarCell key={day.date.toISOString()} day={day} />
+          <CalendarCell key={day.date.toISOString()} day={day} events={events} />
         ))}
       </div>
     </div>
