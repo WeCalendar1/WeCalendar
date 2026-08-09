@@ -16,12 +16,16 @@ import {
   type ScreenView,
 } from "@/lib/calendar";
 import type { CalendarEvent } from "@/lib/events";
+import {
+  isSchedulingConflictError,
+  SCHEDULING_CONFLICT_MESSAGE,
+} from "@/lib/scheduling";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/types/database";
 
 type Group = Tables<"groups">;
 
-// All tag IDs — kept in sync with DEFAULT_TAGS in Sidebar
+// All tag IDs - kept in sync with DEFAULT_TAGS in Sidebar
 const ALL_TAG_IDS = ["personal", "work", "birthdays", "holidays", "reminders", "shared"];
 const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
 
@@ -195,7 +199,12 @@ export function AppShell() {
       created_by: user.id,
     });
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (isSchedulingConflictError(error)) {
+        throw new Error(SCHEDULING_CONFLICT_MESSAGE);
+      }
+      throw new Error(error.message);
+    }
     await loadEvents(activeGroupId);
   }
 
