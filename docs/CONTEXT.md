@@ -54,11 +54,12 @@ Env (local only, never commit):
 - Profile page loads/saves profile; sign out works
 - Navbar shows user initials
 
-### Shared sync (in progress / needs testing)
+### Shared sync (in progress / needs further testing)
 - Sidebar **Shared calendar**: create workspace, copy invite code, join by code
 - **Create Event** saves to active group
 - Events show on day / week / month
 - Realtime subscription refreshes events when the other member adds one
+- **First-come scheduling:** overlapping times in the same workspace are rejected at the DB (`events_no_overlapping_time`). First insert wins; second user gets a scheduling conflict error. Apply `supabase/migrations/20260807150000_events_no_overlap.sql` in the SQL Editor.
 - Commit note: further testing once activities are solid
 
 ## How two accounts sync

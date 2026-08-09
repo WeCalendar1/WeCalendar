@@ -39,7 +39,7 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresh the auth token — do not remove.
+  // Refresh the auth token - do not remove.
   const {
     data: { user },
   } = await supabase.auth.getUser();

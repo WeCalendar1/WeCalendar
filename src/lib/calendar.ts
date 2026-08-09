@@ -65,14 +65,14 @@ export function formatWeekLabel(date: Date): string {
   const sameYear = start.getFullYear() === end.getFullYear();
 
   if (sameMonth) {
-    return `${start.toLocaleDateString("en-US", { month: "short" })} ${start.getDate()} – ${end.getDate()}, ${end.getFullYear()}`;
+    return `${start.toLocaleDateString("en-US", { month: "short" })} ${start.getDate()} - ${end.getDate()}, ${end.getFullYear()}`;
   }
 
   if (sameYear) {
-    return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${end.getFullYear()}`;
+    return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${end.getFullYear()}`;
   }
 
-  return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+  return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} - ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
 }
 
 export function formatYearLabel(date: Date): string {
@@ -114,7 +114,7 @@ export function formatHourLabel(hour: number): string {
   return `${hour - 12} PM`;
 }
 
-/** Hours shown in day/week time grids (midnight–11 PM). */
+/** Hours shown in day/week time grids (midnight-11 PM). */
 export const DAY_HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export type CalendarDay = {
@@ -123,7 +123,7 @@ export type CalendarDay = {
   isToday: boolean;
 };
 
-/** Builds a Sunday–Saturday month grid (6 weeks × 7 days). */
+/** Builds a Sunday-Saturday month grid (6 weeks × 7 days). */
 export function getMonthGrid(viewDate: Date, today = new Date()): CalendarDay[] {
   const first = startOfMonth(viewDate);
   const startOffset = first.getDay(); // 0 = Sunday
@@ -143,7 +143,7 @@ export function getMonthGrid(viewDate: Date, today = new Date()): CalendarDay[] 
   return days;
 }
 
-/** Seven days of the week containing `viewDate` (Sunday–Saturday). */
+/** Seven days of the week containing `viewDate` (Sunday-Saturday). */
 export function getWeekDays(viewDate: Date, today = new Date()): CalendarDay[] {
   const start = startOfWeek(viewDate);
   return Array.from({ length: 7 }, (_, i) => {

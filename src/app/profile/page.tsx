@@ -502,7 +502,7 @@ export default function ProfilePage() {
                   Profile picture
                 </p>
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                  JPG, PNG, or GIF — max 5 MB. Click the circle to upload.
+                  JPG, PNG, or GIF - max 5 MB. Click the circle to upload.
                 </p>
                 {avatarUrl && (
                   <button
@@ -734,7 +734,7 @@ export default function ProfilePage() {
             </svg>
           }
           title="Danger Zone"
-          description="Irreversible and destructive actions — proceed carefully"
+          description="Irreversible and destructive actions - proceed carefully"
         >
           <div>
             <DangerButton
@@ -803,7 +803,7 @@ export default function ProfilePage() {
                 </svg>
               }
               title="Delete account"
-              description="Permanently delete your account and all associated data — cannot be undone"
+              description="Permanently delete your account and all associated data - cannot be undone"
               confirmLabel="Delete forever"
             />
           </div>
