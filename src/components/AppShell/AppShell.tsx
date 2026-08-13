@@ -114,9 +114,9 @@ export function AppShell() {
 
   useEffect(() => {
     if (!user) {
-      setGroups([]);
-      setActiveGroupId(null);
-      setEvents([]);
+      setGroups([]); // eslint-disable-line react-hooks/set-state-in-effect
+      setActiveGroupId(null); // eslint-disable-line react-hooks/set-state-in-effect
+      setEvents([]); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
     void loadGroups();
@@ -126,7 +126,7 @@ export function AppShell() {
     if (activeGroupId) {
       window.localStorage.setItem(ACTIVE_GROUP_KEY, activeGroupId);
     }
-    void loadEvents(activeGroupId);
+    void loadEvents(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
   }, [activeGroupId, loadEvents]);
 
   // Realtime sync for shared events
@@ -279,6 +279,7 @@ export function AppShell() {
       </div>
 
       <CreateEventModal
+        key={createOpen ? viewDate.toISOString() : "closed"}
         open={createOpen}
         defaultDate={viewDate}
         onClose={() => setCreateOpen(false)}

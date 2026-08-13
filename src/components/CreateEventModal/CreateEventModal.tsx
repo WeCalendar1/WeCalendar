@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 
 type CreateEventModalProps = {
   open: boolean;
@@ -35,16 +35,6 @@ export function CreateEventModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open) {
-      setDate(toDateInput(defaultDate));
-      setTitle("");
-      setDescription("");
-      setStartTime("09:00");
-      setEndTime("10:00");
-      setError(null);
-    }
-  }, [open, defaultDate]);
 
   if (!open) return null;
 
