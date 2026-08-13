@@ -81,7 +81,7 @@ export function Sidebar({
           title={
             canCreateEvent
               ? "Create event"
-              : "Join or create a workspace first"
+              : "Join or create a calendar first"
           }
           className="btn-bounce flex w-full cursor-pointer items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           style={{
