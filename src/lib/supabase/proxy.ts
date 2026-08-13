@@ -1,6 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function copyCookies(from: NextResponse, to: NextResponse) {
+  from.cookies.getAll().forEach(({ name, value, ...options }) => {
+    to.cookies.set(name, value, options);
+  });
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -33,8 +39,32 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresh the auth token — do not remove.
-  await supabase.auth.getUser();
+  // Refresh the auth token - do not remove.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+  const isAuthRoute =
+    pathname.startsWith("/login") || pathname.startsWith("/auth");
+
+  if (!user && !isAuthRoute) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/login";
+    redirectUrl.searchParams.set("next", pathname);
+    const redirect = NextResponse.redirect(redirectUrl);
+    copyCookies(supabaseResponse, redirect);
+    return redirect;
+  }
+
+  if (user && pathname.startsWith("/login")) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/";
+    redirectUrl.search = "";
+    const redirect = NextResponse.redirect(redirectUrl);
+    copyCookies(supabaseResponse, redirect);
+    return redirect;
+  }
 
   return supabaseResponse;
 }

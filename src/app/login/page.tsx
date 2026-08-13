@@ -1,39 +1,41 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { LoginForm } from "@/components/Auth";
 
 export default function LoginPage() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6 py-16">
-      <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-surface p-8 shadow-sm">
+    <div
+      className="flex flex-1 flex-col items-center justify-center px-6 py-16"
+      style={{ background: "var(--background)" }}
+    >
+      <div
+        className="w-full max-w-sm space-y-6 p-8"
+        style={{
+          borderRadius: "var(--radius-xl)",
+          border: "1.5px solid var(--border)",
+          background: "var(--surface)",
+          boxShadow: "var(--shadow-md)",
+        }}
+      >
         <div className="space-y-2 text-center">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
+          <Link
+            href="/"
+            className="text-xl font-semibold tracking-tight"
+            style={{
+              fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+              color: "var(--foreground)",
+            }}
+          >
             WeCalendar
           </Link>
-          <p className="text-sm text-stone-600">
-            Sign in to your shared workspace.
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            Create an account or sign in to your shared workspace.
           </p>
         </div>
 
-        <div className="space-y-3 rounded-lg bg-accent-muted/60 p-4 text-sm text-stone-700">
-          <p className="font-medium text-foreground">Auth coming next</p>
-          <p>
-            Wire up Supabase by copying{" "}
-            <code className="rounded bg-white px-1 py-0.5 text-xs">
-              .env.example
-            </code>{" "}
-            to{" "}
-            <code className="rounded bg-white px-1 py-0.5 text-xs">
-              .env.local
-            </code>{" "}
-            and adding your project URL and anon key.
-          </p>
-        </div>
-
-        <Link
-          href="/"
-          className="block text-center text-sm text-accent hover:underline"
-        >
-          ← Back home
-        </Link>
+        <Suspense fallback={<p className="text-center text-sm">Loading…</p>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );
