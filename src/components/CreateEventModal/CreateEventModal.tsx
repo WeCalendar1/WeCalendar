@@ -1,17 +1,23 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import type { CalendarEvent } from "@/lib/events";
+
+export type EventDraft = {
+  title: string;
+  description: string;
+  startsAt: Date;
+  endsAt: Date;
+};
 
 type CreateEventModalProps = {
   open: boolean;
   defaultDate: Date;
+  event?: CalendarEvent | null;
   onClose: () => void;
-  onCreate: (input: {
-    title: string;
-    description: string;
-    startsAt: Date;
-    endsAt: Date;
-  }) => Promise<void>;
+  onCreate: (input: EventDraft) => Promise<void>;
+  onUpdate?: (eventId: string, input: EventDraft) => Promise<void>;
+  onDelete?: (eventId: string) => Promise<void>;
 };
 
 function toDateInput(date: Date): string {
@@ -21,50 +27,103 @@ function toDateInput(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function toTimeInput(date: Date): string {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
 export function CreateEventModal({
   open,
   defaultDate,
+  event = null,
   onClose,
   onCreate,
+  onUpdate,
+  onDelete,
 }: CreateEventModalProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState(toDateInput(defaultDate));
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("10:00");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const isEditing = Boolean(event);
+  const start = event ? new Date(event.starts_at) : defaultDate;
+  const end = event ? new Date(event.ends_at) : null;
 
+  const [title, setTitle] = useState(event?.title ?? "");
+  const [description, setDescription] = useState(event?.description ?? "");
+  const [date, setDate] = useState(toDateInput(start));
+  const [startTime, setStartTime] = useState(
+    event ? toTimeInput(start) : "09:00",
+  );
+  const [endTime, setEndTime] = useState(end ? toTimeInput(end) : "10:00");
+  const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!open) return null;
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  function parseRange(): EventDraft | null {
+    const [sh, sm] = startTime.split(":").map(Number);
+    const [eh, em] = endTime.split(":").map(Number);
+    const [year, month, day] = date.split("-").map(Number);
+
+    const startsAt = new Date(year!, month! - 1, day!, sh!, sm!, 0);
+    const endsAt = new Date(year!, month! - 1, day!, eh!, em!, 0);
+
+    if (endsAt <= startsAt) {
+      setError("End time must be after start time.");
+      return null;
+    }
+
+    return {
+      title: title.trim(),
+      description: description.trim(),
+      startsAt,
+      endsAt,
+    };
+  }
+
+  async function handleSubmit(formEvent: FormEvent) {
+    formEvent.preventDefault();
     setBusy(true);
     setError(null);
+    setConfirmDelete(false);
 
     try {
-      const [sh, sm] = startTime.split(":").map(Number);
-      const [eh, em] = endTime.split(":").map(Number);
-      const [year, month, day] = date.split("-").map(Number);
+      const draft = parseRange();
+      if (!draft) return;
 
-      const startsAt = new Date(year!, month! - 1, day!, sh!, sm!, 0);
-      const endsAt = new Date(year!, month! - 1, day!, eh!, em!, 0);
-
-      if (endsAt <= startsAt) {
-        setError("End time must be after start time.");
-        return;
+      if (isEditing && event && onUpdate) {
+        await onUpdate(event.id, draft);
+      } else {
+        await onCreate(draft);
       }
-
-      await onCreate({
-        title: title.trim(),
-        description: description.trim(),
-        startsAt,
-        endsAt,
-      });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create event.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : isEditing
+            ? "Could not update event."
+            : "Could not create event.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!event || !onDelete) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    try {
+      await onDelete(event.id);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete event.");
+      setConfirmDelete(false);
     } finally {
       setBusy(false);
     }
@@ -92,10 +151,12 @@ export function CreateEventModal({
             fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
           }}
         >
-          Create shared event
+          {isEditing ? "Event details" : "Create shared event"}
         </h2>
         <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-          This event syncs to everyone in the workspace.
+          {isEditing
+            ? "Changes sync to everyone in the workspace."
+            : "This event syncs to everyone in the workspace."}
         </p>
 
         <form onSubmit={(e) => void handleSubmit(e)} className="mt-4 space-y-3">
@@ -169,29 +230,50 @@ export function CreateEventModal({
             </p>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="cursor-pointer px-4 py-2 text-sm font-semibold"
-              style={{
-                borderRadius: "var(--radius-lg)",
-                border: "1.5px solid var(--border)",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={busy}
-              className="btn-bounce cursor-pointer px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              style={{
-                borderRadius: "var(--radius-lg)",
-                background: "var(--accent)",
-              }}
-            >
-              {busy ? "Saving…" : "Save event"}
-            </button>
+          <div className="flex items-center justify-between gap-2 pt-2">
+            {isEditing && onDelete ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleDelete()}
+                className="cursor-pointer px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                style={{
+                  borderRadius: "var(--radius-lg)",
+                  border: "1.5px solid #fca5a5",
+                  background: confirmDelete ? "#dc2626" : "#fff5f5",
+                  color: confirmDelete ? "#fff" : "#dc2626",
+                }}
+              >
+                {confirmDelete ? "Confirm delete" : "Delete"}
+              </button>
+            ) : (
+              <span />
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="cursor-pointer px-4 py-2 text-sm font-semibold"
+                style={{
+                  borderRadius: "var(--radius-lg)",
+                  border: "1.5px solid var(--border)",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="btn-bounce cursor-pointer px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                style={{
+                  borderRadius: "var(--radius-lg)",
+                  background: "var(--accent)",
+                }}
+              >
+                {busy ? "Saving…" : isEditing ? "Save changes" : "Save event"}
+              </button>
+            </div>
           </div>
         </form>
       </div>

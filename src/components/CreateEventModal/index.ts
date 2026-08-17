@@ -1,1 +1,1 @@
-export { CreateEventModal } from "./CreateEventModal";
+export { CreateEventModal, type EventDraft } from "./CreateEventModal";
