@@ -8,9 +8,10 @@ type CalendarGridProps = {
   viewDate: Date;
   activeTagIds: string[];
   events: CalendarEvent[];
+  onSelectEvent?: (event: CalendarEvent) => void;
 };
 
-export function CalendarGrid({ viewDate, events }: CalendarGridProps) {
+export function CalendarGrid({ viewDate, events, onSelectEvent }: CalendarGridProps) {
   const days = getMonthGrid(viewDate);
 
   return (
@@ -41,7 +42,12 @@ export function CalendarGrid({ viewDate, events }: CalendarGridProps) {
 
       <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 overflow-auto">
         {days.map((day) => (
-          <CalendarCell key={day.date.toISOString()} day={day} events={events} />
+          <CalendarCell
+            key={day.date.toISOString()}
+            day={day}
+            events={events}
+            onSelectEvent={onSelectEvent}
+          />
         ))}
       </div>
     </div>

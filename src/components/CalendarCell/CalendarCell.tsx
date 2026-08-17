@@ -4,9 +4,10 @@ import { eventsForDay, formatEventTime, type CalendarEvent } from "@/lib/events"
 type CalendarCellProps = {
   day: CalendarDay;
   events: CalendarEvent[];
+  onSelectEvent?: (event: CalendarEvent) => void;
 };
 
-export function CalendarCell({ day, events }: CalendarCellProps) {
+export function CalendarCell({ day, events, onSelectEvent }: CalendarCellProps) {
   const dayNumber = day.date.getDate();
   const dayEvents = eventsForDay(events, day.date).slice(0, 3);
   const extra = Math.max(eventsForDay(events, day.date).length - 3, 0);
@@ -69,10 +70,15 @@ export function CalendarCell({ day, events }: CalendarCellProps) {
 
       <div className="mt-1 space-y-1">
         {dayEvents.map((event) => (
-          <div
+          <button
             key={event.id}
-            className="truncate px-1.5 py-0.5 text-[10px] font-semibold leading-tight"
+            type="button"
+            className="block w-full truncate px-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
             title={`${event.title} · ${formatEventTime(event.starts_at)}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectEvent?.(event);
+            }}
             style={{
               borderRadius: "var(--radius-sm)",
               background: "var(--accent)",
@@ -80,7 +86,7 @@ export function CalendarCell({ day, events }: CalendarCellProps) {
             }}
           >
             {formatEventTime(event.starts_at)} {event.title}
-          </div>
+          </button>
         ))}
         {extra > 0 && (
           <p className="px-1 text-[10px] font-semibold" style={{ color: "var(--text-muted)" }}>

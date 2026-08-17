@@ -19,9 +19,10 @@ export const HOUR_HEIGHT_PX = 52;
 type TimeGridProps = {
   days: CalendarDay[];
   events: CalendarEvent[];
+  onSelectEvent?: (event: CalendarEvent) => void;
 };
 
-export function TimeGrid({ days, events }: TimeGridProps) {
+export function TimeGrid({ days, events, onSelectEvent }: TimeGridProps) {
   const now = new Date();
   const showNowLine = days.some((d) => d.isToday);
   const nowTop = (getMinutesSinceMidnight(now) / 60) * HOUR_HEIGHT_PX;
@@ -116,10 +117,12 @@ export function TimeGrid({ days, events }: TimeGridProps) {
                   {eventsForDay(events, day.date).map((event) => {
                     const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
                     return (
-                      <div
+                      <button
                         key={event.id}
-                        className="pointer-events-auto absolute right-1 left-1 overflow-hidden px-1.5 py-1 text-[11px] font-semibold text-white"
+                        type="button"
+                        className="pointer-events-auto absolute right-1 left-1 overflow-hidden px-1.5 py-1 text-left text-[11px] font-semibold text-white"
                         title={`${event.title} · ${formatEventTime(event.starts_at)}`}
+                        onClick={() => onSelectEvent?.(event)}
                         style={{
                           top,
                           height,
@@ -132,7 +135,7 @@ export function TimeGrid({ days, events }: TimeGridProps) {
                         <div className="truncate opacity-90">
                           {formatEventTime(event.starts_at)}
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

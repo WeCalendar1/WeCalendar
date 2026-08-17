@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Calendar } from "@/components/Calendar";
-import { CreateEventModal } from "@/components/CreateEventModal";
+import { CreateEventModal, type EventDraft } from "@/components/CreateEventModal";
 import { Navbar } from "@/components/Navbar";
 import { RightPanel } from "@/components/RightPanel";
 import { Sidebar } from "@/components/Sidebar";
@@ -40,7 +40,8 @@ export function AppShell() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
   const showRightPanel = screenView === "tasks" || screenView === "map";
@@ -88,7 +89,14 @@ export function AppShell() {
         return;
       }
 
-      setEvents(data ?? []);
+      const nextEvents = data ?? [];
+      setEvents(nextEvents);
+      setSelectedEvent((current) => {
+        if (!current) return current;
+        const next = nextEvents.find((event) => event.id === current.id) ?? null;
+        if (!next) setModalOpen(false);
+        return next;
+      });
     },
     [supabase],
   );
@@ -180,12 +188,7 @@ export function AppShell() {
     if (data?.id) setActiveGroupId(data.id);
   }
 
-  async function handleCreateEvent(input: {
-    title: string;
-    description: string;
-    startsAt: Date;
-    endsAt: Date;
-  }) {
+  async function handleCreateEvent(input: EventDraft) {
     if (!user || !activeGroupId) {
       throw new Error("Join or create a shared workspace first.");
     }
@@ -206,6 +209,52 @@ export function AppShell() {
       throw new Error(error.message);
     }
     await loadEvents(activeGroupId);
+  }
+
+  async function handleUpdateEvent(eventId: string, input: EventDraft) {
+    if (!activeGroupId) {
+      throw new Error("Join or create a shared workspace first.");
+    }
+
+    const { error } = await supabase
+      .from("events")
+      .update({
+        title: input.title,
+        description: input.description || null,
+        starts_at: input.startsAt.toISOString(),
+        ends_at: input.endsAt.toISOString(),
+      })
+      .eq("id", eventId);
+
+    if (error) {
+      if (isSchedulingConflictError(error)) {
+        throw new Error(SCHEDULING_CONFLICT_MESSAGE);
+      }
+      throw new Error(error.message);
+    }
+    await loadEvents(activeGroupId);
+  }
+
+  async function handleDeleteEvent(eventId: string) {
+    const { error } = await supabase.from("events").delete().eq("id", eventId);
+    if (error) throw new Error(error.message);
+    setSelectedEvent(null);
+    await loadEvents(activeGroupId);
+  }
+
+  function openCreateModal() {
+    setSelectedEvent(null);
+    setModalOpen(true);
+  }
+
+  function openEventDetails(event: CalendarEvent) {
+    setSelectedEvent(event);
+    setModalOpen(true);
+  }
+
+  function closeEventModal() {
+    setModalOpen(false);
+    setSelectedEvent(null);
   }
 
   function handleTagToggle(id: string) {
@@ -241,7 +290,7 @@ export function AppShell() {
           open={sidebarOpen}
           viewDate={viewDate}
           activeTagIds={activeTagIds}
-          onCreateEvent={() => setCreateOpen(true)}
+          onCreateEvent={openCreateModal}
           onTagToggle={handleTagToggle}
           groups={groups}
           activeGroupId={activeGroupId}
@@ -272,6 +321,7 @@ export function AppShell() {
             events={filteredEvents}
             onViewDateChange={setViewDate}
             onCalendarModeChange={setCalendarMode}
+            onSelectEvent={openEventDetails}
           />
         </main>
 
@@ -279,11 +329,20 @@ export function AppShell() {
       </div>
 
       <CreateEventModal
-        key={createOpen ? viewDate.toISOString() : "closed"}
-        open={createOpen}
+        key={
+          selectedEvent
+            ? selectedEvent.id
+            : modalOpen
+              ? `create-${viewDate.toISOString()}`
+              : "closed"
+        }
+        open={modalOpen}
         defaultDate={viewDate}
-        onClose={() => setCreateOpen(false)}
+        event={selectedEvent}
+        onClose={closeEventModal}
         onCreate={handleCreateEvent}
+        onUpdate={handleUpdateEvent}
+        onDelete={handleDeleteEvent}
       />
     </div>
   );

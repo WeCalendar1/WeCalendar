@@ -14,6 +14,7 @@ type CalendarProps = {
   events: CalendarEvent[];
   onViewDateChange: (date: Date) => void;
   onCalendarModeChange: (mode: CalendarMode) => void;
+  onSelectEvent?: (event: CalendarEvent) => void;
 };
 
 export function Calendar({
@@ -23,16 +24,22 @@ export function Calendar({
   events,
   onViewDateChange,
   onCalendarModeChange,
+  onSelectEvent,
 }: CalendarProps) {
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-      {calendarMode === "day" && <DayView viewDate={viewDate} events={events} />}
-      {calendarMode === "week" && <WeekView viewDate={viewDate} events={events} />}
+      {calendarMode === "day" && (
+        <DayView viewDate={viewDate} events={events} onSelectEvent={onSelectEvent} />
+      )}
+      {calendarMode === "week" && (
+        <WeekView viewDate={viewDate} events={events} onSelectEvent={onSelectEvent} />
+      )}
       {calendarMode === "month" && (
         <CalendarGrid
           viewDate={viewDate}
           activeTagIds={activeTagIds}
           events={events}
+          onSelectEvent={onSelectEvent}
         />
       )}
       {calendarMode === "year" && (

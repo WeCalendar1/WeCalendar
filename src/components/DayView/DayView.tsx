@@ -4,9 +4,10 @@ import type { CalendarEvent } from "@/lib/events";
 type DayViewProps = {
   viewDate: Date;
   events: CalendarEvent[];
+  onSelectEvent?: (event: CalendarEvent) => void;
 };
 
-export function DayView({ viewDate, events }: DayViewProps) {
+export function DayView({ viewDate, events, onSelectEvent }: DayViewProps) {
   return (
     <div
       className="flex h-full min-h-0 flex-col overflow-hidden"
@@ -17,7 +18,11 @@ export function DayView({ viewDate, events }: DayViewProps) {
         boxShadow: "var(--shadow-md)",
       }}
     >
-      <TimeGrid days={[dayAsCalendarDay(viewDate)]} events={events} />
+      <TimeGrid
+        days={[dayAsCalendarDay(viewDate)]}
+        events={events}
+        onSelectEvent={onSelectEvent}
+      />
     </div>
   );
 }

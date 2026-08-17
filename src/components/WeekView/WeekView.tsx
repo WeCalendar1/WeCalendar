@@ -5,9 +5,10 @@ import type { CalendarEvent } from "@/lib/events";
 type WeekViewProps = {
   viewDate: Date;
   events: CalendarEvent[];
+  onSelectEvent?: (event: CalendarEvent) => void;
 };
 
-export function WeekView({ viewDate, events }: WeekViewProps) {
+export function WeekView({ viewDate, events, onSelectEvent }: WeekViewProps) {
   const days = getWeekDays(viewDate);
 
   return (
@@ -20,7 +21,7 @@ export function WeekView({ viewDate, events }: WeekViewProps) {
         boxShadow: "var(--shadow-md)",
       }}
     >
-      <TimeGrid days={days} events={events} />
+      <TimeGrid days={days} events={events} onSelectEvent={onSelectEvent} />
     </div>
   );
 }
