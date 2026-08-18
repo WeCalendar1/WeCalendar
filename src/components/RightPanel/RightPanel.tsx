@@ -1,25 +1,71 @@
+import { TaskPanel, type ListCategory, type ListItem, type SharedList } from "@/components/TaskPanel";
+
 type RightPanelProps = {
   visible?: boolean;
+  view: "calendar" | "tasks" | "map";
+  groupId: string | null;
+  lists: SharedList[];
+  items: ListItem[];
+  onCreateList: (name: string, category: ListCategory) => Promise<void>;
+  onDeleteList: (listId: string) => Promise<void>;
+  onAddItem: (listId: string, content: string) => Promise<void>;
+  onToggleItem: (itemId: string, isChecked: boolean) => Promise<void>;
+  onDeleteItem: (itemId: string) => Promise<void>;
 };
 
-/**
- * Placeholder for Tasks / Map content.
- * Hidden by default until those screen views are implemented.
- */
-export function RightPanel({ visible = false }: RightPanelProps) {
+export function RightPanel({
+  visible = false,
+  view,
+  groupId,
+  lists,
+  items,
+  onCreateList,
+  onDeleteList,
+  onAddItem,
+  onToggleItem,
+  onDeleteItem,
+}: RightPanelProps) {
   if (!visible) {
     return null;
   }
 
+  const isTasks = view === "tasks";
+
   return (
-    <aside className="hidden w-72 shrink-0 border-l border-border bg-surface lg:flex lg:flex-col">
-      <div className="border-b border-border px-4 py-3">
-        <p className="text-sm font-semibold text-foreground">Panel</p>
-        <p className="text-xs text-stone-500">Tasks & Map placeholder</p>
+    <aside
+      className="flex w-full shrink-0 flex-col border-l sm:w-80"
+      style={{
+        borderColor: "var(--border)",
+        background: "var(--surface)",
+      }}
+    >
+      <div className="border-b px-4 py-3" style={{ borderColor: "var(--border)" }}>
+        <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+          {isTasks ? "Tasks" : "Map"}
+        </p>
+        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+          {isTasks
+            ? "Shared lists for this workspace"
+            : "Map view is not available yet"}
+        </p>
       </div>
-      <div className="flex flex-1 items-center justify-center p-4 text-sm text-stone-400">
-        Content coming soon
-      </div>
+
+      {isTasks ? (
+        <TaskPanel
+          groupId={groupId}
+          lists={lists}
+          items={items}
+          onCreateList={onCreateList}
+          onDeleteList={onDeleteList}
+          onAddItem={onAddItem}
+          onToggleItem={onToggleItem}
+          onDeleteItem={onDeleteItem}
+        />
+      ) : (
+        <div className="flex flex-1 items-center justify-center p-4 text-sm" style={{ color: "var(--text-muted)" }}>
+          Content coming soon
+        </div>
+      )}
     </aside>
   );
 }
