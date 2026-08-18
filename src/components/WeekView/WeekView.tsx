@@ -6,9 +6,10 @@ type WeekViewProps = {
   viewDate: Date;
   events: CalendarEvent[];
   onSelectEvent?: (event: CalendarEvent) => void;
+  onDayDoubleClick?: (date: Date) => void;
 };
 
-export function WeekView({ viewDate, events, onSelectEvent }: WeekViewProps) {
+export function WeekView({ viewDate, events, onSelectEvent, onDayDoubleClick }: WeekViewProps) {
   const days = getWeekDays(viewDate);
 
   return (
@@ -21,7 +22,7 @@ export function WeekView({ viewDate, events, onSelectEvent }: WeekViewProps) {
         boxShadow: "var(--shadow-md)",
       }}
     >
-      <TimeGrid days={days} events={events} onSelectEvent={onSelectEvent} />
+      <TimeGrid days={days} events={events} onSelectEvent={onSelectEvent} onDayDoubleClick={onDayDoubleClick} />
     </div>
   );
 }

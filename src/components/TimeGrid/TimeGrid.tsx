@@ -20,9 +20,10 @@ type TimeGridProps = {
   days: CalendarDay[];
   events: CalendarEvent[];
   onSelectEvent?: (event: CalendarEvent) => void;
+  onDayDoubleClick?: (date: Date) => void;
 };
 
-export function TimeGrid({ days, events, onSelectEvent }: TimeGridProps) {
+export function TimeGrid({ days, events, onSelectEvent, onDayDoubleClick }: TimeGridProps) {
   const now = new Date();
   const showNowLine = days.some((d) => d.isToday);
   const nowTop = (getMinutesSinceMidnight(now) / 60) * HOUR_HEIGHT_PX;
@@ -97,6 +98,17 @@ export function TimeGrid({ days, events, onSelectEvent }: TimeGridProps) {
                     background: day.isToday
                       ? "color-mix(in srgb, var(--accent-muted) 55%, var(--surface))"
                       : "var(--surface)",
+                    cursor: "default",
+                  }}
+                  onDoubleClick={(e) => {
+                    if (!onDayDoubleClick) return;
+                    // Calculate clicked minute within the slot for precision
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const fraction = (e.clientY - rect.top) / rect.height;
+                    const minute = fraction < 0.5 ? 0 : 30;
+                    const d = new Date(day.date);
+                    d.setHours(hour, minute, 0, 0);
+                    onDayDoubleClick(d);
                   }}
                 />
               ))}
