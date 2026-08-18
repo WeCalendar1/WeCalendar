@@ -20,13 +20,12 @@ import {
   isSchedulingConflictError,
   SCHEDULING_CONFLICT_MESSAGE,
 } from "@/lib/scheduling";
+import { tagIdsForEvent, type EventTag, type Tag } from "@/lib/tags";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/types/database";
 
 type Group = Tables<"groups">;
 
-// All tag IDs - kept in sync with DEFAULT_TAGS in Sidebar
-const ALL_TAG_IDS = ["personal", "work", "birthdays", "holidays", "reminders", "shared"];
 const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
 
 export function AppShell() {
@@ -34,18 +33,22 @@ export function AppShell() {
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [screenView, setScreenView] = useState<ScreenView>("calendar");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTagIds, setActiveTagIds] = useState<string[]>(ALL_TAG_IDS);
+  const [activeTagIds, setActiveTagIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [eventTags, setEventTags] = useState<EventTag[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [modalDefaultDate, setModalDefaultDate] = useState<Date>(() => startOfDay(new Date()));
 
   const supabase = useMemo(() => createClient(), []);
   const showRightPanel = screenView === "tasks" || screenView === "map";
+
+  // ─── Data loaders ────────────────────────────────────────────────────────
 
   const loadGroups = useCallback(async () => {
     const { data, error } = await supabase
@@ -102,6 +105,52 @@ export function AppShell() {
     [supabase],
   );
 
+  const loadTags = useCallback(
+    async (groupId: string | null) => {
+      if (!groupId) {
+        setTags([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("tags")
+        .select("*")
+        .eq("group_id", groupId)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("loadTags", error);
+        return;
+      }
+      setTags(data ?? []);
+    },
+    [supabase],
+  );
+
+  const loadEventTags = useCallback(
+    async (groupId: string | null) => {
+      if (!groupId) {
+        setEventTags([]);
+        return;
+      }
+      // Join through events to filter by group
+      const { data, error } = await supabase
+        .from("event_tags")
+        .select("event_id, tag_id, tags!inner(group_id)")
+        .eq("tags.group_id", groupId);
+
+      if (error) {
+        console.error("loadEventTags", error);
+        return;
+      }
+      setEventTags(
+        (data ?? []).map((row) => ({ event_id: row.event_id, tag_id: row.tag_id })),
+      );
+    },
+    [supabase],
+  );
+
+  // ─── Auth effects ─────────────────────────────────────────────────────────
+
   useEffect(() => {
     let mounted = true;
 
@@ -123,9 +172,11 @@ export function AppShell() {
 
   useEffect(() => {
     if (!user) {
-      setGroups([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setActiveGroupId(null); // eslint-disable-line react-hooks/set-state-in-effect
-      setEvents([]); // eslint-disable-line react-hooks/set-state-in-effect
+      setGroups([]);
+      setActiveGroupId(null);
+      setEvents([]);
+      setTags([]);
+      setEventTags([]);
       return;
     }
     void loadGroups();
@@ -135,43 +186,65 @@ export function AppShell() {
     if (activeGroupId) {
       window.localStorage.setItem(ACTIVE_GROUP_KEY, activeGroupId);
     }
-    void loadEvents(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
-  }, [activeGroupId, loadEvents]);
+    void loadEvents(activeGroupId);
+    void loadTags(activeGroupId);
+    void loadEventTags(activeGroupId);
+  }, [activeGroupId, loadEvents, loadTags, loadEventTags]);
 
-  // Realtime sync for shared events
+  // ─── Realtime subscriptions ───────────────────────────────────────────────
+
   useEffect(() => {
     if (!activeGroupId) return;
 
     const channel = supabase
-      .channel(`events:${activeGroupId}`)
+      .channel(`group-data:${activeGroupId}`)
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "events",
-          filter: `group_id=eq.${activeGroupId}`,
-        },
-        () => {
-          void loadEvents(activeGroupId);
-        },
+        { event: "*", schema: "public", table: "events", filter: `group_id=eq.${activeGroupId}` },
+        () => { void loadEvents(activeGroupId); },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tags", filter: `group_id=eq.${activeGroupId}` },
+        () => { void loadTags(activeGroupId); },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "event_tags" },
+        () => { void loadEventTags(activeGroupId); },
       )
       .subscribe();
 
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [activeGroupId, loadEvents, supabase]);
+    return () => { void supabase.removeChannel(channel); };
+  }, [activeGroupId, loadEvents, loadTags, loadEventTags, supabase]);
+
+  // ─── Filtered events ──────────────────────────────────────────────────────
 
   const filteredEvents = useMemo(() => {
-    if (!searchQuery.trim()) return events;
-    const q = searchQuery.trim().toLowerCase();
-    return events.filter(
-      (event) =>
-        event.title.toLowerCase().includes(q) ||
-        (event.description ?? "").toLowerCase().includes(q),
-    );
-  }, [events, searchQuery]);
+    let filtered = events;
+
+    // Text search
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(
+        (event) =>
+          event.title.toLowerCase().includes(q) ||
+          (event.description ?? "").toLowerCase().includes(q),
+      );
+    }
+
+    // Tag filter — if any tags active, only show events that have at least one
+    if (activeTagIds.length > 0) {
+      filtered = filtered.filter((event) => {
+        const ids = tagIdsForEvent(event.id, eventTags);
+        return ids.some((id) => activeTagIds.includes(id));
+      });
+    }
+
+    return filtered;
+  }, [events, searchQuery, activeTagIds, eventTags]);
+
+  // ─── Handlers ─────────────────────────────────────────────────────────────
 
   async function handleCreateGroup(name: string) {
     const { data, error } = await supabase.rpc("create_group", { p_name: name });
@@ -189,19 +262,35 @@ export function AppShell() {
     if (data?.id) setActiveGroupId(data.id);
   }
 
+  async function handleCreateTag(name: string, color: string) {
+    if (!user || !activeGroupId) throw new Error("Join or create a calendar first.");
+    const { error } = await supabase.from("tags").insert({
+      group_id: activeGroupId,
+      name,
+      color,
+      created_by: user.id,
+    });
+    if (error) throw new Error(error.message);
+    await loadTags(activeGroupId);
+  }
+
   async function handleCreateEvent(input: EventDraft) {
     if (!user || !activeGroupId) {
       throw new Error("Join or create a shared workspace first.");
     }
 
-    const { error } = await supabase.from("events").insert({
-      group_id: activeGroupId,
-      title: input.title,
-      description: input.description || null,
-      starts_at: input.startsAt.toISOString(),
-      ends_at: input.endsAt.toISOString(),
-      created_by: user.id,
-    });
+    const { data: eventData, error } = await supabase
+      .from("events")
+      .insert({
+        group_id: activeGroupId,
+        title: input.title,
+        description: input.description || null,
+        starts_at: input.startsAt.toISOString(),
+        ends_at: input.endsAt.toISOString(),
+        created_by: user.id,
+      })
+      .select()
+      .single();
 
     if (error) {
       if (isSchedulingConflictError(error)) {
@@ -209,7 +298,16 @@ export function AppShell() {
       }
       throw new Error(error.message);
     }
+
+    // Attach tags
+    if (eventData && input.tagIds.length > 0) {
+      await supabase.from("event_tags").insert(
+        input.tagIds.map((tagId) => ({ event_id: eventData.id, tag_id: tagId })),
+      );
+    }
+
     await loadEvents(activeGroupId);
+    await loadEventTags(activeGroupId);
   }
 
   async function handleUpdateEvent(eventId: string, input: EventDraft) {
@@ -233,7 +331,17 @@ export function AppShell() {
       }
       throw new Error(error.message);
     }
+
+    // Replace tag assignments
+    await supabase.from("event_tags").delete().eq("event_id", eventId);
+    if (input.tagIds.length > 0) {
+      await supabase.from("event_tags").insert(
+        input.tagIds.map((tagId) => ({ event_id: eventId, tag_id: tagId })),
+      );
+    }
+
     await loadEvents(activeGroupId);
+    await loadEventTags(activeGroupId);
   }
 
   async function handleDeleteEvent(eventId: string) {
@@ -241,12 +349,12 @@ export function AppShell() {
     if (error) throw new Error(error.message);
     setSelectedEvent(null);
     await loadEvents(activeGroupId);
+    await loadEventTags(activeGroupId);
   }
 
   function openCreateModal(date?: Date) {
     setSelectedEvent(null);
-    if (date) setModalDefaultDate(date);
-    else setModalDefaultDate(viewDate);
+    setModalDefaultDate(date ?? viewDate);
     setModalOpen(true);
   }
 
@@ -269,6 +377,11 @@ export function AppShell() {
   const userInitials = getInitials(
     (user?.user_metadata?.display_name as string | undefined) || user?.email,
   );
+
+  // Tag IDs on the currently-selected event (for the modal)
+  const selectedEventTagIds = selectedEvent
+    ? tagIdsForEvent(selectedEvent.id, eventTags)
+    : [];
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
@@ -295,6 +408,8 @@ export function AppShell() {
           activeTagIds={activeTagIds}
           onCreateEvent={openCreateModal}
           onTagToggle={handleTagToggle}
+          tags={tags}
+          onCreateTag={handleCreateTag}
           groups={groups}
           activeGroupId={activeGroupId}
           onSelectGroup={setActiveGroupId}
@@ -322,6 +437,8 @@ export function AppShell() {
             calendarMode={calendarMode}
             activeTagIds={activeTagIds}
             events={filteredEvents}
+            tags={tags}
+            eventTags={eventTags}
             onViewDateChange={setViewDate}
             onCalendarModeChange={setCalendarMode}
             onSelectEvent={openEventDetails}
@@ -343,10 +460,13 @@ export function AppShell() {
         open={modalOpen}
         defaultDate={modalDefaultDate}
         event={selectedEvent}
+        tags={tags}
+        initialTagIds={selectedEventTagIds}
         onClose={closeEventModal}
         onCreate={handleCreateEvent}
         onUpdate={handleUpdateEvent}
         onDelete={handleDeleteEvent}
+        onCreateTag={handleCreateTag}
       />
     </div>
   );

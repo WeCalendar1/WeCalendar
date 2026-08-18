@@ -13,17 +13,20 @@ import {
   formatEventTime,
   type CalendarEvent,
 } from "@/lib/events";
+import { colorForEvent, type EventTag, type Tag } from "@/lib/tags";
 
 export const HOUR_HEIGHT_PX = 52;
 
 type TimeGridProps = {
   days: CalendarDay[];
   events: CalendarEvent[];
+  tags: Tag[];
+  eventTags: EventTag[];
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
 };
 
-export function TimeGrid({ days, events, onSelectEvent, onDayDoubleClick }: TimeGridProps) {
+export function TimeGrid({ days, events, tags, eventTags, onSelectEvent, onDayDoubleClick }: TimeGridProps) {
   const now = new Date();
   const showNowLine = days.some((d) => d.isToday);
   const nowTop = (getMinutesSinceMidnight(now) / 60) * HOUR_HEIGHT_PX;
@@ -102,7 +105,6 @@ export function TimeGrid({ days, events, onSelectEvent, onDayDoubleClick }: Time
                   }}
                   onDoubleClick={(e) => {
                     if (!onDayDoubleClick) return;
-                    // Calculate clicked minute within the slot for precision
                     const rect = e.currentTarget.getBoundingClientRect();
                     const fraction = (e.clientY - rect.top) / rect.height;
                     const minute = fraction < 0.5 ? 0 : 30;
@@ -128,6 +130,7 @@ export function TimeGrid({ days, events, onSelectEvent, onDayDoubleClick }: Time
                 <div key={day.date.toISOString()} className="relative">
                   {eventsForDay(events, day.date).map((event) => {
                     const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
+                    const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
                     return (
                       <button
                         key={event.id}
@@ -139,7 +142,7 @@ export function TimeGrid({ days, events, onSelectEvent, onDayDoubleClick }: Time
                           top,
                           height,
                           borderRadius: "var(--radius-sm)",
-                          background: "var(--accent)",
+                          background: color,
                           boxShadow: "var(--shadow-sm)",
                         }}
                       >
