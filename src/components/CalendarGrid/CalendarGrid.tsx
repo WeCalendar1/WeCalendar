@@ -1,6 +1,7 @@
 import { CalendarCell } from "@/components/CalendarCell";
 import { getMonthGrid } from "@/lib/calendar";
 import type { CalendarEvent } from "@/lib/events";
+import type { EventTag, Tag } from "@/lib/tags";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -8,9 +9,13 @@ type CalendarGridProps = {
   viewDate: Date;
   activeTagIds: string[];
   events: CalendarEvent[];
+  tags: Tag[];
+  eventTags: EventTag[];
+  onSelectEvent?: (event: CalendarEvent) => void;
+  onDayDoubleClick?: (date: Date) => void;
 };
 
-export function CalendarGrid({ viewDate, events }: CalendarGridProps) {
+export function CalendarGrid({ viewDate, events, tags, eventTags, onSelectEvent, onDayDoubleClick }: CalendarGridProps) {
   const days = getMonthGrid(viewDate);
 
   return (
@@ -41,7 +46,15 @@ export function CalendarGrid({ viewDate, events }: CalendarGridProps) {
 
       <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 overflow-auto">
         {days.map((day) => (
-          <CalendarCell key={day.date.toISOString()} day={day} events={events} />
+          <CalendarCell
+            key={day.date.toISOString()}
+            day={day}
+            events={events}
+            tags={tags}
+            eventTags={eventTags}
+            onSelectEvent={onSelectEvent}
+            onDoubleClick={onDayDoubleClick}
+          />
         ))}
       </div>
     </div>

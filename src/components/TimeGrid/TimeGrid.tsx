@@ -13,15 +13,20 @@ import {
   formatEventTime,
   type CalendarEvent,
 } from "@/lib/events";
+import { colorForEvent, type EventTag, type Tag } from "@/lib/tags";
 
 export const HOUR_HEIGHT_PX = 52;
 
 type TimeGridProps = {
   days: CalendarDay[];
   events: CalendarEvent[];
+  tags: Tag[];
+  eventTags: EventTag[];
+  onSelectEvent?: (event: CalendarEvent) => void;
+  onDayDoubleClick?: (date: Date) => void;
 };
 
-export function TimeGrid({ days, events }: TimeGridProps) {
+export function TimeGrid({ days, events, tags, eventTags, onSelectEvent, onDayDoubleClick }: TimeGridProps) {
   const now = new Date();
   const showNowLine = days.some((d) => d.isToday);
   const nowTop = (getMinutesSinceMidnight(now) / 60) * HOUR_HEIGHT_PX;
@@ -96,6 +101,16 @@ export function TimeGrid({ days, events }: TimeGridProps) {
                     background: day.isToday
                       ? "color-mix(in srgb, var(--accent-muted) 55%, var(--surface))"
                       : "var(--surface)",
+                    cursor: "default",
+                  }}
+                  onDoubleClick={(e) => {
+                    if (!onDayDoubleClick) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const fraction = (e.clientY - rect.top) / rect.height;
+                    const minute = fraction < 0.5 ? 0 : 30;
+                    const d = new Date(day.date);
+                    d.setHours(hour, minute, 0, 0);
+                    onDayDoubleClick(d);
                   }}
                 />
               ))}
@@ -115,16 +130,19 @@ export function TimeGrid({ days, events }: TimeGridProps) {
                 <div key={day.date.toISOString()} className="relative">
                   {eventsForDay(events, day.date).map((event) => {
                     const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
+                    const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
                     return (
-                      <div
+                      <button
                         key={event.id}
-                        className="pointer-events-auto absolute right-1 left-1 overflow-hidden px-1.5 py-1 text-[11px] font-semibold text-white"
+                        type="button"
+                        className="pointer-events-auto absolute right-1 left-1 overflow-hidden px-1.5 py-1 text-left text-[11px] font-semibold text-white"
                         title={`${event.title} · ${formatEventTime(event.starts_at)}`}
+                        onClick={() => onSelectEvent?.(event)}
                         style={{
                           top,
                           height,
                           borderRadius: "var(--radius-sm)",
-                          background: "var(--accent)",
+                          background: color,
                           boxShadow: "var(--shadow-sm)",
                         }}
                       >
@@ -132,7 +150,7 @@ export function TimeGrid({ days, events }: TimeGridProps) {
                         <div className="truncate opacity-90">
                           {formatEventTime(event.starts_at)}
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
