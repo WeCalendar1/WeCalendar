@@ -1,15 +1,18 @@
 import { TimeGrid } from "@/components/TimeGrid";
 import { getWeekDays } from "@/lib/calendar";
 import type { CalendarEvent } from "@/lib/events";
+import type { EventTag, Tag } from "@/lib/tags";
 
 type WeekViewProps = {
   viewDate: Date;
   events: CalendarEvent[];
+  tags: Tag[];
+  eventTags: EventTag[];
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
 };
 
-export function WeekView({ viewDate, events, onSelectEvent, onDayDoubleClick }: WeekViewProps) {
+export function WeekView({ viewDate, events, tags, eventTags, onSelectEvent, onDayDoubleClick }: WeekViewProps) {
   const days = getWeekDays(viewDate);
 
   return (
@@ -22,7 +25,7 @@ export function WeekView({ viewDate, events, onSelectEvent, onDayDoubleClick }: 
         boxShadow: "var(--shadow-md)",
       }}
     >
-      <TimeGrid days={days} events={events} onSelectEvent={onSelectEvent} onDayDoubleClick={onDayDoubleClick} />
+      <TimeGrid days={days} events={events} tags={tags} eventTags={eventTags} onSelectEvent={onSelectEvent} onDayDoubleClick={onDayDoubleClick} />
     </div>
   );
 }

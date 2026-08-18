@@ -2,22 +2,30 @@
 
 import { type FormEvent, useState } from "react";
 import type { CalendarEvent } from "@/lib/events";
+import { TagCreatorInline } from "@/components/TagCreatorInline";
+import type { Tag } from "@/lib/tags";
 
 export type EventDraft = {
   title: string;
   description: string;
   startsAt: Date;
   endsAt: Date;
+  tagIds: string[];
 };
 
 type CreateEventModalProps = {
   open: boolean;
   defaultDate: Date;
   event?: CalendarEvent | null;
+  /** All tags available for this group */
+  tags: Tag[];
+  /** Tag IDs already assigned to this event (when editing) */
+  initialTagIds?: string[];
   onClose: () => void;
   onCreate: (input: EventDraft) => Promise<void>;
   onUpdate?: (eventId: string, input: EventDraft) => Promise<void>;
   onDelete?: (eventId: string) => Promise<void>;
+  onCreateTag: (name: string, color: string) => Promise<void>;
 };
 
 function toDateInput(date: Date): string {
@@ -37,10 +45,13 @@ export function CreateEventModal({
   open,
   defaultDate,
   event = null,
+  tags,
+  initialTagIds = [],
   onClose,
   onCreate,
   onUpdate,
   onDelete,
+  onCreateTag,
 }: CreateEventModalProps) {
   const isEditing = Boolean(event);
   const start = event ? new Date(event.starts_at) : defaultDate;
@@ -50,14 +61,22 @@ export function CreateEventModal({
   const [description, setDescription] = useState(event?.description ?? "");
   const [date, setDate] = useState(toDateInput(start));
   const [startTime, setStartTime] = useState(
-    event ? toTimeInput(start) : "09:00",
+    event ? toTimeInput(start) : toTimeInput(defaultDate),
   );
-  const [endTime, setEndTime] = useState(end ? toTimeInput(end) : "10:00");
+  const defaultEnd = new Date(defaultDate.getTime() + 60 * 60 * 1000);
+  const [endTime, setEndTime] = useState(end ? toTimeInput(end) : toTimeInput(defaultEnd));
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTagIds);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!open) return null;
+
+  function toggleTag(tagId: string) {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
+    );
+  }
 
   function parseRange(): EventDraft | null {
     const [sh, sm] = startTime.split(":").map(Number);
@@ -77,6 +96,7 @@ export function CreateEventModal({
       description: description.trim(),
       startsAt,
       endsAt,
+      tagIds: selectedTagIds,
     };
   }
 
@@ -142,6 +162,8 @@ export function CreateEventModal({
           background: "var(--surface)",
           boxShadow: "var(--shadow-lg)",
           border: "1.5px solid var(--border)",
+          maxHeight: "90vh",
+          overflowY: "auto",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -222,6 +244,42 @@ export function CreateEventModal({
                 }}
               />
             </label>
+          </div>
+
+          {/* Tag picker */}
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+              Tags
+            </p>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {tags.map((tag) => {
+                  const active = selectedTagIds.includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => toggleTag(tag.id)}
+                      className="flex cursor-pointer items-center gap-1.5 px-2.5 py-1 text-xs font-semibold transition-all duration-150"
+                      style={{
+                        borderRadius: "var(--radius-full)",
+                        border: `1.5px solid ${tag.color}`,
+                        background: active ? tag.color : "transparent",
+                        color: active ? "#fff" : tag.color,
+                      }}
+                    >
+                      {active && (
+                        <svg viewBox="0 0 12 12" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 6l3 3 5-5" />
+                        </svg>
+                      )}
+                      {tag.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <TagCreatorInline onAdd={onCreateTag} />
           </div>
 
           {error && (

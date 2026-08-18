@@ -2,31 +2,21 @@
 
 import { MiniCalendar } from "./MiniCalendar";
 import { SharedWorkspace } from "@/components/SharedWorkspace";
+import { TagCreatorInline } from "@/components/TagCreatorInline";
+import type { Tag } from "@/lib/tags";
 import type { Tables } from "@/types/database";
 
 type Group = Tables<"groups">;
-
-export type Tag = {
-  id: string;
-  label: string;
-  color: string;
-};
-
-const DEFAULT_TAGS: Tag[] = [
-  { id: "personal", label: "Personal", color: "#6366f1" },
-  { id: "work", label: "Work", color: "#0ea5e9" },
-  { id: "birthdays", label: "Birthdays", color: "#f43f5e" },
-  { id: "holidays", label: "Holidays", color: "#f59e0b" },
-  { id: "reminders", label: "Reminders", color: "#10b981" },
-  { id: "shared", label: "Shared", color: "#8b5cf6" },
-];
 
 type SidebarProps = {
   open: boolean;
   viewDate: Date;
   onCreateEvent: () => void;
+  /** Real tag IDs currently active (shown on calendar) */
   activeTagIds: string[];
   onTagToggle: (id: string) => void;
+  tags: Tag[];
+  onCreateTag: (name: string, color: string) => Promise<void>;
   groups: Group[];
   activeGroupId: string | null;
   onSelectGroup: (groupId: string) => void;
@@ -41,6 +31,8 @@ export function Sidebar({
   onCreateEvent,
   activeTagIds,
   onTagToggle,
+  tags,
+  onCreateTag,
   groups,
   activeGroupId,
   onSelectGroup,
@@ -48,15 +40,15 @@ export function Sidebar({
   onJoinGroup,
   canCreateEvent,
 }: SidebarProps) {
-  const allOn = activeTagIds.length === DEFAULT_TAGS.length;
+  const allOn = tags.length > 0 && activeTagIds.length === tags.length;
 
   function toggleAll() {
     if (allOn) {
-      DEFAULT_TAGS.forEach((t) => {
+      tags.forEach((t) => {
         if (activeTagIds.includes(t.id)) onTagToggle(t.id);
       });
     } else {
-      DEFAULT_TAGS.forEach((t) => {
+      tags.forEach((t) => {
         if (!activeTagIds.includes(t.id)) onTagToggle(t.id);
       });
     }
@@ -113,6 +105,7 @@ export function Sidebar({
 
         <MiniCalendar viewDate={viewDate} />
 
+        {/* Tag Filters */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <p
@@ -121,14 +114,16 @@ export function Sidebar({
             >
               Filters
             </p>
-            <button
-              type="button"
-              onClick={toggleAll}
-              className="cursor-pointer text-xs font-semibold"
-              style={{ color: "var(--accent)" }}
-            >
-              {allOn ? "Clear all" : "Select all"}
-            </button>
+            {tags.length > 0 && (
+              <button
+                type="button"
+                onClick={toggleAll}
+                className="cursor-pointer text-xs font-semibold"
+                style={{ color: "var(--accent)" }}
+              >
+                {allOn ? "Clear all" : "Select all"}
+              </button>
+            )}
           </div>
 
           <div
@@ -139,7 +134,16 @@ export function Sidebar({
               background: "var(--surface-2)",
             }}
           >
-            {DEFAULT_TAGS.map((tag) => {
+            {tags.length === 0 && (
+              <p
+                className="px-2 py-1 text-xs"
+                style={{ color: "var(--text-muted)" }}
+              >
+                No tags yet — create one below.
+              </p>
+            )}
+
+            {tags.map((tag) => {
               const active = activeTagIds.includes(tag.id);
               return (
                 <label
@@ -183,10 +187,17 @@ export function Sidebar({
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ background: tag.color }}
                   />
-                  <span style={{ color: "var(--foreground)" }}>{tag.label}</span>
+                  <span style={{ color: "var(--foreground)" }}>{tag.name}</span>
                 </label>
               );
             })}
+
+            {/* Inline tag creator — only shown when in a group */}
+            {activeGroupId && (
+              <div className="mt-1">
+                <TagCreatorInline onAdd={onCreateTag} />
+              </div>
+            )}
           </div>
         </div>
       </div>
