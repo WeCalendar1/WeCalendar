@@ -1,12 +1,17 @@
 import type { CalendarDay } from "@/lib/calendar";
 import { eventsForDay, formatEventTime, type CalendarEvent } from "@/lib/events";
+import { colorForEvent, type EventTag, type Tag } from "@/lib/tags";
 
 type CalendarCellProps = {
   day: CalendarDay;
   events: CalendarEvent[];
+  tags: Tag[];
+  eventTags: EventTag[];
+  onSelectEvent?: (event: CalendarEvent) => void;
+  onDoubleClick?: (date: Date) => void;
 };
 
-export function CalendarCell({ day, events }: CalendarCellProps) {
+export function CalendarCell({ day, events, tags, eventTags, onSelectEvent, onDoubleClick }: CalendarCellProps) {
   const dayNumber = day.date.getDate();
   const dayEvents = eventsForDay(events, day.date).slice(0, 3);
   const extra = Math.max(eventsForDay(events, day.date).length - 3, 0);
@@ -26,6 +31,7 @@ export function CalendarCell({ day, events }: CalendarCellProps) {
         cursor: "pointer",
         position: "relative",
       }}
+      onDoubleClick={() => onDoubleClick?.(day.date)}
       onMouseEnter={(e) => {
         if (!day.isToday) {
           (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
@@ -68,20 +74,28 @@ export function CalendarCell({ day, events }: CalendarCellProps) {
       </div>
 
       <div className="mt-1 space-y-1">
-        {dayEvents.map((event) => (
-          <div
-            key={event.id}
-            className="truncate px-1.5 py-0.5 text-[10px] font-semibold leading-tight"
-            title={`${event.title} · ${formatEventTime(event.starts_at)}`}
-            style={{
-              borderRadius: "var(--radius-sm)",
-              background: "var(--accent)",
-              color: "#fff",
-            }}
-          >
-            {formatEventTime(event.starts_at)} {event.title}
-          </div>
-        ))}
+        {dayEvents.map((event) => {
+          const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+          return (
+            <button
+              key={event.id}
+              type="button"
+              className="block w-full truncate px-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
+              title={`${event.title} · ${formatEventTime(event.starts_at)}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectEvent?.(event);
+              }}
+              style={{
+                borderRadius: "var(--radius-sm)",
+                background: color,
+                color: "#fff",
+              }}
+            >
+              {formatEventTime(event.starts_at)} {event.title}
+            </button>
+          );
+        })}
         {extra > 0 && (
           <p className="px-1 text-[10px] font-semibold" style={{ color: "var(--text-muted)" }}>
             +{extra} more
