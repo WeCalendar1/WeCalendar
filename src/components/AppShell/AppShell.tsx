@@ -7,6 +7,7 @@ import { CreateEventModal, type EventDraft } from "@/components/CreateEventModal
 import { Navbar } from "@/components/Navbar";
 import { RightPanel } from "@/components/RightPanel";
 import { Sidebar } from "@/components/Sidebar";
+import type { ListCategory, ListItem, SharedList } from "@/components/TaskPanel";
 import { getInitials } from "@/lib/auth";
 import {
   formatViewLabel,
@@ -41,6 +42,8 @@ export function AppShell() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [eventTags, setEventTags] = useState<EventTag[]>([]);
+  const [lists, setLists] = useState<SharedList[]>([]);
+  const [listItems, setListItems] = useState<ListItem[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [modalDefaultDate, setModalDefaultDate] = useState<Date>(() => startOfDay(new Date()));
@@ -149,6 +152,52 @@ export function AppShell() {
     [supabase],
   );
 
+  const loadLists = useCallback(
+    async (groupId: string | null) => {
+      if (!groupId) {
+        setLists([]);
+        setListItems([]);
+        return;
+      }
+
+      const { data: nextLists, error: listsError } = await supabase
+        .from("lists")
+        .select("*")
+        .eq("group_id", groupId)
+        .order("created_at", { ascending: true });
+
+      if (listsError) {
+        console.error("loadLists", listsError);
+        return;
+      }
+
+      const loadedLists = nextLists ?? [];
+      setLists(loadedLists);
+
+      if (loadedLists.length === 0) {
+        setListItems([]);
+        return;
+      }
+
+      const { data: nextItems, error: itemsError } = await supabase
+        .from("list_items")
+        .select("*")
+        .in(
+          "list_id",
+          loadedLists.map((list) => list.id),
+        )
+        .order("sort_order", { ascending: true });
+
+      if (itemsError) {
+        console.error("loadListItems", itemsError);
+        return;
+      }
+
+      setListItems(nextItems ?? []);
+    },
+    [supabase],
+  );
+
   // ─── Auth effects ─────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -177,6 +226,8 @@ export function AppShell() {
       setEvents([]); // eslint-disable-line react-hooks/set-state-in-effect
       setTags([]); // eslint-disable-line react-hooks/set-state-in-effect
       setEventTags([]); // eslint-disable-line react-hooks/set-state-in-effect
+      setLists([]); // eslint-disable-line react-hooks/set-state-in-effect
+      setListItems([]); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
     void loadGroups();
@@ -189,7 +240,8 @@ export function AppShell() {
     void loadEvents(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
     void loadTags(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
     void loadEventTags(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
-  }, [activeGroupId, loadEvents, loadTags, loadEventTags]);
+    void loadLists(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadLists]);
 
   // ─── Realtime subscriptions ───────────────────────────────────────────────
 
@@ -213,10 +265,20 @@ export function AppShell() {
         { event: "*", schema: "public", table: "event_tags" },
         () => { void loadEventTags(activeGroupId); },
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "lists", filter: `group_id=eq.${activeGroupId}` },
+        () => { void loadLists(activeGroupId); },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "list_items" },
+        () => { void loadLists(activeGroupId); },
+      )
       .subscribe();
 
     return () => { void supabase.removeChannel(channel); };
-  }, [activeGroupId, loadEvents, loadTags, loadEventTags, supabase]);
+  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadLists, supabase]);
 
   // ─── Filtered events ──────────────────────────────────────────────────────
 
@@ -374,6 +436,56 @@ export function AppShell() {
     );
   }
 
+  async function handleCreateList(name: string, category: ListCategory) {
+    if (!user || !activeGroupId) {
+      throw new Error("Join or create a shared workspace first.");
+    }
+    const { error } = await supabase.from("lists").insert({
+      group_id: activeGroupId,
+      name,
+      category,
+      created_by: user.id,
+    });
+    if (error) throw new Error(error.message);
+    await loadLists(activeGroupId);
+  }
+
+  async function handleDeleteList(listId: string) {
+    const { error } = await supabase.from("lists").delete().eq("id", listId);
+    if (error) throw new Error(error.message);
+    await loadLists(activeGroupId);
+  }
+
+  async function handleAddListItem(listId: string, content: string) {
+    if (!user) throw new Error("Sign in to add items.");
+    const siblingCount = listItems.filter((item) => item.list_id === listId).length;
+    const { error } = await supabase.from("list_items").insert({
+      list_id: listId,
+      content,
+      created_by: user.id,
+      sort_order: siblingCount,
+    });
+    if (error) throw new Error(error.message);
+    await loadLists(activeGroupId);
+  }
+
+  async function handleToggleListItem(itemId: string, isChecked: boolean) {
+    const { error } = await supabase
+      .from("list_items")
+      .update({ is_checked: isChecked })
+      .eq("id", itemId);
+    if (error) throw new Error(error.message);
+    setListItems((prev) =>
+      prev.map((item) => (item.id === itemId ? { ...item, is_checked: isChecked } : item)),
+    );
+  }
+
+  async function handleDeleteListItem(itemId: string) {
+    const { error } = await supabase.from("list_items").delete().eq("id", itemId);
+    if (error) throw new Error(error.message);
+    setListItems((prev) => prev.filter((item) => item.id !== itemId));
+  }
+
   const userInitials = getInitials(
     (user?.user_metadata?.display_name as string | undefined) || user?.email,
   );
@@ -446,7 +558,18 @@ export function AppShell() {
           />
         </main>
 
-        <RightPanel visible={showRightPanel} />
+        <RightPanel
+          visible={showRightPanel}
+          view={screenView}
+          groupId={activeGroupId}
+          lists={lists}
+          items={listItems}
+          onCreateList={handleCreateList}
+          onDeleteList={handleDeleteList}
+          onAddItem={handleAddListItem}
+          onToggleItem={handleToggleListItem}
+          onDeleteItem={handleDeleteListItem}
+        />
       </div>
 
       <CreateEventModal
