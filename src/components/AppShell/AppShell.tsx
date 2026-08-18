@@ -42,6 +42,7 @@ export function AppShell() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [modalDefaultDate, setModalDefaultDate] = useState<Date>(() => startOfDay(new Date()));
 
   const supabase = useMemo(() => createClient(), []);
   const showRightPanel = screenView === "tasks" || screenView === "map";
@@ -242,8 +243,10 @@ export function AppShell() {
     await loadEvents(activeGroupId);
   }
 
-  function openCreateModal() {
+  function openCreateModal(date?: Date) {
     setSelectedEvent(null);
+    if (date) setModalDefaultDate(date);
+    else setModalDefaultDate(viewDate);
     setModalOpen(true);
   }
 
@@ -322,6 +325,7 @@ export function AppShell() {
             onViewDateChange={setViewDate}
             onCalendarModeChange={setCalendarMode}
             onSelectEvent={openEventDetails}
+            onDayDoubleClick={openCreateModal}
           />
         </main>
 
@@ -333,11 +337,11 @@ export function AppShell() {
           selectedEvent
             ? selectedEvent.id
             : modalOpen
-              ? `create-${viewDate.toISOString()}`
+              ? `create-${modalDefaultDate.toISOString()}`
               : "closed"
         }
         open={modalOpen}
-        defaultDate={viewDate}
+        defaultDate={modalDefaultDate}
         event={selectedEvent}
         onClose={closeEventModal}
         onCreate={handleCreateEvent}

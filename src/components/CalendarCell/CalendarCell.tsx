@@ -5,9 +5,10 @@ type CalendarCellProps = {
   day: CalendarDay;
   events: CalendarEvent[];
   onSelectEvent?: (event: CalendarEvent) => void;
+  onDoubleClick?: (date: Date) => void;
 };
 
-export function CalendarCell({ day, events, onSelectEvent }: CalendarCellProps) {
+export function CalendarCell({ day, events, onSelectEvent, onDoubleClick }: CalendarCellProps) {
   const dayNumber = day.date.getDate();
   const dayEvents = eventsForDay(events, day.date).slice(0, 3);
   const extra = Math.max(eventsForDay(events, day.date).length - 3, 0);
@@ -27,6 +28,7 @@ export function CalendarCell({ day, events, onSelectEvent }: CalendarCellProps) 
         cursor: "pointer",
         position: "relative",
       }}
+      onDoubleClick={() => onDoubleClick?.(day.date)}
       onMouseEnter={(e) => {
         if (!day.isToday) {
           (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";

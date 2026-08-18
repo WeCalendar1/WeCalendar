@@ -5,9 +5,10 @@ type DayViewProps = {
   viewDate: Date;
   events: CalendarEvent[];
   onSelectEvent?: (event: CalendarEvent) => void;
+  onDayDoubleClick?: (date: Date) => void;
 };
 
-export function DayView({ viewDate, events, onSelectEvent }: DayViewProps) {
+export function DayView({ viewDate, events, onSelectEvent, onDayDoubleClick }: DayViewProps) {
   return (
     <div
       className="flex h-full min-h-0 flex-col overflow-hidden"
@@ -22,6 +23,7 @@ export function DayView({ viewDate, events, onSelectEvent }: DayViewProps) {
         days={[dayAsCalendarDay(viewDate)]}
         events={events}
         onSelectEvent={onSelectEvent}
+        onDayDoubleClick={onDayDoubleClick}
       />
     </div>
   );

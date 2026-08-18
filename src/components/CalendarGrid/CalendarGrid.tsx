@@ -9,9 +9,10 @@ type CalendarGridProps = {
   activeTagIds: string[];
   events: CalendarEvent[];
   onSelectEvent?: (event: CalendarEvent) => void;
+  onDayDoubleClick?: (date: Date) => void;
 };
 
-export function CalendarGrid({ viewDate, events, onSelectEvent }: CalendarGridProps) {
+export function CalendarGrid({ viewDate, events, onSelectEvent, onDayDoubleClick }: CalendarGridProps) {
   const days = getMonthGrid(viewDate);
 
   return (
@@ -47,6 +48,7 @@ export function CalendarGrid({ viewDate, events, onSelectEvent }: CalendarGridPr
             day={day}
             events={events}
             onSelectEvent={onSelectEvent}
+            onDoubleClick={onDayDoubleClick}
           />
         ))}
       </div>
