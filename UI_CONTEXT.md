@@ -150,6 +150,15 @@ All design tokens live in `src/app/globals.css` as CSS custom properties. The en
 }
 ```
 
+### Native Browser Widget Suppression
+
+```css
+/* Hides Edge/IE built-in password reveal button so it doesn't
+   clash with our custom show/hide toggle */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear { display: none; }
+```
+
 ### Border Radius Scale (Bubbly-Minimal)
 
 | Token | Value | Usage |
@@ -347,6 +356,37 @@ Right side panel (`w-80` on desktop, full-width on mobile). Visible when `screen
 
 ---
 
+### `LoginForm`
+
+`src/components/Auth/LoginForm.tsx`
+
+Handles both sign-up and sign-in via a tab switcher (`Create account` / `Sign in`).
+
+**Sign-up fields:** Display name, Email, Password  
+**Sign-in fields:** Email, Password
+
+#### Password field
+- **Show/hide toggle** — persistent eye/eye-off SVG button inside a `<div className="relative">` wrapper; the input `type` attribute toggles between `"password"` and `"text"` without remounting
+- **Native reveal suppressed** — `input[type="password"]::-ms-reveal { display: none }` in `globals.css` prevents Edge/IE from showing a second icon
+- **Mode-aware placeholder** — `"Min. 8 characters"` in signup, `"Password"` in sign-in
+- **Strength checklist** — appears in signup mode once the user starts typing; 4 rules derived from current value (no extra state, just a computed `pwRules` object):
+
+| Rule | Regex / check |
+|---|---|
+| 8+ characters | `password.length >= 8` |
+| Uppercase letter | `/[A-Z]/` |
+| Number | `/[0-9]/` |
+| Symbol (`!@#…`) | `/[^A-Za-z0-9]/` |
+
+  - Each row shows a green ✓ (met) or grey ✗ (unmet)
+  - Input border turns green when all 4 pass (`pwAllValid`)
+  - "Create account" button disabled until `pwAllValid` is true
+  - Server-side guard in `handleSubmit` as a fallback
+
+**Error handling:** `formatAuthError()` maps Supabase error shapes to human-readable strings.
+
+---
+
 ### `Profile Page`
 
 `src/app/profile/page.tsx` — `"use client"`
@@ -358,7 +398,31 @@ Four collapsible sections (chevron rotates 180°, content animates via `grid-tem
 | Your Profile | `true` | Avatar upload, display name, pronouns, birthday, favorite color |
 | Account & Security | `true` | Change password (current → new → confirm) |
 | Notifications | `false` | 4 toggle checkboxes |
-| Danger Zone | `false` | 5 destructive actions with two-step confirm |
+| Danger Zone | `false` | Sign out, Unsync, Leave a group (selector), Leave all, Export, Delete account |
+
+**Sub-components:**
+- `SectionCard` — collapsible card wrapper
+- `FieldLabel` — styled `<label>` helper
+- `TextInput` — styled `<input>` with focus ring
+- `DangerButton` — two-step confirm/cancel row. Props: `id`, `icon`, `title`, `description`, `onClick?`, `confirmLabel`, `buttonLabel?` (overrides the first-word-of-title default for the trigger button)
+- `LeaveGroupRow` — single danger row with a styled `<select>` dropdown of the user's groups + `Leave` button. States: `selectedId`, `confirming`. On confirm: calls `onLeave(groupId)`, resets selector. Shows disabled `"No groups"` option when user has no groups.
+
+**Danger zone button order:** `[Confirm action]` `[Cancel]` — Cancel is on the right to catch double-clicks safely.
+
+**State loaded on mount:**
+- Auth user → email, display name
+- `profiles` table → display name, theme_preferences (favorite_color, pronouns, birthday)
+- `group_members` joined with `groups` → `groups: { id, name }[]` for the `LeaveGroupRow` selector
+
+**Handlers:**
+- `handleSaveProfile` — upserts `profiles` + updates auth metadata
+- `handleChangePassword` — `supabase.auth.updateUser({ password })`
+- `handleSignOut` — signs out + redirects to `/login`
+- `handleLeaveGroup(groupId)` — deletes from `group_members` where `(group_id, user_id)` match; removes group from local state optimistically
+
+**Avatar:** click circle → file input → `URL.createObjectURL()` → preview. Remove button appears when photo is set.
+
+**Favorite color:** native `<input type="color">` picker + hex text input, synced bidirectionally.
 
 ---
 
