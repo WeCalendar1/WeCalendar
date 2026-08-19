@@ -35,6 +35,15 @@ export function LoginForm() {
 
   const supabase = useMemo(() => createClient(), []);
 
+  // Password strength rules — derived from current value, no extra state needed
+  const pwRules = {
+    length:    password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    number:    /[0-9]/.test(password),
+    symbol:    /[^A-Za-z0-9]/.test(password),
+  };
+  const pwAllValid = Object.values(pwRules).every(Boolean);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
@@ -43,6 +52,11 @@ export function LoginForm() {
 
     try {
       if (mode === "signup") {
+        if (!pwAllValid) {
+          setError("Please satisfy all password requirements before continuing.");
+          setLoading(false);
+          return;
+        }
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -187,16 +201,23 @@ export function LoginForm() {
               id="password"
               type={showPassword ? "text" : "password"}
               required
-              minLength={6}
+              minLength={8}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
+              placeholder={mode === "signup" ? "Min. 8 characters" : "Password"}
               className="w-full py-2.5 pr-11 pl-3.5 text-sm outline-none"
               style={{
                 borderRadius: "var(--radius-lg)",
-                border: "1.5px solid var(--border)",
+                border: `1.5px solid ${
+                  mode === "signup" && password.length > 0
+                    ? pwAllValid
+                      ? "#10b981"
+                      : "var(--border)"
+                    : "var(--border)"
+                }`,
                 background: "var(--surface)",
+                transition: "border-color 0.15s",
               }}
             />
             <button
@@ -208,14 +229,12 @@ export function LoginForm() {
               tabIndex={-1}
             >
               {showPassword ? (
-                /* Eye-off icon */
                 <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
                   <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
                   <line x1="1" y1="1" x2="23" y2="23" />
                 </svg>
               ) : (
-                /* Eye icon */
                 <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                   <circle cx="12" cy="12" r="3" />
@@ -223,6 +242,39 @@ export function LoginForm() {
               )}
             </button>
           </div>
+
+          {/* Requirements checklist — only shown in signup mode once user starts typing */}
+          {mode === "signup" && password.length > 0 && (
+            <ul
+              className="grid grid-cols-2 gap-x-3 gap-y-1 pt-1"
+              aria-label="Password requirements"
+            >
+              {([
+                { key: "length",    label: "8+ characters" },
+                { key: "uppercase", label: "Uppercase letter" },
+                { key: "number",    label: "Number" },
+                { key: "symbol",    label: "Symbol (!@#…)" },
+              ] as const).map(({ key, label }) => {
+                const met = pwRules[key];
+                return (
+                  <li key={key} className="flex items-center gap-1.5 text-xs font-medium">
+                    {met ? (
+                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M2.5 8l3.5 3.5 7-7" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                        <path d="M4 4l8 8M12 4l-8 8" />
+                      </svg>
+                    )}
+                    <span style={{ color: met ? "#10b981" : "var(--text-muted)" }}>
+                      {label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
 
 
@@ -248,7 +300,7 @@ export function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (mode === "signup" && !pwAllValid)}
           className="btn-bounce w-full px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
           style={{
             borderRadius: "var(--radius-lg)",
