@@ -188,6 +188,7 @@ function DangerButton({
   description,
   onClick,
   confirmLabel = "Confirm",
+  buttonLabel,
 }: {
   id: string;
   icon: React.ReactNode;
@@ -195,6 +196,7 @@ function DangerButton({
   description: string;
   onClick?: () => void;
   confirmLabel?: string;
+  buttonLabel?: string;
 }) {
   const [confirming, setConfirming] = useState(false);
 
@@ -257,7 +259,7 @@ function DangerButton({
             color: "#dc2626",
           }}
         >
-          {title.split(" ")[0]}
+          {buttonLabel ?? title.split(" ")[0]}
         </button>
       )}
     </div>
@@ -265,6 +267,131 @@ function DangerButton({
 }
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
+
+function LeaveGroupRow({
+  groups,
+  onLeave,
+}: {
+  groups: { id: string; name: string }[];
+  onLeave: (groupId: string) => void;
+}) {
+  const [selectedId, setSelectedId] = useState("");
+  const [confirming, setConfirming] = useState(false);
+
+  const selectedGroup = groups.find((g) => g.id === selectedId);
+
+  function handleConfirm() {
+    if (!selectedId) return;
+    onLeave(selectedId);
+    setSelectedId("");
+    setConfirming(false);
+  }
+
+  return (
+    <div
+      className="flex flex-wrap items-center justify-between gap-3 px-6 py-4"
+      style={{ borderBottom: "1px solid #fecaca" }}
+    >
+      {/* Left: icon + label */}
+      <div className="flex items-center gap-3">
+        <span className="text-lg text-red-400">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="23" y1="11" x2="17" y2="11" />
+          </svg>
+        </span>
+        <div>
+          <p className="text-sm font-semibold" style={{ color: "#991b1b" }}>
+            Leave a group
+          </p>
+          <p className="text-xs" style={{ color: "#b91c1c" }}>
+            Remove yourself from a specific shared workspace
+          </p>
+        </div>
+      </div>
+
+      {/* Right: selector + action */}
+      <div className="flex shrink-0 items-center gap-2">
+        <select
+          id="leave-group-select"
+          value={selectedId}
+          onChange={(e) => { setSelectedId(e.target.value); setConfirming(false); }}
+          disabled={groups.length === 0}
+          className="cursor-pointer py-1.5 pl-2.5 pr-7 text-xs font-semibold outline-none"
+          style={{
+            borderRadius: "var(--radius-full)",
+            border: "1.5px solid #fca5a5",
+            background: "#fff0f0",
+            color: groups.length === 0 ? "#fca5a5" : "#dc2626",
+            appearance: "none",
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23dc2626'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E")`,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 6px center",
+            backgroundSize: "14px",
+          }}
+        >
+          <option value="" disabled>
+            {groups.length === 0 ? "No groups" : "Select group…"}
+          </option>
+          {groups.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+
+        {confirming ? (
+          <>
+            <button
+              id="leave-group-confirm-btn"
+              type="button"
+              onClick={handleConfirm}
+              className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold text-white"
+              style={{
+                borderRadius: "var(--radius-full)",
+                background: "#dc2626",
+                boxShadow: "0 2px 8px 0 rgb(220 38 38 / 0.3)",
+              }}
+            >
+              Leave &ldquo;{selectedGroup?.name}&rdquo;
+            </button>
+            <button
+              id="leave-group-cancel-btn"
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold"
+              style={{
+                borderRadius: "var(--radius-full)",
+                border: "1.5px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button
+            id="leave-group-btn"
+            type="button"
+            disabled={!selectedId}
+            onClick={() => setConfirming(true)}
+            className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+            style={{
+              borderRadius: "var(--radius-full)",
+              border: "1.5px solid #fca5a5",
+              background: "#fff0f0",
+              color: "#dc2626",
+            }}
+          >
+            Leave
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -277,6 +404,7 @@ export default function ProfilePage() {
   const [birthday, setBirthday] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("#6366f1");
   const [saved, setSaved] = useState(false);
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -315,6 +443,23 @@ export default function ProfilePage() {
       if (theme?.favorite_color) setFavoriteColor(theme.favorite_color);
       if (theme?.pronouns) setPronouns(theme.pronouns);
       if (theme?.birthday) setBirthday(theme.birthday);
+
+      // Load groups the user belongs to
+      const { data: memberRows } = await supabase
+        .from("group_members")
+        .select("group_id, groups(id, name)")
+        .eq("user_id", user.id);
+
+      if (!mounted) return;
+
+      const loadedGroups = (memberRows ?? [])
+        .map((row) => {
+          const g = row.groups as { id: string; name: string } | null;
+          return g ? { id: g.id, name: g.name } : null;
+        })
+        .filter((g): g is { id: string; name: string } => g !== null);
+
+      setGroups(loadedGroups);
     }
 
     void loadUser();
@@ -375,6 +520,17 @@ export default function ProfilePage() {
     await supabase.auth.signOut();
     router.replace("/login");
     router.refresh();
+  }
+
+  async function handleLeaveGroup(groupId: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase
+      .from("group_members")
+      .delete()
+      .eq("group_id", groupId)
+      .eq("user_id", user.id);
+    setGroups((prev) => prev.filter((g) => g.id !== groupId));
   }
 
   const initials = displayName
@@ -766,8 +922,12 @@ export default function ProfilePage() {
               description="Disconnect your Google Calendar or Outlook sync"
               confirmLabel="Unsync"
             />
+            {/* ── Leave a specific group (selector) ── */}
+            <LeaveGroupRow groups={groups} onLeave={(id) => { void handleLeaveGroup(id); }} />
+
             <DangerButton
               id="leave-all-groups-btn"
+              buttonLabel="Leave all"
               icon={
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
