@@ -156,3 +156,13 @@ body {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* ─────────────────────────────────────────
+   SUPPRESS NATIVE BROWSER PASSWORD ICONS
+   Edge/IE ship a built-in eye button; hide
+   it so it doesn't clash with our custom one.
+   ───────────────────────────────────────── */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
