@@ -456,6 +456,16 @@ export function AppShell() {
     await loadLists(activeGroupId);
   }
 
+  async function handleRenameList(listId: string, name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) throw new Error("List name cannot be empty.");
+    const { error } = await supabase.from("lists").update({ name: trimmed }).eq("id", listId);
+    if (error) throw new Error(error.message);
+    setLists((prev) =>
+      prev.map((list) => (list.id === listId ? { ...list, name: trimmed } : list)),
+    );
+  }
+
   async function handleAddListItem(listId: string, content: string) {
     if (!user) throw new Error("Sign in to add items.");
     const siblingCount = listItems.filter((item) => item.list_id === listId).length;
@@ -484,6 +494,28 @@ export function AppShell() {
     const { error } = await supabase.from("list_items").delete().eq("id", itemId);
     if (error) throw new Error(error.message);
     setListItems((prev) => prev.filter((item) => item.id !== itemId));
+  }
+
+  async function handleReorderListItems(listId: string, orderedItemIds: string[]) {
+    const orderById = new Map(orderedItemIds.map((id, index) => [id, index]));
+    setListItems((prev) =>
+      prev.map((item) => {
+        if (item.list_id !== listId) return item;
+        const nextOrder = orderById.get(item.id);
+        return nextOrder === undefined ? item : { ...item, sort_order: nextOrder };
+      }),
+    );
+
+    const results = await Promise.all(
+      orderedItemIds.map((id, index) =>
+        supabase.from("list_items").update({ sort_order: index }).eq("id", id),
+      ),
+    );
+    const firstError = results.find((result) => result.error)?.error;
+    if (firstError) {
+      await loadLists(activeGroupId);
+      throw new Error(firstError.message);
+    }
   }
 
   const userInitials = getInitials(
@@ -565,10 +597,12 @@ export function AppShell() {
           lists={lists}
           items={listItems}
           onCreateList={handleCreateList}
+          onRenameList={handleRenameList}
           onDeleteList={handleDeleteList}
           onAddItem={handleAddListItem}
           onToggleItem={handleToggleListItem}
           onDeleteItem={handleDeleteListItem}
+          onReorderItems={handleReorderListItems}
         />
       </div>
 
