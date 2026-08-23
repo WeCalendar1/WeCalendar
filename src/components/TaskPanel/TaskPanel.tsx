@@ -246,10 +246,6 @@ function ListCard({
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setRenameDraft(list.name);
-  }, [list.name]);
-
-  useEffect(() => {
     if (renaming) renameInputRef.current?.select();
   }, [renaming]);
 
@@ -258,6 +254,11 @@ function ListCard({
     const timer = window.setTimeout(() => setConfirmDelete(false), 4000);
     return () => window.clearTimeout(timer);
   }, [confirmDelete]);
+
+  function startRename() {
+    setRenameDraft(list.name);
+    setRenaming(true);
+  }
 
   async function handleAdd(event: FormEvent) {
     event.preventDefault();
@@ -377,7 +378,7 @@ function ListCard({
           ) : (
             <button
               type="button"
-              onClick={() => setRenaming(true)}
+              onClick={startRename}
               className="block max-w-full cursor-pointer truncate text-left text-sm font-semibold"
               style={{ color: "var(--foreground)" }}
               title="Click to rename"
@@ -406,7 +407,7 @@ function ListCard({
           {!renaming && (
             <button
               type="button"
-              onClick={() => setRenaming(true)}
+              onClick={startRename}
               className="cursor-pointer text-[11px] font-semibold"
               style={{ color: style.accent }}
             >

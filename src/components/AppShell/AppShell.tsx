@@ -416,7 +416,7 @@ export function AppShell() {
 
   function openCreateModal(date?: Date) {
     setSelectedEvent(null);
-    setModalDefaultDate(date ?? viewDate);
+    setModalDefaultDate(date instanceof Date ? date : viewDate);
     setModalOpen(true);
   }
 
@@ -550,7 +550,7 @@ export function AppShell() {
           open={sidebarOpen}
           viewDate={viewDate}
           activeTagIds={activeTagIds}
-          onCreateEvent={openCreateModal}
+          onCreateEvent={() => openCreateModal()}
           onTagToggle={handleTagToggle}
           tags={tags}
           onCreateTag={handleCreateTag}
