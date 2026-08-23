@@ -14,15 +14,56 @@ export type ListCategory = Tables<"lists">["category"];
 export type SharedList = Tables<"lists">;
 export type ListItem = Tables<"list_items">;
 
-const CATEGORIES: { id: ListCategory; label: string }[] = [
-  { id: "todo", label: "To-do" },
-  { id: "grocery", label: "Grocery" },
-  { id: "wishlist", label: "Wishlist" },
-  { id: "custom", label: "Custom" },
+type CategoryStyle = {
+  id: ListCategory;
+  label: string;
+  accent: string;
+  background: string;
+  border: string;
+  badgeText: string;
+};
+
+const CATEGORIES: CategoryStyle[] = [
+  {
+    id: "todo",
+    label: "To-do",
+    accent: "#0284c7",
+    background: "#e0f2fe",
+    border: "#7dd3fc",
+    badgeText: "#075985",
+  },
+  {
+    id: "grocery",
+    label: "Grocery",
+    accent: "#059669",
+    background: "#d1fae5",
+    border: "#6ee7b7",
+    badgeText: "#065f46",
+  },
+  {
+    id: "wishlist",
+    label: "Wishlist",
+    accent: "#e11d48",
+    background: "#ffe4e6",
+    border: "#fda4af",
+    badgeText: "#9f1239",
+  },
+  {
+    id: "custom",
+    label: "Custom",
+    accent: "#475569",
+    background: "#f1f5f9",
+    border: "#cbd5e1",
+    badgeText: "#334155",
+  },
 ];
 
+function categoryStyle(category: ListCategory): CategoryStyle {
+  return CATEGORIES.find((c) => c.id === category) ?? CATEGORIES[3]!;
+}
+
 function categoryLabel(category: ListCategory): string {
-  return CATEGORIES.find((c) => c.id === category)?.label ?? category;
+  return categoryStyle(category).label;
 }
 
 type TaskPanelProps = {
@@ -112,8 +153,9 @@ export function TaskPanel({
             className="flex-1 px-2 py-2 text-sm outline-none"
             style={{
               borderRadius: "var(--radius-lg)",
-              border: "1.5px solid var(--border)",
-              background: "var(--surface)",
+              border: `1.5px solid ${categoryStyle(category).border}`,
+              background: categoryStyle(category).background,
+              color: categoryStyle(category).badgeText,
             }}
           >
             {CATEGORIES.map((c) => (
@@ -128,7 +170,7 @@ export function TaskPanel({
             className="btn-bounce shrink-0 cursor-pointer px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
             style={{
               borderRadius: "var(--radius-lg)",
-              background: "var(--accent)",
+              background: categoryStyle(category).accent,
             }}
           >
             Add
@@ -301,14 +343,16 @@ function ListCard({
   }
 
   const remaining = items.filter((item) => !item.is_checked).length;
+  const style = categoryStyle(list.category);
 
   return (
     <section
       className="p-3"
       style={{
         borderRadius: "var(--radius-xl)",
-        border: "1.5px solid var(--border)",
-        background: "var(--surface-2)",
+        border: `1.5px solid ${style.border}`,
+        borderLeft: `2px solid ${style.accent}`,
+        background: style.background,
       }}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -324,7 +368,7 @@ function ListCard({
               className="w-full px-2 py-1 text-sm font-semibold outline-none"
               style={{
                 borderRadius: "var(--radius-md)",
-                border: "1.5px solid var(--accent)",
+                border: `1.5px solid ${style.accent}`,
                 background: "var(--surface)",
                 color: "var(--foreground)",
               }}
@@ -341,9 +385,22 @@ function ListCard({
               {list.name}
             </button>
           )}
-          <p className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
-            {categoryLabel(list.category)} · {remaining} left
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span
+              className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+              style={{
+                borderRadius: "var(--radius-full)",
+                background: "var(--surface)",
+                color: style.badgeText,
+                border: `1px solid ${style.border}`,
+              }}
+            >
+              {categoryLabel(list.category)}
+            </span>
+            <span className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
+              {remaining} left
+            </span>
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {!renaming && (
@@ -351,7 +408,7 @@ function ListCard({
               type="button"
               onClick={() => setRenaming(true)}
               className="cursor-pointer text-[11px] font-semibold"
-              style={{ color: "var(--accent)" }}
+              style={{ color: style.accent }}
             >
               Rename
             </button>
@@ -387,18 +444,17 @@ function ListCard({
             onDragEnd={() => setDragOverId(null)}
             className="flex items-center gap-1.5 rounded-md px-1 py-0.5"
             style={{
-              background:
-                dragOverId === item.id ? "var(--accent-muted)" : "transparent",
+              background: dragOverId === item.id ? "var(--surface)" : "transparent",
               outline:
                 dragOverId === item.id
-                  ? "1.5px dashed var(--accent)"
+                  ? `1.5px dashed ${style.accent}`
                   : "1.5px solid transparent",
             }}
           >
             <span
               aria-hidden
               className="cursor-grab select-none px-0.5 text-xs active:cursor-grabbing"
-              style={{ color: "var(--text-muted)" }}
+              style={{ color: style.accent }}
               title="Drag to reorder"
             >
               ⋮⋮
@@ -408,7 +464,8 @@ function ListCard({
                 type="checkbox"
                 checked={item.is_checked}
                 onChange={() => void onToggleItem(item.id, !item.is_checked)}
-                className="h-4 w-4 shrink-0 cursor-pointer accent-[var(--accent)]"
+                className="h-4 w-4 shrink-0 cursor-pointer"
+                style={{ accentColor: style.accent }}
               />
               <span
                 className="truncate text-sm"
@@ -441,7 +498,7 @@ function ListCard({
           className="min-w-0 flex-1 px-2.5 py-1.5 text-sm outline-none"
           style={{
             borderRadius: "var(--radius-md)",
-            border: "1.5px solid var(--border)",
+            border: `1.5px solid ${style.border}`,
             background: "var(--surface)",
           }}
         />
@@ -449,7 +506,7 @@ function ListCard({
           type="submit"
           disabled={busy || !draft.trim()}
           className="cursor-pointer px-2 text-sm font-semibold disabled:opacity-40"
-          style={{ color: "var(--accent)" }}
+          style={{ color: style.accent }}
         >
           Add
         </button>
