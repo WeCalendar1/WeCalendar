@@ -9,11 +9,8 @@
       "ref_next_env_d_ts",
       "ref_next_types_ts",
       "ref_node_modules",
-      "ref_test_ts",
-      "ref_test_tsx",
       "ref_ts",
       "ref_tsx",
-      "ref_vitest_config_mts",
       "tsconfig",
       "tsconfig_compileroptions",
       "tsconfig_compileroptions_allowjs",
@@ -38,9 +35,15 @@
       "src_app_page",
       "src_app_page_home",
       "src_components_appshell_appshell",
+      "src_components_appshell_appshell_all_tag_ids",
       "src_components_appshell_appshell_appshell",
       "src_components_appshell_appshell_group",
       "src_components_appshell_index",
+      "src_components_createeventmodal_createeventmodal",
+      "src_components_createeventmodal_createeventmodal_createeventmodal",
+      "src_components_createeventmodal_createeventmodal_createeventmodalprops",
+      "src_components_createeventmodal_createeventmodal_todateinput",
+      "src_components_createeventmodal_index",
       "src_components_navbar_index",
       "src_components_navbar_navbar",
       "src_components_navbar_navbar_modes",
@@ -51,20 +54,8 @@
       "src_components_rightpanel_rightpanel",
       "src_components_rightpanel_rightpanel_rightpanel",
       "src_components_rightpanel_rightpanel_rightpanelprops",
-      "src_components_taskpanel_index",
-      "src_components_taskpanel_taskpanel",
-      "src_components_taskpanel_taskpanel_categories",
-      "src_components_taskpanel_taskpanel_categorylabel",
-      "src_components_taskpanel_taskpanel_categorystyle",
-      "src_components_taskpanel_taskpanel_listcard",
-      "src_components_taskpanel_taskpanel_listcategory",
-      "src_components_taskpanel_taskpanel_listitem",
-      "src_components_taskpanel_taskpanel_sharedlist",
-      "src_components_taskpanel_taskpanel_taskpanel",
-      "src_components_taskpanel_taskpanel_taskpanelprops",
       "src_lib_auth",
       "src_lib_auth_getinitials",
-      "src_lib_calendar_calendarmode",
       "src_lib_calendar_screenview",
       "src_lib_scheduling",
       "src_lib_scheduling_isschedulingconflicterror",
@@ -84,70 +75,46 @@
       "src_components_sidebar_minicalendar_minicalendarprops",
       "src_components_sidebar_minicalendar_weekdays",
       "src_components_sidebar_sidebar",
+      "src_components_sidebar_sidebar_default_tags",
       "src_components_sidebar_sidebar_group",
       "src_components_sidebar_sidebar_sidebar",
       "src_components_sidebar_sidebar_sidebarprops",
+      "src_components_sidebar_sidebar_tag",
       "src_lib_supabase_server",
       "src_lib_supabase_server_createclient",
       "src_types_database",
       "src_types_database_database",
       "src_types_database_json",
+      "src_types_database_tables",
       "src_types_database_tablesinsert",
       "src_types_database_tablesupdate"
     ],
     "3": [
-      "src_components_calendar_calendar",
-      "src_components_calendar_calendar_calendar",
-      "src_components_calendar_calendar_calendarprops",
-      "src_components_calendar_index",
       "src_components_calendarcell_calendarcell",
       "src_components_calendarcell_calendarcell_calendarcell",
       "src_components_calendarcell_calendarcell_calendarcellprops",
       "src_components_calendarcell_index",
-      "src_components_calendargrid_calendargrid",
-      "src_components_calendargrid_calendargrid_calendargrid",
-      "src_components_calendargrid_calendargrid_calendargridprops",
-      "src_components_calendargrid_calendargrid_weekdays",
-      "src_components_calendargrid_index",
       "src_components_dayview_dayview",
       "src_components_dayview_dayview_dayview",
       "src_components_dayview_dayview_dayviewprops",
       "src_components_dayview_index",
-      "src_components_tagcreatorinline_tagcreatorinline",
-      "src_components_tagcreatorinline_tagcreatorinline_tagcreatorinlineprops",
       "src_components_timegrid_index",
       "src_components_timegrid_timegrid",
       "src_components_timegrid_timegrid_dayascalendarday",
       "src_components_timegrid_timegrid_hour_height_px",
       "src_components_timegrid_timegrid_timegrid",
       "src_components_timegrid_timegrid_timegridprops",
-      "src_components_weekview_index",
       "src_components_weekview_weekview",
-      "src_components_weekview_weekview_weekview",
       "src_components_weekview_weekview_weekviewprops",
-      "src_components_yearview_index",
-      "src_components_yearview_yearview_yearview",
       "src_lib_calendar_calendarday",
       "src_lib_calendar_formathourlabel",
       "src_lib_calendar_getminutessincemidnight",
+      "src_lib_calendar_issameday",
       "src_lib_events",
       "src_lib_events_calendarevent",
       "src_lib_events_eventposition",
       "src_lib_events_eventsforday",
-      "src_lib_events_formateventtime",
-      "src_lib_events_test",
-      "src_lib_events_test_makeevent",
-      "src_lib_tags",
-      "src_lib_tags_colorforevent",
-      "src_lib_tags_eventtag",
-      "src_lib_tags_tag",
-      "src_lib_tags_tag_palette",
-      "src_lib_tags_tagidsforevent",
-      "src_lib_tags_test",
-      "src_lib_tags_test_eventtags",
-      "src_lib_tags_test_taga",
-      "src_lib_tags_test_tagb",
-      "src_types_database_tables"
+      "src_lib_events_formateventtime"
     ],
     "4": [
       "supabase_migrations_20260730120000_init_schema",
@@ -217,9 +184,6 @@
       "package_scripts_dev",
       "package_scripts_lint",
       "package_scripts_start",
-      "package_scripts_test",
-      "package_scripts_test_coverage",
-      "package_scripts_test_watch",
       "package_version",
       "react",
       "react_dom",
@@ -227,39 +191,26 @@
       "supabase_supabase_js"
     ],
     "7": [
-      "ui_context",
-      "ui_context_10_shared_lists_tasks",
-      "ui_context_11_calendar_interactions",
-      "ui_context_12_ci_pipeline",
-      "ui_context_13_what_s_done_vs_pending",
-      "ui_context_14_development_commands",
-      "ui_context_15_key_design_decisions",
-      "ui_context_1_what_is_wecalendar",
-      "ui_context_2_tech_stack",
-      "ui_context_3_repository_structure",
-      "ui_context_4_environment_variables",
-      "ui_context_5_design_system",
-      "ui_context_7_routing",
-      "ui_context_8_supabase_backend",
-      "ui_context_9_tags_system",
-      "ui_context_apply_db_schema",
-      "ui_context_border_radius_scale_bubbly_minimal",
-      "ui_context_color_tokens",
-      "ui_context_data_flow",
-      "ui_context_database_tables",
-      "ui_context_done",
-      "ui_context_filtering_logic",
-      "ui_context_key_dependencies",
-      "ui_context_key_helpers_src_lib_tags_ts",
-      "ui_context_micro_interaction_utility_classes",
-      "ui_context_native_browser_widget_suppression",
-      "ui_context_pending",
-      "ui_context_realtime_subscriptions_in_appshell",
-      "ui_context_request_proxy_next_js_16",
-      "ui_context_rpcs_use_these_don_t_insert_directly",
-      "ui_context_supabase_clients",
-      "ui_context_typography",
-      "ui_context_wecalendar_full_project_context"
+      "src_components_calendar_calendar",
+      "src_components_calendar_calendar_calendar",
+      "src_components_calendar_calendar_calendarprops",
+      "src_components_calendar_index",
+      "src_components_calendargrid_calendargrid",
+      "src_components_calendargrid_calendargrid_calendargrid",
+      "src_components_calendargrid_calendargrid_calendargridprops",
+      "src_components_calendargrid_calendargrid_weekdays",
+      "src_components_calendargrid_index",
+      "src_components_weekview_index",
+      "src_components_weekview_weekview_weekview",
+      "src_components_yearview_index",
+      "src_components_yearview_yearview",
+      "src_components_yearview_yearview_minimonth",
+      "src_components_yearview_yearview_weekdays",
+      "src_components_yearview_yearview_yearview",
+      "src_components_yearview_yearview_yearviewprops",
+      "src_lib_calendar_calendarmode",
+      "src_lib_calendar_getmonthgrid",
+      "src_lib_calendar_startofmonth"
     ],
     "8": [
       "eslint",
@@ -273,16 +224,12 @@
       "package_devdependencies_types_react",
       "package_devdependencies_types_react_dom",
       "package_devdependencies_typescript",
-      "package_devdependencies_vitest",
-      "package_devdependencies_vitest_coverage_v8",
       "tailwindcss",
       "tailwindcss_postcss",
       "types_node",
       "types_react",
       "types_react_dom",
-      "typescript",
-      "vitest",
-      "vitest_coverage_v8"
+      "typescript"
     ],
     "9": [
       "src_app_login_page",
@@ -290,7 +237,6 @@
       "src_app_profile_page",
       "src_app_profile_page_dangerbutton",
       "src_app_profile_page_fieldlabel",
-      "src_app_profile_page_leavegrouprow",
       "src_app_profile_page_profilepage",
       "src_app_profile_page_sectioncard",
       "src_app_profile_page_textinput",
@@ -303,10 +249,6 @@
       "src_lib_supabase_client_createclient"
     ],
     "10": [
-      "src_components_yearview_yearview",
-      "src_components_yearview_yearview_minimonth",
-      "src_components_yearview_yearview_weekdays",
-      "src_components_yearview_yearview_yearviewprops",
       "src_lib_calendar",
       "src_lib_calendar_adddays",
       "src_lib_calendar_addmonths",
@@ -317,15 +259,11 @@
       "src_lib_calendar_formatviewlabel",
       "src_lib_calendar_formatweeklabel",
       "src_lib_calendar_formatyearlabel",
-      "src_lib_calendar_getmonthgrid",
       "src_lib_calendar_getweekdays",
-      "src_lib_calendar_issameday",
       "src_lib_calendar_issamemonth",
       "src_lib_calendar_shiftviewdate",
       "src_lib_calendar_startofday",
-      "src_lib_calendar_startofmonth",
-      "src_lib_calendar_startofweek",
-      "src_lib_calendar_test"
+      "src_lib_calendar_startofweek"
     ],
     "11": [
       "src_lib_supabase_proxy",
@@ -361,135 +299,36 @@
       "postcss_config_config"
     ],
     "17": [
-      "docs_schema",
-      "docs_schema_apply_the_migration",
-      "docs_schema_option_a_supabase_dashboard_simplest",
-      "docs_schema_option_b_supabase_cli",
-      "docs_schema_out_of_scope_later_phases",
-      "docs_schema_rpcs_use_these_from_the_app",
-      "docs_schema_security",
-      "docs_schema_smoke_test_after_auth_exists",
-      "docs_schema_tables",
-      "docs_schema_typescript_types",
-      "docs_schema_wecalendar_schema_phase_2",
-      "readme",
-      "readme_apply_database_schema_phase_2",
-      "readme_architecture",
-      "readme_authentication_account_creation",
-      "readme_data_model_high_level",
-      "readme_getting_started",
-      "readme_main_features",
-      "readme_optional_features",
-      "readme_prerequisites",
-      "readme_problem",
-      "readme_project_structure",
-      "readme_scope",
-      "readme_scripts",
-      "readme_setup",
-      "readme_tech_stack",
-      "readme_wecalendar"
+      "public_events"
     ],
     "18": [
       "supabase_migrations_20260807150000_events_no_overlap"
     ],
     "19": [
       "supabase_seed"
-    ],
-    "20": [
-      "docs_context",
-      "docs_context_branch_note",
-      "docs_context_how_two_accounts_sync",
-      "docs_context_key_paths",
-      "docs_context_not_done_yet_next_ideas",
-      "docs_context_phase_1_scaffold_calendar_ui",
-      "docs_context_phase_2_schema",
-      "docs_context_phase_3_auth",
-      "docs_context_shared_sync_in_progress_needs_further_testing",
-      "docs_context_stack",
-      "docs_context_supabase_auth_checklist_local",
-      "docs_context_wecalendar_project_context",
-      "docs_context_what_s_done",
-      "docs_context_what_this_app_is",
-      "docs_context_what_was_worked_on"
-    ],
-    "21": [
-      "ui_context_6_component_reference",
-      "ui_context_appshell_state_hub",
-      "ui_context_calendarcell",
-      "ui_context_calendargrid_month_view",
-      "ui_context_createeventmodal",
-      "ui_context_loginform",
-      "ui_context_navbar",
-      "ui_context_password_field",
-      "ui_context_profile_page",
-      "ui_context_rightpanel",
-      "ui_context_sidebar",
-      "ui_context_tagcreatorinline",
-      "ui_context_taskpanel",
-      "ui_context_timegrid"
-    ],
-    "22": [
-      "public_group_members",
-      "public_groups",
-      "public_profiles",
-      "supabase_migrations_20260818000000_tags",
-      "supabase_migrations_20260818000000_tags_public_event_tags",
-      "supabase_migrations_20260818000000_tags_public_is_event_group_member",
-      "supabase_migrations_20260818000000_tags_public_is_tag_group_member",
-      "supabase_migrations_20260818000000_tags_public_tags",
-      "supabase_migrations_20260818000000_tags_sql_public_events",
-      "supabase_migrations_20260818000000_tags_sql_public_set_updated_at",
-      "supabase_migrations_20260818000000_tags_tags_set_updated_at"
-    ],
-    "23": [
-      "src_components_createeventmodal_createeventmodal",
-      "src_components_createeventmodal_createeventmodal_createeventmodal",
-      "src_components_createeventmodal_createeventmodal_createeventmodalprops",
-      "src_components_createeventmodal_createeventmodal_eventdraft",
-      "src_components_createeventmodal_createeventmodal_todateinput",
-      "src_components_createeventmodal_createeventmodal_totimeinput",
-      "src_components_createeventmodal_index",
-      "src_components_tagcreatorinline_index",
-      "src_components_tagcreatorinline_tagcreatorinline_tagcreatorinline"
-    ],
-    "24": [
-      "supabase_migrations_20260807150000_events_no_overlap_sql_public_events"
-    ],
-    "25": [
-      "supabase_migrations_20260818160000_lists_realtime"
-    ],
-    "26": [
-      "vitest_config"
     ]
   },
   "cohesion": {
-    "0": 0.0625,
-    "1": 0.1051693404634581,
-    "2": 0.12648221343873517,
-    "3": 0.0942684766214178,
+    "0": 0.06896551724137931,
+    "1": 0.1111111111111111,
+    "2": 0.11384615384615385,
+    "3": 0.18333333333333332,
     "4": 0.14492753623188406,
     "5": 0.14492753623188406,
-    "6": 0.08695652173913043,
-    "7": 0.06060606060606061,
-    "8": 0.09523809523809523,
-    "9": 0.18333333333333332,
-    "10": 0.22529644268774704,
+    "6": 0.1,
+    "7": 0.1631578947368421,
+    "8": 0.11764705882352941,
+    "9": 0.2,
+    "10": 0.2571428571428571,
     "11": 0.5333333333333333,
     "12": 0.4,
     "13": 0.5,
     "14": 1.0,
     "15": 1.0,
     "16": 1.0,
-    "17": 0.07407407407407407,
+    "17": 1.0,
     "18": 1.0,
-    "19": 1.0,
-    "20": 0.13333333333333333,
-    "21": 0.14285714285714285,
-    "22": 0.2545454545454545,
-    "23": 0.3611111111111111,
-    "24": 1.0,
-    "25": 1.0,
-    "26": 1.0
+    "19": 1.0
   },
   "gods": [
     {
@@ -498,49 +337,49 @@
       "degree": 16
     },
     {
-      "id": "ui_context_wecalendar_full_project_context",
-      "label": "WeCalendar — Full Project Context",
-      "degree": 16
-    },
-    {
-      "id": "ui_context_6_component_reference",
-      "label": "6. Component Reference",
-      "degree": 13
-    },
-    {
-      "id": "src_lib_tags_tag",
-      "label": "Tag",
-      "degree": 11
-    },
-    {
-      "id": "src_lib_events_calendarevent",
-      "label": "CalendarEvent",
-      "degree": 10
-    },
-    {
       "id": "src_components_appshell_appshell_appshell",
       "label": "AppShell()",
-      "degree": 10
+      "degree": 9
     },
     {
       "id": "src_lib_calendar_issameday",
       "label": "isSameDay()",
-      "degree": 10
+      "degree": 9
     },
     {
       "id": "src_components_timegrid_timegrid_timegrid",
       "label": "TimeGrid()",
-      "degree": 10
-    },
-    {
-      "id": "docs_context_wecalendar_project_context",
-      "label": "WeCalendar — project context",
-      "degree": 10
-    },
-    {
-      "id": "src_lib_tags_eventtag",
-      "label": "EventTag",
       "degree": 9
+    },
+    {
+      "id": "src_lib_events_calendarevent",
+      "label": "CalendarEvent",
+      "degree": 8
+    },
+    {
+      "id": "src_lib_calendar_getmonthgrid",
+      "label": "getMonthGrid()",
+      "degree": 8
+    },
+    {
+      "id": "src_lib_calendar_formatviewlabel",
+      "label": "formatViewLabel()",
+      "degree": 7
+    },
+    {
+      "id": "src_lib_calendar_getweekdays",
+      "label": "getWeekDays()",
+      "degree": 7
+    },
+    {
+      "id": "src_lib_supabase_client_createclient",
+      "label": "createClient()",
+      "degree": 7
+    },
+    {
+      "id": "tsconfig_include",
+      "label": "include",
+      "degree": 7
     }
   ],
   "surprises": [
@@ -589,11 +428,11 @@
       "why": "bridges separate communities"
     },
     {
-      "source": "AppShell()",
-      "target": "tagIdsForEvent()",
+      "source": "WeekView()",
+      "target": "getWeekDays()",
       "source_files": [
-        "src/components/AppShell/AppShell.tsx",
-        "src/lib/tags.ts"
+        "src/components/WeekView/WeekView.tsx",
+        "src/lib/calendar.ts"
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
@@ -604,37 +443,37 @@
     {
       "type": "bridge_node",
       "question": "Why does `createClient()` connect `profile/page.tsx` to `AppShell.tsx`?",
-      "why": "High betweenness centrality (0.014) - this node is a cross-community bridge."
+      "why": "High betweenness centrality (0.026) - this node is a cross-community bridge."
     },
     {
       "type": "bridge_node",
-      "question": "Why does `WeCalendar — Full Project Context` connect `WeCalendar — Full Project Context` to `6. Component Reference`?",
-      "why": "High betweenness centrality (0.011) - this node is a cross-community bridge."
+      "question": "Why does `devDependencies` connect `devDependencies` to `package.json`?",
+      "why": "High betweenness centrality (0.012) - this node is a cross-community bridge."
     },
     {
       "type": "bridge_node",
-      "question": "Why does `devDependencies` connect `devDependencies` to `scripts`?",
-      "why": "High betweenness centrality (0.008) - this node is a cross-community bridge."
+      "question": "Why does `Tables` connect `Sidebar.tsx` to `AppShell.tsx`, `TimeGrid.tsx`?",
+      "why": "High betweenness centrality (0.012) - this node is a cross-community bridge."
     },
     {
       "type": "isolated_nodes",
-      "question": "What connects `Group`, `NavbarProps`, `RightPanelProps` to the rest of the system?",
-      "why": "160 weakly-connected nodes found - possible documentation gaps or missing edges."
+      "question": "What connects `Group`, `CreateEventModalProps`, `NavbarProps` to the rest of the system?",
+      "why": "79 weakly-connected nodes found - possible documentation gaps or missing edges."
     },
     {
       "type": "low_cohesion",
       "question": "Should `compilerOptions` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.0625 - nodes in this community are weakly interconnected."
+      "why": "Cohesion score 0.06896551724137931 - nodes in this community are weakly interconnected."
     },
     {
       "type": "low_cohesion",
       "question": "Should `AppShell.tsx` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.1051693404634581 - nodes in this community are weakly interconnected."
+      "why": "Cohesion score 0.1111111111111111 - nodes in this community are weakly interconnected."
     },
     {
       "type": "low_cohesion",
       "question": "Should `Sidebar.tsx` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.12648221343873517 - nodes in this community are weakly interconnected."
+      "why": "Cohesion score 0.11384615384615385 - nodes in this community are weakly interconnected."
     }
   ]
 }
