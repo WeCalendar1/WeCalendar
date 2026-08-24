@@ -7,10 +7,12 @@ type RightPanelProps = {
   lists: SharedList[];
   items: ListItem[];
   onCreateList: (name: string, category: ListCategory) => Promise<void>;
+  onRenameList: (listId: string, name: string) => Promise<void>;
   onDeleteList: (listId: string) => Promise<void>;
   onAddItem: (listId: string, content: string) => Promise<void>;
   onToggleItem: (itemId: string, isChecked: boolean) => Promise<void>;
   onDeleteItem: (itemId: string) => Promise<void>;
+  onReorderItems: (listId: string, orderedItemIds: string[]) => Promise<void>;
 };
 
 export function RightPanel({
@@ -20,10 +22,12 @@ export function RightPanel({
   lists,
   items,
   onCreateList,
+  onRenameList,
   onDeleteList,
   onAddItem,
   onToggleItem,
   onDeleteItem,
+  onReorderItems,
 }: RightPanelProps) {
   if (!visible) {
     return null;
@@ -56,10 +60,12 @@ export function RightPanel({
           lists={lists}
           items={items}
           onCreateList={onCreateList}
+          onRenameList={onRenameList}
           onDeleteList={onDeleteList}
           onAddItem={onAddItem}
           onToggleItem={onToggleItem}
           onDeleteItem={onDeleteItem}
+          onReorderItems={onReorderItems}
         />
       ) : (
         <div className="flex flex-1 items-center justify-center p-4 text-sm" style={{ color: "var(--text-muted)" }}>
