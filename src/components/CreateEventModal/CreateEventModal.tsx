@@ -18,14 +18,18 @@ type CreateEventModalProps = {
   open: boolean;
   defaultDate: Date;
   event?: CalendarEvent | null;
+  seriesEvents?: CalendarEvent[];
   /** All tags available for this group */
   tags: Tag[];
   /** Tag IDs already assigned to this event (when editing) */
   initialTagIds?: string[];
   onClose: () => void;
   onCreate: (input: EventDraft) => Promise<void>;
+  onCreateMultiple?: (drafts: EventDraft[]) => Promise<void>;
   onUpdate?: (eventId: string, input: EventDraft) => Promise<void>;
+  onUpdateSeries?: (recurrenceGroupId: string, drafts: EventDraft[]) => Promise<void>;
   onDelete?: (eventId: string) => Promise<void>;
+  onDeleteSeries?: (recurrenceGroupId: string) => Promise<void>;
   onCreateTag: (name: string, color: string) => Promise<void>;
 };
 
@@ -236,12 +240,16 @@ export function CreateEventModal({
   open,
   defaultDate,
   event = null,
+  seriesEvents = [],
   tags,
   initialTagIds = [],
   onClose,
   onCreate,
+  onCreateMultiple,
   onUpdate,
+  onUpdateSeries,
   onDelete,
+  onDeleteSeries,
   onCreateTag,
 }: CreateEventModalProps) {
   const isEditing = Boolean(event);
@@ -253,17 +261,15 @@ export function CreateEventModal({
 
   // Single set of individually-toggled dates for both create and edit modes
   const [selectedDates, setSelectedDates] = useState<Set<string>>(() => {
-    if (event) {
+    if (seriesEvents.length > 0) {
       const dates = new Set<string>();
-      const curr = new Date(event.starts_at);
-      curr.setHours(0, 0, 0, 0);
-      const last = new Date(event.ends_at);
-      last.setHours(0, 0, 0, 0);
-      while (curr <= last) {
-        dates.add(toDateInput(curr));
-        curr.setDate(curr.getDate() + 1);
+      for (const e of seriesEvents) {
+        dates.add(toDateInput(new Date(e.starts_at)));
       }
       return dates;
+    }
+    if (event) {
+      return new Set([toDateInput(new Date(event.starts_at))]);
     }
     return new Set([toDateInput(defaultDate)]);
   });
@@ -278,6 +284,12 @@ export function CreateEventModal({
   const [busy, setBusy]               = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError]             = useState<string | null>(null);
+
+  // Repeating events state (Create mode only)
+  const [repeats, setRepeats] = useState(false);
+  const [repeatFreq, setRepeatFreq] = useState<"daily" | "weekly" | "monthly">("weekly");
+  const [repeatCount, setRepeatCount] = useState(4);
+
 
   if (!open) return null;
 
@@ -299,15 +311,24 @@ export function CreateEventModal({
     });
   }
 
-  function buildDraft(startDateStr: string, endDateStr: string = startDateStr): EventDraft | null {
+  function buildDraft(startDateStr: string, endDateStr: string = startDateStr, offsetDays = 0, offsetMonths = 0): EventDraft | null {
     const [sh, sm] = startTime.split(":").map(Number);
     const [eh, em] = endTime.split(":").map(Number);
     
     const [sy, smo, sd] = startDateStr.split("-").map(Number);
-    const startsAt = new Date(sy!, smo! - 1, sd!, sh!, sm!, 0);
+    let startsAt = new Date(sy!, smo! - 1, sd!, sh!, sm!, 0);
     
     const [ey, emo, ed] = endDateStr.split("-").map(Number);
-    const endsAt   = new Date(ey!, emo! - 1, ed!, eh!, em!, 0);
+    let endsAt   = new Date(ey!, emo! - 1, ed!, eh!, em!, 0);
+
+    if (offsetDays !== 0) {
+      startsAt = new Date(startsAt.getTime() + offsetDays * 86_400_000);
+      endsAt   = new Date(endsAt.getTime() + offsetDays * 86_400_000);
+    }
+    if (offsetMonths !== 0) {
+      startsAt = addMonths(startsAt, offsetMonths);
+      endsAt   = addMonths(endsAt, offsetMonths);
+    }
 
     if (startDateStr === endDateStr && endsAt <= startsAt) {
       setError("End time must be after start time.");
@@ -323,40 +344,52 @@ export function CreateEventModal({
     setError(null);
     setConfirmDelete(false);
 
+    if (selectedDates.size === 0) {
+      setError("Select at least one day.");
+      setBusy(false);
+      return;
+    }
+
     try {
-      if (isEditing && event && onUpdate) {
-        // Edit mode — must be a single consecutive group
-        const groups = groupConsecutiveDates(selectedDates);
-        if (groups.length === 0) {
-          setError("Select at least one day.");
-          return;
-        }
-        if (groups.length > 1) {
-          setError("Cannot split an event into disconnected days during edit. Please select consecutive days.");
-          return;
-        }
+      const drafts: EventDraft[] = [];
+      const occurrences = ((!isEditing || seriesEvents.length <= 1) && repeats) ? repeatCount : 1;
 
-        const group = groups[0]!;
-        const draft = buildDraft(group[0]!, group[group.length - 1]!);
-        if (!draft) return;
-        await onUpdate(event.id, draft);
-      } else {
-        // Create mode — group consecutive dates, one event per group
-        const groups = groupConsecutiveDates(selectedDates);
-        if (groups.length === 0) {
-          setError("Select at least one day.");
-          return;
-        }
+      for (const dateStr of selectedDates) {
+        for (let i = 0; i < occurrences; i++) {
+          let offsetDays = 0;
+          let offsetMonths = 0;
+          if ((!isEditing || seriesEvents.length <= 1) && repeats) {
+            if (repeatFreq === "daily") offsetDays = i;
+            else if (repeatFreq === "weekly") offsetDays = i * 7;
+            else if (repeatFreq === "monthly") offsetMonths = i;
+          }
 
-        const drafts: EventDraft[] = [];
-        for (const group of groups) {
-          const draft = buildDraft(group[0]!, group[group.length - 1]!);
+          const draft = buildDraft(dateStr, dateStr, offsetDays, offsetMonths);
           if (!draft) return; // buildDraft already set error
           drafts.push(draft);
         }
+      }
 
-        // Create all events in parallel
-        await Promise.all(drafts.map((d) => onCreate(d)));
+      if (isEditing && event) {
+        if (event.recurrence_group_id && onUpdateSeries) {
+          await onUpdateSeries(event.recurrence_group_id, drafts);
+        } else if (onUpdate) {
+          if (drafts.length > 1 && onCreateMultiple) {
+            // Upgrading a single event to a series!
+            if (onDelete) await onDelete(event.id);
+            await onCreateMultiple(drafts);
+          } else {
+            // Just updating a single event
+            await onUpdate(event.id, drafts[0]!);
+          }
+        }
+      } else {
+        // Create mode
+        if (onCreateMultiple) {
+          await onCreateMultiple(drafts);
+        } else {
+          await Promise.all(drafts.map((d) => onCreate(d)));
+        }
       }
       onClose();
     } catch (err) {
@@ -384,6 +417,26 @@ export function CreateEventModal({
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete event.");
+      setConfirmDelete(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteSeriesAction() {
+    if (!event || !event.recurrence_group_id || !onDeleteSeries) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    try {
+      await onDeleteSeries(event.recurrence_group_id);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete series.");
       setConfirmDelete(false);
     } finally {
       setBusy(false);
@@ -440,9 +493,25 @@ export function CreateEventModal({
 
           {/* ── Date selection ────────────────────────────────────────────── */}
           <div>
-            <p className="mb-1.5 text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-              {isEditing ? "Date" : "Day(s)"}
-            </p>
+            <div className="mb-1.5 flex items-center justify-between">
+              <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                {isEditing ? "Date" : "Day(s)"}
+              </p>
+              {isEditing && seriesEvents.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (event) {
+                      setSelectedDates(new Set([toDateInput(new Date(event.starts_at))]));
+                    }
+                  }}
+                  className="text-[10px] font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: "#dc2626" }}
+                >
+                  Remove repeating
+                </button>
+              )}
+            </div>
 
             {/* Day picker (used for both create and edit) */}
             <DayPicker selectedDates={selectedDates} onToggle={toggleDay} />
@@ -473,6 +542,49 @@ export function CreateEventModal({
               />
             </label>
           </div>
+
+          {/* ── Repeating ────────────────────────────────────────────────── */}
+          {(!isEditing || seriesEvents.length <= 1) && (
+            <div className="flex flex-col gap-2">
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
+                <input
+                  type="checkbox"
+                  checked={repeats}
+                  onChange={(e) => setRepeats(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                />
+                Repeat this event
+              </label>
+
+              {repeats && (
+                <div className="flex items-center gap-3 animate-fade-in pl-6">
+                  <select
+                    value={repeatFreq}
+                    onChange={(e) => setRepeatFreq(e.target.value as any)}
+                    className="px-2 py-1.5 text-sm outline-none"
+                    style={{ borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                  <span className="text-sm font-medium">for</span>
+                  <input
+                    type="number"
+                    min="2"
+                    max="52"
+                    value={repeatCount}
+                    onChange={(e) => setRepeatCount(parseInt(e.target.value) || 2)}
+                    className="w-16 px-2 py-1.5 text-sm outline-none"
+                    style={{ borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}
+                  />
+                  <span className="text-sm font-medium">
+                    {repeatFreq === "daily" ? "days" : repeatFreq === "weekly" ? "weeks" : "months"}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Tag picker ───────────────────────────────────────────────── */}
           <div className="flex flex-col gap-2">
@@ -518,20 +630,38 @@ export function CreateEventModal({
 
           <div className="flex items-center justify-between gap-2 pt-2">
             {isEditing && onDelete ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void handleDelete()}
-                className="cursor-pointer px-4 py-2 text-sm font-semibold disabled:opacity-60"
-                style={{
-                  borderRadius: "var(--radius-lg)",
-                  border:       "1.5px solid #fca5a5",
-                  background:   confirmDelete ? "#dc2626" : "#fff5f5",
-                  color:        confirmDelete ? "#fff" : "#dc2626",
-                }}
-              >
-                {confirmDelete ? "Confirm delete" : "Delete"}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void handleDelete()}
+                  className="cursor-pointer px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                  style={{
+                    borderRadius: "var(--radius-lg)",
+                    border:       "1.5px solid #fca5a5",
+                    background:   confirmDelete ? "#dc2626" : "#fff5f5",
+                    color:        confirmDelete ? "#fff" : "#dc2626",
+                  }}
+                >
+                  {confirmDelete ? "Confirm delete" : "Delete"}
+                </button>
+                {event?.recurrence_group_id && onDeleteSeries && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void handleDeleteSeriesAction()}
+                    className="cursor-pointer px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                    style={{
+                      borderRadius: "var(--radius-lg)",
+                      border:       "1.5px solid #fca5a5",
+                      background:   confirmDelete ? "#dc2626" : "#fff5f5",
+                      color:        confirmDelete ? "#fff" : "#dc2626",
+                    }}
+                  >
+                    {confirmDelete ? "Confirm delete series" : "Delete series"}
+                  </button>
+                )}
+              </div>
             ) : (
               <span />
             )}
@@ -555,9 +685,11 @@ export function CreateEventModal({
                   ? "Saving…"
                   : isEditing
                     ? "Save changes"
-                    : selectedDates.size > 1
-                      ? `Save ${selectedDates.size} events`
-                      : "Save event"}
+                    : (() => {
+                        const baseCount = selectedDates.size;
+                        const totalCount = repeats ? baseCount * repeatCount : baseCount;
+                        return totalCount > 1 ? `Save ${totalCount} events` : "Save event";
+                      })()}
               </button>
             </div>
           </div>

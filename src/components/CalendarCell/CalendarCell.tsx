@@ -4,6 +4,7 @@ import {
   eventsSpanningDay,
   formatEventTime,
   getSpanPosition,
+  getSeriesSpanPosition,
   isMultiDayEvent,
   type CalendarEvent,
   type SpanPosition,
@@ -79,10 +80,21 @@ export function CalendarCell({
 }: CalendarCellProps) {
   const dayOfWeek = day.date.getDay(); // 0 = Sun … 6 = Sat
 
-  // ── Multi-day events ────────────────────────────────────────────────────────
-  const multiDay = eventsSpanningDay(events, day.date)
-    .filter(isMultiDayEvent)
-    .sort((a, b) => (multiDaySlots.get(a.id) ?? 0) - (multiDaySlots.get(b.id) ?? 0));
+  // ── Multi-day & Connected Series events ──────────────────────────────────────
+  // Get true multi-day events
+  const trueMultiDay = eventsSpanningDay(events, day.date).filter(isMultiDayEvent);
+  
+  // Get single-day events that are part of a series and connect visually on this day
+  const cellSingleDayEvents = eventsForDay(events, day.date).filter((e) => !isMultiDayEvent(e));
+  
+  const connectedSeriesEvents = cellSingleDayEvents.filter((e) => {
+    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek);
+    return pos !== "solo";
+  });
+
+  const multiDay = [...trueMultiDay, ...connectedSeriesEvents].sort(
+    (a, b) => (multiDaySlots.get(a.id) ?? 0) - (multiDaySlots.get(b.id) ?? 0)
+  );
 
   const visibleBars = multiDay.filter((e) => (multiDaySlots.get(e.id) ?? 0) < MAX_SLOTS);
   const hiddenBars  = multiDay.filter((e) => (multiDaySlots.get(e.id) ?? 0) >= MAX_SLOTS);
@@ -93,8 +105,12 @@ export function CalendarCell({
       ? Math.max(...visibleBars.map((e) => multiDaySlots.get(e.id) ?? 0)) + 1
       : 0;
 
-  // ── Single-day events ───────────────────────────────────────────────────────
-  const singleDay = eventsForDay(events, day.date).filter((e) => !isMultiDayEvent(e));
+  // ── Solo Single-day events ──────────────────────────────────────────────────
+  const singleDay = cellSingleDayEvents.filter((e) => {
+    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek);
+    return pos === "solo";
+  });
+  
   const visibleSingle = singleDay.slice(0, 3);
   const extraSingle   = Math.max(singleDay.length - 3, 0);
   const totalExtra    = extraSingle + hiddenBars.length;
@@ -164,7 +180,7 @@ export function CalendarCell({
       {/* ── Multi-day bars (absolutely positioned) ─────────────────────────── */}
       {visibleBars.map((event) => {
         const slot  = multiDaySlots.get(event.id) ?? 0;
-        const pos   = getSpanPosition(event, day.date, dayOfWeek);
+        const pos   = getSeriesSpanPosition(event, events, day.date, dayOfWeek);
         const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
         const { left, right } = barEdges(pos);
         const showLabel = pos === "solo" || pos === "start";

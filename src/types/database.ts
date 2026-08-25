@@ -117,6 +117,7 @@ export type Database = {
           ends_at: string;
           created_by: string;
           has_conflict: boolean;
+          recurrence_group_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -129,6 +130,7 @@ export type Database = {
           ends_at: string;
           created_by: string;
           has_conflict?: boolean;
+          recurrence_group_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -141,6 +143,7 @@ export type Database = {
           ends_at?: string;
           created_by?: string;
           has_conflict?: boolean;
+          recurrence_group_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -64,6 +64,42 @@ export function getSpanPosition(
   return "middle";
 }
 
+export function getSeriesSpanPosition(
+  event: CalendarEvent,
+  allEvents: CalendarEvent[],
+  day: Date,
+  dayOfWeek: number,
+): SpanPosition {
+  if (isMultiDayEvent(event)) return getSpanPosition(event, day, dayOfWeek);
+
+  if (!event.recurrence_group_id) return "solo";
+
+  const prevDay = startOfDay(new Date(day.getTime() - 86400000));
+  const nextDay = startOfDay(new Date(day.getTime() + 86400000));
+
+  const hasPrev = allEvents.some(
+    (e) =>
+      e.recurrence_group_id === event.recurrence_group_id &&
+      isSameDay(new Date(e.starts_at), prevDay)
+  );
+  const hasNext = allEvents.some(
+    (e) =>
+      e.recurrence_group_id === event.recurrence_group_id &&
+      isSameDay(new Date(e.starts_at), nextDay)
+  );
+
+  const isRowStart = dayOfWeek === 0; // Sunday
+  const isRowEnd = dayOfWeek === 6;   // Saturday
+
+  const isVisualStart = !hasPrev || isRowStart;
+  const isVisualEnd = !hasNext || isRowEnd;
+
+  if (isVisualStart && isVisualEnd) return "solo";
+  if (isVisualStart) return "start";
+  if (isVisualEnd) return "end";
+  return "middle";
+}
+
 export function eventPosition(
   event: CalendarEvent,
   hourHeightPx: number,

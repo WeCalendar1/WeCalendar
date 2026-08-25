@@ -15,43 +15,78 @@ type CalendarGridProps = {
   onDayDoubleClick?: (date: Date) => void;
 };
 
-/**
- * Greedily assigns a vertical slot (0, 1, …) to each multi-day event so that
- * overlapping date spans land on different bar rows within the month grid.
- * Longer / earlier-starting events claim lower-numbered slots first.
- */
 function computeMultiDaySlots(events: CalendarEvent[]): Map<string, number> {
-  const multiDay = events
-    .filter(isMultiDayEvent)
-    .sort((a, b) => {
-      const diff =
-        new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
-      if (diff !== 0) return diff;
-      // Longer events win ties (earlier end = lower slot priority)
-      return new Date(b.ends_at).getTime() - new Date(a.ends_at).getTime();
+  const seriesGroups = new Map<string, CalendarEvent[]>();
+  const isolatedMultiDay: CalendarEvent[] = [];
+
+  for (const event of events) {
+    if (event.recurrence_group_id) {
+      const group = seriesGroups.get(event.recurrence_group_id) || [];
+      group.push(event);
+      seriesGroups.set(event.recurrence_group_id, group);
+    } else if (isMultiDayEvent(event)) {
+      isolatedMultiDay.push(event);
+    }
+  }
+
+  type Span = {
+    eventIds: string[];
+    start: Date;
+    end: Date;
+  };
+
+  const spans: Span[] = [];
+
+  for (const group of seriesGroups.values()) {
+    if (group.length === 1 && !isMultiDayEvent(group[0]!)) continue;
+    
+    let minS = new Date(group[0]!.starts_at);
+    let maxE = new Date(group[0]!.ends_at);
+    for (const e of group) {
+      const s = new Date(e.starts_at);
+      const en = new Date(e.ends_at);
+      if (s < minS) minS = s;
+      if (en > maxE) maxE = en;
+    }
+    spans.push({
+      eventIds: group.map((e) => e.id),
+      start: startOfDay(minS),
+      end: startOfDay(maxE),
     });
+  }
+
+  for (const event of isolatedMultiDay) {
+    spans.push({
+      eventIds: [event.id],
+      start: startOfDay(new Date(event.starts_at)),
+      end: startOfDay(new Date(event.ends_at)),
+    });
+  }
+
+  spans.sort((a, b) => {
+    const diff = a.start.getTime() - b.start.getTime();
+    if (diff !== 0) return diff;
+    return b.end.getTime() - a.end.getTime();
+  });
 
   const slots = new Map<string, number>();
+  const spanSlots = new Map<Span, number>();
 
-  for (const event of multiDay) {
-    const s = startOfDay(new Date(event.starts_at));
-    const e = startOfDay(new Date(event.ends_at));
-
+  for (const span of spans) {
     let slot = 0;
     while (true) {
-      const conflict = multiDay.some((other) => {
-        if (other.id === event.id) return false;
-        if (slots.get(other.id) !== slot) return false;
-        const os = startOfDay(new Date(other.starts_at));
-        const oe = startOfDay(new Date(other.ends_at));
-        // Spans overlap when one starts before the other ends
-        return s <= oe && e >= os;
+      const conflict = spans.some((other) => {
+        if (other === span) return false;
+        if (spanSlots.get(other) !== slot) return false;
+        return span.start <= other.end && span.end >= other.start;
       });
       if (!conflict) break;
       slot++;
     }
-
-    slots.set(event.id, slot);
+    spanSlots.set(span, slot);
+    for (const id of span.eventIds) {
+      slots.set(id, slot);
+    }
   }
 
   return slots;
