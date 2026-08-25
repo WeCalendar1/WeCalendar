@@ -462,7 +462,6 @@ export function AppShell() {
   async function handleDeleteEvent(eventId: string) {
     const { error } = await supabase.from("events").delete().eq("id", eventId);
     if (error) throw new Error(error.message);
-    setSelectedEvent(null);
     await loadEvents(activeGroupId);
     await loadEventTags(activeGroupId);
   }
@@ -497,7 +496,6 @@ export function AppShell() {
   async function handleDeleteSeries(recurrenceGroupId: string) {
     const { error } = await supabase.from("events").delete().eq("recurrence_group_id", recurrenceGroupId);
     if (error) throw new Error(error.message);
-    setSelectedEvent(null);
     await loadEvents(activeGroupId);
     await loadEventTags(activeGroupId);
   }
