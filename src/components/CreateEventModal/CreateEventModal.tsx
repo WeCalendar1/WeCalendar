@@ -560,7 +560,7 @@ export function CreateEventModal({
                 <div className="flex items-center gap-3 animate-fade-in pl-6">
                   <select
                     value={repeatFreq}
-                    onChange={(e) => setRepeatFreq(e.target.value as any)}
+                    onChange={(e) => setRepeatFreq(e.target.value as "daily" | "weekly" | "monthly")}
                     className="px-2 py-1.5 text-sm outline-none"
                     style={{ borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}
                   >
