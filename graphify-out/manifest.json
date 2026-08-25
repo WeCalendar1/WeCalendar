@@ -65,8 +65,8 @@
     "semantic_hash": "dec5f84ccbe58bca6bfefce498b9efcb"
   },
   "src/components/CalendarCell/CalendarCell.tsx": {
-    "mtime": 1787014154.134884,
-    "ast_hash": "f332d6700e1cbca433c741dbd12805a0",
+    "mtime": 1787613473.0933585,
+    "ast_hash": "16cfa356befa32e99c0d42c4b6f11810",
     "semantic_hash": ""
   },
   "src/components/CalendarCell/index.ts": {
@@ -75,8 +75,8 @@
     "semantic_hash": "8909572c3264854a01c6a34b6b129afe"
   },
   "src/components/CalendarGrid/CalendarGrid.tsx": {
-    "mtime": 1787014195.460082,
-    "ast_hash": "5a8097fe8528cc1caa432ad74fe93d90",
+    "mtime": 1787613431.8280952,
+    "ast_hash": "3588db62ee4c2a98d7ce889215abf1d1",
     "semantic_hash": ""
   },
   "src/components/CalendarGrid/index.ts": {
@@ -95,8 +95,8 @@
     "semantic_hash": "9446dea120e445fab96980f91667da62"
   },
   "src/components/CreateEventModal/CreateEventModal.tsx": {
-    "mtime": 1787014306.1987107,
-    "ast_hash": "a575631ac1fd7814398c45a67fe0c28d",
+    "mtime": 1787613542.3483758,
+    "ast_hash": "d6a108fbc49e3dc7862622046eb0ea66",
     "semantic_hash": ""
   },
   "src/components/CreateEventModal/index.ts": {
@@ -200,9 +200,9 @@
     "semantic_hash": "118cb937eac94002fa7f0af55bbe3d3c"
   },
   "src/lib/events.ts": {
-    "mtime": 1786580760.1713872,
-    "ast_hash": "82c89549184c4d0f9e6b44cdbb5090e9",
-    "semantic_hash": "82c89549184c4d0f9e6b44cdbb5090e9"
+    "mtime": 1787613411.0007617,
+    "ast_hash": "3834ac736711adce794106908fa67088",
+    "semantic_hash": ""
   },
   "src/lib/scheduling.ts": {
     "mtime": 1786580760.1713872,
@@ -290,8 +290,8 @@
     "semantic_hash": ""
   },
   "src/lib/events.test.ts": {
-    "mtime": 1787014983.5828176,
-    "ast_hash": "3617a8a3382f7b249b9ab3acf34077af",
+    "mtime": 1787613589.7911057,
+    "ast_hash": "0095f850cdda6d2219b86ebb6507339c",
     "semantic_hash": ""
   },
   "src/lib/tags.test.ts": {
@@ -330,8 +330,8 @@
     "semantic_hash": ""
   },
   "UI_CONTEXT.md": {
-    "mtime": 1787182913.525654,
-    "ast_hash": "2a047120afff4907f1e64c3a3700952e",
+    "mtime": 1787613747.9490168,
+    "ast_hash": "f5826b0fc766a52ab8d634a3ae8a8382",
     "semantic_hash": ""
   },
   "docs/CONTEXT.md": {

@@ -1,8 +1,7 @@
-# Graph Report - WeCalendar  (2026-08-24)
+# Graph Report - .  (2026-08-24)
 
 ## Corpus Check
-- 68 files · ~26,467 words
-- Verdict: corpus is large enough that graph structure adds value.
+- cluster-only mode — file stats not available
 
 ## Summary
 - 407 nodes · 652 edges · 27 communities (22 shown, 5 thin omitted)
@@ -44,16 +43,14 @@
 2. `WeCalendar — Full Project Context` - 16 edges
 3. `6. Component Reference` - 13 edges
 4. `Tag` - 11 edges
-5. `AppShell()` - 10 edges
-6. `TimeGrid()` - 10 edges
+5. `CalendarEvent` - 10 edges
+6. `AppShell()` - 10 edges
 7. `isSameDay()` - 10 edges
-8. `CalendarEvent` - 10 edges
+8. `TimeGrid()` - 10 edges
 9. `WeCalendar — project context` - 10 edges
-10. `getMonthGrid()` - 9 edges
+10. `EventTag` - 9 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `ProfilePage()` --calls--> `createClient()`  [EXTRACTED]
-  src/app/profile/page.tsx → src/lib/supabase/client.ts
 - `AppShell()` --calls--> `formatViewLabel()`  [EXTRACTED]
   src/components/AppShell/AppShell.tsx → src/lib/calendar.ts
 - `AppShell()` --calls--> `shiftViewDate()`  [EXTRACTED]
@@ -62,6 +59,8 @@
   src/components/AppShell/AppShell.tsx → src/lib/calendar.ts
 - `AppShell()` --calls--> `createClient()`  [EXTRACTED]
   src/components/AppShell/AppShell.tsx → src/lib/supabase/client.ts
+- `AppShell()` --calls--> `tagIdsForEvent()`  [EXTRACTED]
+  src/components/AppShell/AppShell.tsx → src/lib/tags.ts
 
 ## Import Cycles
 - None detected.
@@ -141,7 +140,7 @@ Cohesion: 0.36
 Nodes (6): CreateEventModal(), CreateEventModalProps, EventDraft, toDateInput(), toTimeInput(), TagCreatorInline()
 
 ## Knowledge Gaps
-- **160 isolated node(s):** `eslintConfig`, `nextConfig`, `name`, `version`, `private` (+155 more)
+- **160 isolated node(s):** `Group`, `NavbarProps`, `RightPanelProps`, `CategoryStyle`, `TaskPanelProps` (+155 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -154,7 +153,7 @@ _Questions this graph is uniquely positioned to answer:_
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Why does `devDependencies` connect `devDependencies` to `scripts`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
-- **What connects `eslintConfig`, `nextConfig`, `name` to the rest of the system?**
+- **What connects `Group`, `NavbarProps`, `RightPanelProps` to the rest of the system?**
   _160 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `compilerOptions` be split into smaller, more focused modules?**
   _Cohesion score 0.0625 - nodes in this community are weakly interconnected._
