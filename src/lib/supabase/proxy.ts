@@ -39,10 +39,14 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresh the auth token - do not remove.
+  // Refresh the auth session from the cookie — no network round trip needed here.
+  // getUser() would make a live Supabase call on every request (causes huge latency
+  // on cold/paused projects). getSession() reads the signed JWT from the cookie and
+  // is sufficient for route-guard purposes.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute =
