@@ -277,7 +277,8 @@ Reusable inline form used in both `Sidebar` and `CreateEventModal`.
 
 Modal for create / edit / delete of events. Props: `open`, `defaultDate`, `event` (null = create mode), `tags`, `initialTagIds`, `onClose`, `onCreate`, `onUpdate`, `onDelete`, `onCreateTag`.
 
-- **Title**, **description** (textarea), **date**, **start time**, **end time** fields
+- **Inline `DateRangePicker`** — replaces the flat `<input type="date">`. Shows a compact mini-calendar with month navigation. Two-phase click selection: first click sets the anchor day (single day selected), second click commits the range (normalized so the earlier date is always start). Hovering after the first click previews the range with a band highlight. Adjacent days in-range show a light accent band; start and end days show a filled accent circle.
+- **Title**, **description** (textarea), **start time**, **end time** fields. Time labels read "Start time / End time" when a multi-day range is selected.
 - **Tag picker** — pill-style multi-select of all group tags; active = filled colour
 - **Inline `TagCreatorInline`** — create a new tag without leaving the modal
 - **Delete flow** — first click shows "Confirm delete" (red), second click deletes
@@ -288,11 +289,13 @@ Modal for create / edit / delete of events. Props: `open`, `defaultDate`, `event
 type EventDraft = {
   title: string;
   description: string;
-  startsAt: Date;
-  endsAt: Date;
-  tagIds: string[];   // ← tag IDs to attach on save
+  startsAt: Date;   // startDate + startTime
+  endsAt: Date;     // endDate + endTime
+  tagIds: string[]; // ← tag IDs to attach on save
 };
 ```
+
+**Validation**: For same-day events, `endsAt > startsAt` is enforced. For multi-day events (different calendar days), any end time is valid (dates guarantee ordering).
 
 ---
 
@@ -303,6 +306,7 @@ type EventDraft = {
 6×7 grid from `getMonthGrid(viewDate)`. Props include `tags` + `eventTags` for colour-coding.
 
 - **Double-click** on a cell → opens create modal pre-filled with that date
+- Runs `computeMultiDaySlots(events)` — a greedy packing algorithm that assigns each multi-day event a vertical slot index (0, 1, …) so overlapping spans never stack on the same row. The resulting `Map<eventId, slotIndex>` is passed to every `CalendarCell`.
 
 ---
 
@@ -310,8 +314,15 @@ type EventDraft = {
 
 `src/components/CalendarCell/CalendarCell.tsx`
 
-Single day tile. Shows up to 3 event chips; "+N more" for overflow.
+Single day tile. Shows up to 2 rows of **multi-day bars** above up to 3 single-day chips; "+N more" for overflow.
 
+**Multi-day bars** are absolutely positioned inside the cell (cells have `overflow: visible`):
+- Bar edges bleed ±1 px across the 1 px cell border so adjacent bars in the same event span appear seamlessly connected.
+- `SpanPosition` controls the border-radius cap: `solo` = fully rounded, `start` = left-capped (right flat), `middle` = flat both sides, `end` = right-capped (left flat).
+- Week-row boundaries cap the position: Saturday always shows as an `end` cap; Sunday always shows as a `start` cap, even if the event started before this row.
+- A flow spacer div of height `usedSlots × 19 px` pushes single-day chips below the bars.
+
+**Single-day chips** (as before):
 - Event chip colour = first tag's hex colour via `colorForEvent()`, fallback `var(--accent)`
 - `onDoubleClick` → `onDayDoubleClick(day.date)` bubble
 

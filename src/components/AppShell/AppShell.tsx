@@ -221,13 +221,14 @@ export function AppShell() {
 
   useEffect(() => {
     if (!user) {
-      setGroups([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setActiveGroupId(null); // eslint-disable-line react-hooks/set-state-in-effect
-      setEvents([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setTags([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setEventTags([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setLists([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setListItems([]); // eslint-disable-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setGroups([]);
+      setActiveGroupId(null);
+      setEvents([]);
+      setTags([]);
+      setEventTags([]);
+      setLists([]);
+      setListItems([]);
       return;
     }
     void loadGroups();
@@ -237,10 +238,11 @@ export function AppShell() {
     if (activeGroupId) {
       window.localStorage.setItem(ACTIVE_GROUP_KEY, activeGroupId);
     }
-    void loadEvents(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
-    void loadTags(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
-    void loadEventTags(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
-    void loadLists(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadEvents(activeGroupId);
+    void loadTags(activeGroupId);
+    void loadEventTags(activeGroupId);
+    void loadLists(activeGroupId);
   }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadLists]);
 
   // ─── Realtime subscriptions ───────────────────────────────────────────────
@@ -372,6 +374,59 @@ export function AppShell() {
     await loadEventTags(activeGroupId);
   }
 
+  async function handleCreateMultipleEvents(drafts: EventDraft[], explicitRecurrenceGroupId?: string) {
+    if (!user || !activeGroupId) {
+      throw new Error("Join or create a shared workspace first.");
+    }
+    if (drafts.length === 0) return;
+
+    const recurrenceGroupId = explicitRecurrenceGroupId || crypto.randomUUID();
+
+    // 1. Bulk insert events
+    const { data: insertedEvents, error: eventsError } = await supabase
+      .from("events")
+      .insert(
+        drafts.map((input) => ({
+          group_id: activeGroupId,
+          title: input.title,
+          description: input.description || null,
+          starts_at: input.startsAt.toISOString(),
+          ends_at: input.endsAt.toISOString(),
+          created_by: user.id,
+          recurrence_group_id: drafts.length > 1 ? recurrenceGroupId : null,
+        }))
+      )
+      .select("id");
+
+    if (eventsError) {
+      if (isSchedulingConflictError(eventsError)) {
+        throw new Error(SCHEDULING_CONFLICT_MESSAGE);
+      }
+      throw new Error(eventsError.message);
+    }
+
+    // 2. Bulk insert tags for all events
+    const tagInserts: { event_id: string; tag_id: string }[] = [];
+    if (insertedEvents) {
+      insertedEvents.forEach((ev, idx) => {
+        const input = drafts[idx];
+        if (input && input.tagIds.length > 0) {
+          input.tagIds.forEach((tagId) => {
+            tagInserts.push({ event_id: ev.id, tag_id: tagId });
+          });
+        }
+      });
+    }
+
+    if (tagInserts.length > 0) {
+      const { error: tagError } = await supabase.from("event_tags").insert(tagInserts);
+      if (tagError) throw new Error(tagError.message);
+    }
+
+    await loadEvents(activeGroupId);
+    await loadEventTags(activeGroupId);
+  }
+
   async function handleUpdateEvent(eventId: string, input: EventDraft) {
     if (!activeGroupId) {
       throw new Error("Join or create a shared workspace first.");
@@ -409,7 +464,40 @@ export function AppShell() {
   async function handleDeleteEvent(eventId: string) {
     const { error } = await supabase.from("events").delete().eq("id", eventId);
     if (error) throw new Error(error.message);
-    setSelectedEvent(null);
+    await loadEvents(activeGroupId);
+    await loadEventTags(activeGroupId);
+  }
+
+  async function handleUpdateSeries(recurrenceGroupId: string, drafts: EventDraft[]) {
+    if (!activeGroupId) throw new Error("Join or create a shared workspace first.");
+    
+    // Client-side overlap check to prevent deleting if the recreation will fail
+    const otherEvents = events.filter((e) => e.recurrence_group_id !== recurrenceGroupId);
+    for (const draft of drafts) {
+      const s1 = draft.startsAt.getTime();
+      const e1 = draft.endsAt.getTime();
+      for (const other of otherEvents) {
+        const s2 = new Date(other.starts_at).getTime();
+        const e2 = new Date(other.ends_at).getTime();
+        if (s1 < e2 && e1 > s2) {
+          throw new Error(SCHEDULING_CONFLICT_MESSAGE);
+        }
+      }
+    }
+
+    const { error: deleteError } = await supabase
+      .from("events")
+      .delete()
+      .eq("recurrence_group_id", recurrenceGroupId);
+
+    if (deleteError) throw new Error(deleteError.message);
+
+    await handleCreateMultipleEvents(drafts, recurrenceGroupId);
+  }
+
+  async function handleDeleteSeries(recurrenceGroupId: string) {
+    const { error } = await supabase.from("events").delete().eq("recurrence_group_id", recurrenceGroupId);
+    if (error) throw new Error(error.message);
     await loadEvents(activeGroupId);
     await loadEventTags(activeGroupId);
   }
@@ -527,6 +615,12 @@ export function AppShell() {
     ? tagIdsForEvent(selectedEvent.id, eventTags)
     : [];
 
+  const seriesEvents = selectedEvent?.recurrence_group_id
+    ? events.filter((e) => e.recurrence_group_id === selectedEvent.recurrence_group_id)
+    : selectedEvent
+      ? [selectedEvent]
+      : [];
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <Navbar
@@ -617,12 +711,16 @@ export function AppShell() {
         open={modalOpen}
         defaultDate={modalDefaultDate}
         event={selectedEvent}
+        seriesEvents={seriesEvents}
         tags={tags}
         initialTagIds={selectedEventTagIds}
         onClose={closeEventModal}
         onCreate={handleCreateEvent}
+        onCreateMultiple={handleCreateMultipleEvents}
         onUpdate={handleUpdateEvent}
+        onUpdateSeries={handleUpdateSeries}
         onDelete={handleDeleteEvent}
+        onDeleteSeries={handleDeleteSeries}
         onCreateTag={handleCreateTag}
       />
     </div>
