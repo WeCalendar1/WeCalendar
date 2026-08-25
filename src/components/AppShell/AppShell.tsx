@@ -221,6 +221,7 @@ export function AppShell() {
 
   useEffect(() => {
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGroups([]);
       setActiveGroupId(null);
       setEvents([]);
@@ -237,6 +238,7 @@ export function AppShell() {
     if (activeGroupId) {
       window.localStorage.setItem(ACTIVE_GROUP_KEY, activeGroupId);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadEvents(activeGroupId);
     void loadTags(activeGroupId);
     void loadEventTags(activeGroupId);
