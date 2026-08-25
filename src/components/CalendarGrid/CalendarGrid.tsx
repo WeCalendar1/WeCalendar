@@ -1,6 +1,6 @@
 import { CalendarCell } from "@/components/CalendarCell";
-import { getMonthGrid } from "@/lib/calendar";
-import type { CalendarEvent } from "@/lib/events";
+import { getMonthGrid, startOfDay } from "@/lib/calendar";
+import { isMultiDayEvent, type CalendarEvent } from "@/lib/events";
 import type { EventTag, Tag } from "@/lib/tags";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -15,8 +15,58 @@ type CalendarGridProps = {
   onDayDoubleClick?: (date: Date) => void;
 };
 
-export function CalendarGrid({ viewDate, events, tags, eventTags, onSelectEvent, onDayDoubleClick }: CalendarGridProps) {
+/**
+ * Greedily assigns a vertical slot (0, 1, …) to each multi-day event so that
+ * overlapping date spans land on different bar rows within the month grid.
+ * Longer / earlier-starting events claim lower-numbered slots first.
+ */
+function computeMultiDaySlots(events: CalendarEvent[]): Map<string, number> {
+  const multiDay = events
+    .filter(isMultiDayEvent)
+    .sort((a, b) => {
+      const diff =
+        new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
+      if (diff !== 0) return diff;
+      // Longer events win ties (earlier end = lower slot priority)
+      return new Date(b.ends_at).getTime() - new Date(a.ends_at).getTime();
+    });
+
+  const slots = new Map<string, number>();
+
+  for (const event of multiDay) {
+    const s = startOfDay(new Date(event.starts_at));
+    const e = startOfDay(new Date(event.ends_at));
+
+    let slot = 0;
+    while (true) {
+      const conflict = multiDay.some((other) => {
+        if (other.id === event.id) return false;
+        if (slots.get(other.id) !== slot) return false;
+        const os = startOfDay(new Date(other.starts_at));
+        const oe = startOfDay(new Date(other.ends_at));
+        // Spans overlap when one starts before the other ends
+        return s <= oe && e >= os;
+      });
+      if (!conflict) break;
+      slot++;
+    }
+
+    slots.set(event.id, slot);
+  }
+
+  return slots;
+}
+
+export function CalendarGrid({
+  viewDate,
+  events,
+  tags,
+  eventTags,
+  onSelectEvent,
+  onDayDoubleClick,
+}: CalendarGridProps) {
   const days = getMonthGrid(viewDate);
+  const multiDaySlots = computeMultiDaySlots(events);
 
   return (
     <div
@@ -52,6 +102,7 @@ export function CalendarGrid({ viewDate, events, tags, eventTags, onSelectEvent,
             events={events}
             tags={tags}
             eventTags={eventTags}
+            multiDaySlots={multiDaySlots}
             onSelectEvent={onSelectEvent}
             onDoubleClick={onDayDoubleClick}
           />

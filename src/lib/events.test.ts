@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { eventsForDay, eventPosition, formatEventTime } from "./events";
+import { eventsForDay, eventPosition, formatEventTime, isMultiDayEvent, eventsSpanningDay, getSpanPosition } from "./events";
 import type { CalendarEvent } from "./events";
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -122,3 +122,145 @@ describe("formatEventTime", () => {
     expect(result).toMatch(/AM|PM/i);
   });
 });
+
+// ── isMultiDayEvent ───────────────────────────────────────────────────────────
+
+describe("isMultiDayEvent", () => {
+  it("returns false for a same-day event", () => {
+    const event = makeEvent({ starts_at: "2025-06-15T09:00:00Z", ends_at: "2025-06-15T17:00:00Z" });
+    expect(isMultiDayEvent(event)).toBe(false);
+  });
+
+  it("returns true for an event spanning two days", () => {
+    const event = makeEvent({ starts_at: "2025-06-15T22:00:00.000Z", ends_at: "2025-06-16T06:00:00.000Z" });
+    // Note: UTC dates differ; result depends on local timezone offset but the
+    // helper compares local calendar days via isSameDay.
+    // Use explicit local-midnight times to make the test deterministic.
+    const localStart = new Date(2025, 5, 15, 22, 0, 0).toISOString();
+    const localEnd   = new Date(2025, 5, 16,  6, 0, 0).toISOString();
+    const evt = makeEvent({ starts_at: localStart, ends_at: localEnd });
+    expect(isMultiDayEvent(evt)).toBe(true);
+  });
+
+  it("returns false for a midnight-to-midnight same-day event", () => {
+    const evt = makeEvent({
+      starts_at: new Date(2025, 5, 15, 0, 0, 0).toISOString(),
+      ends_at:   new Date(2025, 5, 15, 23, 59, 0).toISOString(),
+    });
+    expect(isMultiDayEvent(evt)).toBe(false);
+  });
+});
+
+// ── eventsSpanningDay ─────────────────────────────────────────────────────────
+
+describe("eventsSpanningDay", () => {
+  // Use local midnight timestamps to avoid timezone ambiguity
+  const jun13 = new Date(2025, 5, 13);
+  const jun14 = new Date(2025, 5, 14);
+  const jun15 = new Date(2025, 5, 15);
+  const jun17 = new Date(2025, 5, 17);
+  const jun18 = new Date(2025, 5, 18);
+
+  const singleDay = makeEvent({
+    id: "single",
+    starts_at: new Date(2025, 5, 15, 9, 0).toISOString(),
+    ends_at:   new Date(2025, 5, 15, 10, 0).toISOString(),
+  });
+  const multiDay = makeEvent({
+    id: "multi",
+    starts_at: new Date(2025, 5, 14, 8, 0).toISOString(),
+    ends_at:   new Date(2025, 5, 17, 18, 0).toISOString(),
+  });
+  const unrelated = makeEvent({
+    id: "unrelated",
+    starts_at: new Date(2025, 5, 20, 9, 0).toISOString(),
+    ends_at:   new Date(2025, 5, 20, 10, 0).toISOString(),
+  });
+
+  const events = [singleDay, multiDay, unrelated];
+
+  it("includes single-day events that start and end on the day", () => {
+    expect(eventsSpanningDay(events, jun15).map((e) => e.id)).toContain("single");
+  });
+
+  it("includes multi-day events that span the given day", () => {
+    // Jun 15 is in the middle of multi (Jun 14 – Jun 17)
+    expect(eventsSpanningDay(events, jun15).map((e) => e.id)).toContain("multi");
+  });
+
+  it("includes multi-day event on its start day", () => {
+    expect(eventsSpanningDay(events, jun14).map((e) => e.id)).toContain("multi");
+  });
+
+  it("includes multi-day event on its end day", () => {
+    expect(eventsSpanningDay(events, jun17).map((e) => e.id)).toContain("multi");
+  });
+
+  it("excludes multi-day event the day before it starts", () => {
+    expect(eventsSpanningDay(events, jun13).map((e) => e.id)).not.toContain("multi");
+  });
+
+  it("excludes multi-day event the day after it ends", () => {
+    expect(eventsSpanningDay(events, jun18).map((e) => e.id)).not.toContain("multi");
+  });
+
+  it("excludes unrelated events", () => {
+    expect(eventsSpanningDay(events, jun15).map((e) => e.id)).not.toContain("unrelated");
+  });
+});
+
+// ── getSpanPosition ───────────────────────────────────────────────────────────
+
+describe("getSpanPosition", () => {
+  const event = makeEvent({
+    starts_at: new Date(2025, 5, 16, 9, 0).toISOString(), // Monday Jun 16
+    ends_at:   new Date(2025, 5, 19, 17, 0).toISOString(), // Thursday Jun 19
+  });
+
+  const mon = new Date(2025, 5, 16); // dayOfWeek 1
+  const tue = new Date(2025, 5, 17); // dayOfWeek 2
+  const thu = new Date(2025, 5, 19); // dayOfWeek 4
+
+  it("returns 'start' on the first day (non-Sunday)", () => {
+    expect(getSpanPosition(event, mon, mon.getDay())).toBe("start");
+  });
+
+  it("returns 'middle' on an intermediate day", () => {
+    expect(getSpanPosition(event, tue, tue.getDay())).toBe("middle");
+  });
+
+  it("returns 'end' on the last day (non-Saturday)", () => {
+    expect(getSpanPosition(event, thu, thu.getDay())).toBe("end");
+  });
+
+  it("returns 'solo' for a single-day event", () => {
+    const solo = makeEvent({
+      starts_at: new Date(2025, 5, 15, 9, 0).toISOString(),
+      ends_at:   new Date(2025, 5, 15, 17, 0).toISOString(),
+    });
+    const sun15 = new Date(2025, 5, 15); // Sunday
+    expect(getSpanPosition(solo, sun15, sun15.getDay())).toBe("solo");
+  });
+
+  it("caps to 'end' on Saturday regardless of actual event end", () => {
+    // Event runs Mon–Thu, but we're testing a hypothetical Saturday in the middle
+    const satEvent = makeEvent({
+      starts_at: new Date(2025, 5, 14, 9, 0).toISOString(), // Sat Jun 14
+      ends_at:   new Date(2025, 5, 21, 17, 0).toISOString(), // Sat Jun 21
+    });
+    const sat14 = new Date(2025, 5, 14);
+    expect(getSpanPosition(satEvent, sat14, 6)).toBe("solo"); // start-and-end-of-row
+  });
+
+  it("caps to 'start' on Sunday if event started before this week", () => {
+    // Reuse event (Mon 16 – Thu 19); test Sunday June 15 which is BEFORE start
+    // …that day isn't spanned, but test a genuine spanning Sunday
+    const longEvent = makeEvent({
+      starts_at: new Date(2025, 5, 14, 9, 0).toISOString(), // Sat Jun 14
+      ends_at:   new Date(2025, 5, 21, 17, 0).toISOString(), // Sat Jun 21
+    });
+    const sun15 = new Date(2025, 5, 15); // Sunday Jun 15 — in the middle
+    expect(getSpanPosition(longEvent, sun15, 0)).toBe("start");
+  });
+});
+
