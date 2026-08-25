@@ -132,7 +132,6 @@ describe("isMultiDayEvent", () => {
   });
 
   it("returns true for an event spanning two days", () => {
-    const event = makeEvent({ starts_at: "2025-06-15T22:00:00.000Z", ends_at: "2025-06-16T06:00:00.000Z" });
     // Note: UTC dates differ; result depends on local timezone offset but the
     // helper compares local calendar days via isSameDay.
     // Use explicit local-midnight times to make the test deterministic.

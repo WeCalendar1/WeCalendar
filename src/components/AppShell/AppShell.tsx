@@ -221,13 +221,13 @@ export function AppShell() {
 
   useEffect(() => {
     if (!user) {
-      setGroups([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setActiveGroupId(null); // eslint-disable-line react-hooks/set-state-in-effect
-      setEvents([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setTags([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setEventTags([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setLists([]); // eslint-disable-line react-hooks/set-state-in-effect
-      setListItems([]); // eslint-disable-line react-hooks/set-state-in-effect
+      setGroups([]);
+      setActiveGroupId(null);
+      setEvents([]);
+      setTags([]);
+      setEventTags([]);
+      setLists([]);
+      setListItems([]);
       return;
     }
     void loadGroups();
@@ -237,10 +237,10 @@ export function AppShell() {
     if (activeGroupId) {
       window.localStorage.setItem(ACTIVE_GROUP_KEY, activeGroupId);
     }
-    void loadEvents(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
-    void loadTags(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
-    void loadEventTags(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
-    void loadLists(activeGroupId); // eslint-disable-line react-hooks/set-state-in-effect
+    void loadEvents(activeGroupId);
+    void loadTags(activeGroupId);
+    void loadEventTags(activeGroupId);
+    void loadLists(activeGroupId);
   }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadLists]);
 
   // ─── Realtime subscriptions ───────────────────────────────────────────────

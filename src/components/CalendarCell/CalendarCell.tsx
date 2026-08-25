@@ -3,7 +3,6 @@ import {
   eventsForDay,
   eventsSpanningDay,
   formatEventTime,
-  getSpanPosition,
   getSeriesSpanPosition,
   isMultiDayEvent,
   type CalendarEvent,
