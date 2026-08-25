@@ -251,13 +251,22 @@ export function CreateEventModal({
   const [title, setTitle]             = useState(event?.title ?? "");
   const [description, setDescription] = useState(event?.description ?? "");
 
-  // Edit mode: single date input (editing one existing event)
-  const [editDate, setEditDate]       = useState(toDateInput(start));
-
-  // Create mode: set of individually-toggled dates
-  const [selectedDates, setSelectedDates] = useState<Set<string>>(
-    () => new Set([toDateInput(defaultDate)]),
-  );
+  // Single set of individually-toggled dates for both create and edit modes
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(() => {
+    if (event) {
+      const dates = new Set<string>();
+      const curr = new Date(event.starts_at);
+      curr.setHours(0, 0, 0, 0);
+      const last = new Date(event.ends_at);
+      last.setHours(0, 0, 0, 0);
+      while (curr <= last) {
+        dates.add(toDateInput(curr));
+        curr.setDate(curr.getDate() + 1);
+      }
+      return dates;
+    }
+    return new Set([toDateInput(defaultDate)]);
+  });
 
   const [startTime, setStartTime]     = useState(event ? toTimeInput(start) : toTimeInput(defaultDate));
   const [endTime, setEndTime]         = useState(() => {
@@ -316,8 +325,19 @@ export function CreateEventModal({
 
     try {
       if (isEditing && event && onUpdate) {
-        // Edit mode — single event, single date
-        const draft = buildDraft(editDate);
+        // Edit mode — must be a single consecutive group
+        const groups = groupConsecutiveDates(selectedDates);
+        if (groups.length === 0) {
+          setError("Select at least one day.");
+          return;
+        }
+        if (groups.length > 1) {
+          setError("Cannot split an event into disconnected days during edit. Please select consecutive days.");
+          return;
+        }
+
+        const group = groups[0]!;
+        const draft = buildDraft(group[0]!, group[group.length - 1]!);
         if (!draft) return;
         await onUpdate(event.id, draft);
       } else {
@@ -424,20 +444,8 @@ export function CreateEventModal({
               {isEditing ? "Date" : "Day(s)"}
             </p>
 
-            {isEditing ? (
-              /* Edit mode: simple single-date input */
-              <input
-                type="date"
-                required
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm outline-none"
-                style={{ borderRadius: "var(--radius-lg)", border: "1.5px solid var(--border)" }}
-              />
-            ) : (
-              /* Create mode: toggle individual days */
-              <DayPicker selectedDates={selectedDates} onToggle={toggleDay} />
-            )}
+            {/* Day picker (used for both create and edit) */}
+            <DayPicker selectedDates={selectedDates} onToggle={toggleDay} />
           </div>
 
           {/* ── Times ────────────────────────────────────────────────────── */}
