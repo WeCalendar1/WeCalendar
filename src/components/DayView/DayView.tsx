@@ -7,11 +7,22 @@ type DayViewProps = {
   events: CalendarEvent[];
   tags: Tag[];
   eventTags: EventTag[];
+  conflictIds?: ReadonlySet<string>;
+  showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
 };
 
-export function DayView({ viewDate, events, tags, eventTags, onSelectEvent, onDayDoubleClick }: DayViewProps) {
+export function DayView({
+  viewDate,
+  events,
+  tags,
+  eventTags,
+  conflictIds,
+  showConflictHighlights,
+  onSelectEvent,
+  onDayDoubleClick,
+}: DayViewProps) {
   return (
     <div
       className="flex h-full min-h-0 flex-col overflow-hidden"
@@ -27,6 +38,8 @@ export function DayView({ viewDate, events, tags, eventTags, onSelectEvent, onDa
         events={events}
         tags={tags}
         eventTags={eventTags}
+        conflictIds={conflictIds}
+        showConflictHighlights={showConflictHighlights}
         onSelectEvent={onSelectEvent}
         onDayDoubleClick={onDayDoubleClick}
       />

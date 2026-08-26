@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { MiniCalendar } from "./MiniCalendar";
 import { SharedWorkspace } from "@/components/SharedWorkspace";
@@ -139,7 +139,7 @@ export function Sidebar({
                 className="px-2 py-1 text-xs"
                 style={{ color: "var(--text-muted)" }}
               >
-                No tags yet — create one below.
+                No tags yet - create one below.
               </p>
             )}
 
@@ -192,7 +192,7 @@ export function Sidebar({
               );
             })}
 
-            {/* Inline tag creator — only shown when in a group */}
+            {/* Inline tag creator - only shown when in a group */}
             {activeGroupId && (
               <div className="mt-1">
                 <TagCreatorInline onAdd={onCreateTag} />
