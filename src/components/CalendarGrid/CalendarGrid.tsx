@@ -11,6 +11,8 @@ type CalendarGridProps = {
   events: CalendarEvent[];
   tags: Tag[];
   eventTags: EventTag[];
+  conflictIds?: ReadonlySet<string>;
+  showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
 };
@@ -97,6 +99,8 @@ export function CalendarGrid({
   events,
   tags,
   eventTags,
+  conflictIds,
+  showConflictHighlights,
   onSelectEvent,
   onDayDoubleClick,
 }: CalendarGridProps) {
@@ -138,6 +142,8 @@ export function CalendarGrid({
             tags={tags}
             eventTags={eventTags}
             multiDaySlots={multiDaySlots}
+            conflictIds={conflictIds}
+            showConflictHighlights={showConflictHighlights}
             onSelectEvent={onSelectEvent}
             onDoubleClick={onDayDoubleClick}
           />

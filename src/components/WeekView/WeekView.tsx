@@ -8,11 +8,22 @@ type WeekViewProps = {
   events: CalendarEvent[];
   tags: Tag[];
   eventTags: EventTag[];
+  conflictIds?: ReadonlySet<string>;
+  showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
 };
 
-export function WeekView({ viewDate, events, tags, eventTags, onSelectEvent, onDayDoubleClick }: WeekViewProps) {
+export function WeekView({
+  viewDate,
+  events,
+  tags,
+  eventTags,
+  conflictIds,
+  showConflictHighlights,
+  onSelectEvent,
+  onDayDoubleClick,
+}: WeekViewProps) {
   const days = getWeekDays(viewDate);
 
   return (
@@ -25,7 +36,16 @@ export function WeekView({ viewDate, events, tags, eventTags, onSelectEvent, onD
         boxShadow: "var(--shadow-md)",
       }}
     >
-      <TimeGrid days={days} events={events} tags={tags} eventTags={eventTags} onSelectEvent={onSelectEvent} onDayDoubleClick={onDayDoubleClick} />
+      <TimeGrid
+        days={days}
+        events={events}
+        tags={tags}
+        eventTags={eventTags}
+        conflictIds={conflictIds}
+        showConflictHighlights={showConflictHighlights}
+        onSelectEvent={onSelectEvent}
+        onDayDoubleClick={onDayDoubleClick}
+      />
     </div>
   );
 }

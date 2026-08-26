@@ -1,4 +1,4 @@
-import type { CalendarDay } from "@/lib/calendar";
+﻿import type { CalendarDay } from "@/lib/calendar";
 import {
   eventsForDay,
   eventsSpanningDay,
@@ -62,11 +62,17 @@ type CalendarCellProps = {
   events: CalendarEvent[];
   tags: Tag[];
   eventTags: EventTag[];
-  /** Slot index (0, 1, …) per multi-day event id — computed by CalendarGrid. */
+  /** Slot index (0, 1, …) per multi-day event id - computed by CalendarGrid. */
   multiDaySlots: Map<string, number>;
+  conflictIds?: ReadonlySet<string>;
+  showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDoubleClick?: (date: Date) => void;
 };
+
+function conflictOutline(active: boolean): string | undefined {
+  return active ? "0 0 0 2px #dc2626" : undefined;
+}
 
 export function CalendarCell({
   day,
@@ -74,6 +80,8 @@ export function CalendarCell({
   tags,
   eventTags,
   multiDaySlots,
+  conflictIds,
+  showConflictHighlights = false,
   onSelectEvent,
   onDoubleClick,
 }: CalendarCellProps) {
@@ -183,6 +191,8 @@ export function CalendarCell({
         const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
         const { left, right } = barEdges(pos);
         const showLabel = pos === "solo" || pos === "start";
+        const warn =
+          showConflictHighlights && Boolean(conflictIds?.has(event.id));
 
         return (
           <button
@@ -208,6 +218,7 @@ export function CalendarCell({
               lineHeight:   1,
               zIndex:       1,
               whiteSpace:   "nowrap",
+              boxShadow:    conflictOutline(warn),
             }}
           >
             {showLabel && (
@@ -228,6 +239,8 @@ export function CalendarCell({
       <div className="space-y-1">
         {visibleSingle.map((event) => {
           const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+          const warn =
+            showConflictHighlights && Boolean(conflictIds?.has(event.id));
           return (
             <button
               key={event.id}
@@ -242,6 +255,7 @@ export function CalendarCell({
                 borderRadius: "var(--radius-sm)",
                 background:   color,
                 color:        "#fff",
+                boxShadow:    conflictOutline(warn),
               }}
             >
               {formatEventTime(event.starts_at)} {event.title}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import type { Tables } from "@/types/database";
@@ -81,7 +81,7 @@ export function SharedWorkspace({
           background: "var(--surface-2)",
         }}
       >
-        {/* Header — always visible, click to collapse */}
+        {/* Header - always visible, click to collapse */}
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
@@ -94,7 +94,7 @@ export function SharedWorkspace({
           >
             Shared calendars
           </p>
-          {/* Chevron icon — rotates when open */}
+          {/* Chevron icon - rotates when open */}
           <svg
             viewBox="0 0 16 16"
             className="h-3.5 w-3.5 shrink-0 transition-transform duration-200"
@@ -112,7 +112,7 @@ export function SharedWorkspace({
           </svg>
         </button>
 
-        {/* Collapsible body — max-height transition keeps elements in the DOM */}
+        {/* Collapsible body - max-height transition keeps elements in the DOM */}
         <div
           style={{
             overflow: "hidden",
@@ -121,7 +121,7 @@ export function SharedWorkspace({
           }}
         >
           <div className="flex flex-col gap-3 px-3 pb-3">
-            {/* Active Calendar selector — shown when at least one group exists */}
+            {/* Active Calendar selector - shown when at least one group exists */}
             {groups.length > 0 && (
               <label className="flex flex-col gap-1 text-xs font-semibold">
                 Active calendar
@@ -145,7 +145,7 @@ export function SharedWorkspace({
               </label>
             )}
 
-            {/* Invite code section — hidden by default, reveal with toggle */}
+            {/* Invite code section - hidden by default, reveal with toggle */}
             {activeGroup && (
               <div
                 className="rounded-lg p-2.5"

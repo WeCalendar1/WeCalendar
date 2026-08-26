@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Calendar } from "@/components/Calendar";
+import { ConflictToast } from "@/components/ConflictToast";
 import { CreateEventModal, type EventDraft } from "@/components/CreateEventModal";
 import { Navbar } from "@/components/Navbar";
 import { RightPanel } from "@/components/RightPanel";
@@ -18,8 +19,8 @@ import {
 } from "@/lib/calendar";
 import type { CalendarEvent } from "@/lib/events";
 import {
-  isSchedulingConflictError,
-  SCHEDULING_CONFLICT_MESSAGE,
+  conflictFingerprint,
+  conflictingEventIds,
 } from "@/lib/scheduling";
 import { tagIdsForEvent, type EventTag, type Tag } from "@/lib/tags";
 import { createClient } from "@/lib/supabase/client";
@@ -47,6 +48,12 @@ export function AppShell() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [modalDefaultDate, setModalDefaultDate] = useState<Date>(() => startOfDay(new Date()));
+  const [dismissedConflictFingerprint, setDismissedConflictFingerprint] = useState<string | null>(
+    null,
+  );
+  const [hiddenHighlightFingerprint, setHiddenHighlightFingerprint] = useState<string | null>(
+    null,
+  );
 
   const supabase = useMemo(() => createClient(), []);
   const showRightPanel = screenView === "tasks" || screenView === "map";
@@ -297,7 +304,7 @@ export function AppShell() {
       );
     }
 
-    // Tag filter — if any tags active, only show events that have at least one
+    // Tag filter - if any tags active, only show events that have at least one
     if (activeTagIds.length > 0) {
       filtered = filtered.filter((event) => {
         const ids = tagIdsForEvent(event.id, eventTags);
@@ -307,6 +314,24 @@ export function AppShell() {
 
     return filtered;
   }, [events, searchQuery, activeTagIds, eventTags]);
+
+  const conflictIds = useMemo(() => conflictingEventIds(events), [events]);
+  const conflictFp = useMemo(() => conflictFingerprint(conflictIds), [conflictIds]);
+  const conflictTitles = useMemo(() => {
+    const titles: string[] = [];
+    const seen = new Set<string>();
+    for (const event of events) {
+      if (!conflictIds.has(event.id) || seen.has(event.id)) continue;
+      seen.add(event.id);
+      titles.push(event.title);
+    }
+    return titles;
+  }, [events, conflictIds]);
+
+  const conflictToastOpen =
+    conflictIds.size > 0 && dismissedConflictFingerprint !== conflictFp;
+  const showConflictHighlights =
+    conflictIds.size > 0 && hiddenHighlightFingerprint !== conflictFp;
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
@@ -357,9 +382,6 @@ export function AppShell() {
       .single();
 
     if (error) {
-      if (isSchedulingConflictError(error)) {
-        throw new Error(SCHEDULING_CONFLICT_MESSAGE);
-      }
       throw new Error(error.message);
     }
 
@@ -399,9 +421,6 @@ export function AppShell() {
       .select("id");
 
     if (eventsError) {
-      if (isSchedulingConflictError(eventsError)) {
-        throw new Error(SCHEDULING_CONFLICT_MESSAGE);
-      }
       throw new Error(eventsError.message);
     }
 
@@ -443,9 +462,6 @@ export function AppShell() {
       .eq("id", eventId);
 
     if (error) {
-      if (isSchedulingConflictError(error)) {
-        throw new Error(SCHEDULING_CONFLICT_MESSAGE);
-      }
       throw new Error(error.message);
     }
 
@@ -470,20 +486,6 @@ export function AppShell() {
 
   async function handleUpdateSeries(recurrenceGroupId: string, drafts: EventDraft[]) {
     if (!activeGroupId) throw new Error("Join or create a shared workspace first.");
-    
-    // Client-side overlap check to prevent deleting if the recreation will fail
-    const otherEvents = events.filter((e) => e.recurrence_group_id !== recurrenceGroupId);
-    for (const draft of drafts) {
-      const s1 = draft.startsAt.getTime();
-      const e1 = draft.endsAt.getTime();
-      for (const other of otherEvents) {
-        const s2 = new Date(other.starts_at).getTime();
-        const e2 = new Date(other.ends_at).getTime();
-        if (s1 < e2 && e1 > s2) {
-          throw new Error(SCHEDULING_CONFLICT_MESSAGE);
-        }
-      }
-    }
 
     const { error: deleteError } = await supabase
       .from("events")
@@ -677,6 +679,8 @@ export function AppShell() {
             events={filteredEvents}
             tags={tags}
             eventTags={eventTags}
+            conflictIds={conflictIds}
+            showConflictHighlights={showConflictHighlights}
             onViewDateChange={setViewDate}
             onCalendarModeChange={setCalendarMode}
             onSelectEvent={openEventDetails}
@@ -700,6 +704,16 @@ export function AppShell() {
         />
       </div>
 
+      <ConflictToast
+        open={conflictToastOpen}
+        titles={conflictTitles}
+        onDismiss={() => setDismissedConflictFingerprint(conflictFp)}
+        onHideHighlights={() => {
+          setDismissedConflictFingerprint(conflictFp);
+          setHiddenHighlightFingerprint(conflictFp);
+        }}
+      />
+
       <CreateEventModal
         key={
           selectedEvent
@@ -712,6 +726,7 @@ export function AppShell() {
         defaultDate={modalDefaultDate}
         event={selectedEvent}
         seriesEvents={seriesEvents}
+        existingEvents={events}
         tags={tags}
         initialTagIds={selectedEventTagIds}
         onClose={closeEventModal}

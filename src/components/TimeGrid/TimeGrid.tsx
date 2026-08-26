@@ -22,11 +22,22 @@ type TimeGridProps = {
   events: CalendarEvent[];
   tags: Tag[];
   eventTags: EventTag[];
+  conflictIds?: ReadonlySet<string>;
+  showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
 };
 
-export function TimeGrid({ days, events, tags, eventTags, onSelectEvent, onDayDoubleClick }: TimeGridProps) {
+export function TimeGrid({
+  days,
+  events,
+  tags,
+  eventTags,
+  conflictIds,
+  showConflictHighlights = false,
+  onSelectEvent,
+  onDayDoubleClick,
+}: TimeGridProps) {
   const now = new Date();
   const showNowLine = days.some((d) => d.isToday);
   const nowTop = (getMinutesSinceMidnight(now) / 60) * HOUR_HEIGHT_PX;
@@ -131,6 +142,8 @@ export function TimeGrid({ days, events, tags, eventTags, onSelectEvent, onDayDo
                   {eventsForDay(events, day.date).map((event) => {
                     const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
                     const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+                    const warn =
+                      showConflictHighlights && Boolean(conflictIds?.has(event.id));
                     return (
                       <button
                         key={event.id}
@@ -143,7 +156,9 @@ export function TimeGrid({ days, events, tags, eventTags, onSelectEvent, onDayDo
                           height,
                           borderRadius: "var(--radius-sm)",
                           background: color,
-                          boxShadow: "var(--shadow-sm)",
+                          boxShadow: warn
+                            ? "0 0 0 2px #dc2626, var(--shadow-sm)"
+                            : "var(--shadow-sm)",
                         }}
                       >
                         <div className="truncate">{event.title}</div>

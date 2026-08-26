@@ -1,4 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
+﻿import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 function copyCookies(from: NextResponse, to: NextResponse) {
@@ -39,7 +39,7 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresh the auth session from the cookie — no network round trip needed here.
+  // Refresh the auth session from the cookie - no network round trip needed here.
   // getUser() would make a live Supabase call on every request (causes huge latency
   // on cold/paused projects). getSession() reads the signed JWT from the cookie and
   // is sufficient for route-guard purposes.
