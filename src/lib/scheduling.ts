@@ -20,7 +20,7 @@ export const SCHEDULING_CONFLICT_MESSAGE =
 
 /**
  * Half-open ranges [start, end) so back-to-back events
- * (10:00–11:00 and 11:00–12:00) are not treated as overlaps.
+ * (10:00-11:00 and 11:00-12:00) are not treated as overlaps.
  */
 export function rangesOverlap(
   aStart: number,
@@ -51,6 +51,40 @@ export function conflictingEventIds(
     }
   }
   return ids;
+}
+
+export type ConflictGroup = {
+  /** recurrence_group_id when present, otherwise the event id */
+  key: string;
+  title: string;
+  eventIds: string[];
+};
+
+/**
+ * Groups conflicting events by series so a multi-day / repeating series
+ * counts as one conflict item instead of one per day occurrence.
+ */
+export function conflictingEventGroups(
+  events: Pick<
+    CalendarEvent,
+    "id" | "title" | "starts_at" | "ends_at" | "recurrence_group_id"
+  >[],
+): ConflictGroup[] {
+  const conflictIds = conflictingEventIds(events);
+  const byKey = new Map<string, ConflictGroup>();
+
+  for (const event of events) {
+    if (!conflictIds.has(event.id)) continue;
+    const key = event.recurrence_group_id ?? event.id;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.eventIds.push(event.id);
+    } else {
+      byKey.set(key, { key, title: event.title, eventIds: [event.id] });
+    }
+  }
+
+  return [...byKey.values()];
 }
 
 /** True if [startsAt, endsAt) overlaps any event except those in `excludeIds`. */

@@ -74,6 +74,26 @@ function conflictOutline(active: boolean): string | undefined {
   return active ? "0 0 0 2px #dc2626" : undefined;
 }
 
+/** Continuous outline for multi-day bars - no vertical seams between columns. */
+function conflictBarShadow(active: boolean, pos: SpanPosition): string | undefined {
+  if (!active) return undefined;
+  const c = "#dc2626";
+  const top = `0 -2px 0 0 ${c}`;
+  const bottom = `0 2px 0 0 ${c}`;
+  const left = `-2px 0 0 0 ${c}`;
+  const right = `2px 0 0 0 ${c}`;
+  switch (pos) {
+    case "solo":
+      return `0 0 0 2px ${c}`;
+    case "start":
+      return `${top}, ${bottom}, ${left}`;
+    case "middle":
+      return `${top}, ${bottom}`;
+    case "end":
+      return `${top}, ${bottom}, ${right}`;
+  }
+}
+
 export function CalendarCell({
   day,
   events,
@@ -218,7 +238,7 @@ export function CalendarCell({
               lineHeight:   1,
               zIndex:       1,
               whiteSpace:   "nowrap",
-              boxShadow:    conflictOutline(warn),
+              boxShadow:    conflictBarShadow(warn, pos),
             }}
           >
             {showLabel && (
