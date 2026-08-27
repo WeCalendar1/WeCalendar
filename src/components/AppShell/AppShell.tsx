@@ -20,9 +20,9 @@ import {
 import type { CalendarEvent } from "@/lib/events";
 import {
   conflictFingerprint,
-  conflictingEventIds,
+  conflictingEventGroups,
 } from "@/lib/scheduling";
-import { tagIdsForEvent, type EventTag, type Tag } from "@/lib/tags";
+import { colorForEvent, tagIdsForEvent, type EventTag, type Tag } from "@/lib/tags";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/types/database";
 
@@ -54,6 +54,7 @@ export function AppShell() {
   const [hiddenHighlightFingerprint, setHiddenHighlightFingerprint] = useState<string | null>(
     null,
   );
+  const [hiddenConflictKeys, setHiddenConflictKeys] = useState<Set<string>>(() => new Set());
 
   const supabase = useMemo(() => createClient(), []);
   const showRightPanel = screenView === "tasks" || screenView === "map";
@@ -315,23 +316,39 @@ export function AppShell() {
     return filtered;
   }, [events, searchQuery, activeTagIds, eventTags]);
 
-  const conflictIds = useMemo(() => conflictingEventIds(events), [events]);
-  const conflictFp = useMemo(() => conflictFingerprint(conflictIds), [conflictIds]);
-  const conflictTitles = useMemo(() => {
-    const titles: string[] = [];
-    const seen = new Set<string>();
-    for (const event of events) {
-      if (!conflictIds.has(event.id) || seen.has(event.id)) continue;
-      seen.add(event.id);
-      titles.push(event.title);
-    }
-    return titles;
-  }, [events, conflictIds]);
+  const conflictGroups = useMemo(() => conflictingEventGroups(events), [events]);
+  const conflictFp = useMemo(
+    () => conflictFingerprint(conflictGroups.map((g) => g.key)),
+    [conflictGroups],
+  );
+  const conflictToastItems = useMemo(
+    () =>
+      conflictGroups.map((group) => {
+        const firstId = group.eventIds[0]!;
+        return {
+          key: group.key,
+          title: group.title,
+          color: colorForEvent(firstId, eventTags, tags) ?? "#6366f1",
+        };
+      }),
+    [conflictGroups, eventTags, tags],
+  );
 
   const conflictToastOpen =
-    conflictIds.size > 0 && dismissedConflictFingerprint !== conflictFp;
-  const showConflictHighlights =
-    conflictIds.size > 0 && hiddenHighlightFingerprint !== conflictFp;
+    conflictGroups.length > 0 && dismissedConflictFingerprint !== conflictFp;
+
+  const highlightConflictIds = useMemo(() => {
+    if (conflictGroups.length === 0) return new Set<string>();
+    if (hiddenHighlightFingerprint === conflictFp) return new Set<string>();
+    const ids = new Set<string>();
+    for (const group of conflictGroups) {
+      if (hiddenConflictKeys.has(group.key)) continue;
+      for (const id of group.eventIds) ids.add(id);
+    }
+    return ids;
+  }, [conflictGroups, conflictFp, hiddenHighlightFingerprint, hiddenConflictKeys]);
+
+  const showConflictHighlights = highlightConflictIds.size > 0;
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
@@ -679,7 +696,7 @@ export function AppShell() {
             events={filteredEvents}
             tags={tags}
             eventTags={eventTags}
-            conflictIds={conflictIds}
+            conflictIds={highlightConflictIds}
             showConflictHighlights={showConflictHighlights}
             onViewDateChange={setViewDate}
             onCalendarModeChange={setCalendarMode}
@@ -706,11 +723,26 @@ export function AppShell() {
 
       <ConflictToast
         open={conflictToastOpen}
-        titles={conflictTitles}
+        items={conflictToastItems}
+        hiddenKeys={hiddenConflictKeys}
         onDismiss={() => setDismissedConflictFingerprint(conflictFp)}
         onHideHighlights={() => {
           setDismissedConflictFingerprint(conflictFp);
           setHiddenHighlightFingerprint(conflictFp);
+        }}
+        onToggleHidden={(key) => {
+          setHiddenConflictKeys((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+          });
+          // Re-enable highlights if user was in "hide all" mode
+          setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
+        }}
+        onSetHiddenKeys={(keys) => {
+          setHiddenConflictKeys(keys);
+          setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
         }}
       />
 

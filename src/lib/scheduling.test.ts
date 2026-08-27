@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   conflictFingerprint,
+  conflictingEventGroups,
   conflictingEventIds,
   draftOverlapsExisting,
   rangesOverlap,
@@ -69,6 +70,43 @@ describe("draftOverlapsExisting", () => {
       ["a"],
     );
     expect(result.overlaps).toBe(false);
+  });
+});
+
+describe("conflictingEventGroups", () => {
+  it("collapses a repeating series into one group", () => {
+    const groups = conflictingEventGroups([
+      {
+        id: "a1",
+        title: "Overlap long test",
+        recurrence_group_id: "series-a",
+        starts_at: "2025-06-15T09:00:00.000Z",
+        ends_at: "2025-06-15T10:00:00.000Z",
+      },
+      {
+        id: "a2",
+        title: "Overlap long test",
+        recurrence_group_id: "series-a",
+        starts_at: "2025-06-16T09:00:00.000Z",
+        ends_at: "2025-06-16T10:00:00.000Z",
+      },
+      {
+        id: "b1",
+        title: "Overlap long test",
+        recurrence_group_id: "series-b",
+        starts_at: "2025-06-15T09:30:00.000Z",
+        ends_at: "2025-06-15T10:30:00.000Z",
+      },
+      {
+        id: "b2",
+        title: "Overlap long test",
+        recurrence_group_id: "series-b",
+        starts_at: "2025-06-16T09:30:00.000Z",
+        ends_at: "2025-06-16T10:30:00.000Z",
+      },
+    ]);
+    expect(groups).toHaveLength(2);
+    expect(groups.map((g) => g.key).sort()).toEqual(["series-a", "series-b"]);
   });
 });
 
