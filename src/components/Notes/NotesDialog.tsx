@@ -11,6 +11,8 @@ type NotesDialogProps = {
   placeholder?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  secondaryLabel?: string;
+  inputType?: string;
   danger?: boolean;
   busy?: boolean;
   onClose: () => void;
@@ -26,6 +28,8 @@ export function NotesDialog({
   placeholder,
   confirmLabel,
   cancelLabel = "Cancel",
+  secondaryLabel,
+  inputType = "text",
   danger = false,
   busy = false,
   onClose,
@@ -102,6 +106,7 @@ export function NotesDialog({
           {mode === "prompt" && (
             <input
               autoFocus
+              type={inputType}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={placeholder}
@@ -115,7 +120,18 @@ export function NotesDialog({
             />
           )}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {secondaryLabel && (
+              <button
+                type="button"
+                onClick={() => void onConfirm("")}
+                disabled={busy}
+                className="mr-auto cursor-pointer px-1 py-2 text-sm font-semibold disabled:opacity-60"
+                style={{ color: "#dc2626" }}
+              >
+                {secondaryLabel}
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}

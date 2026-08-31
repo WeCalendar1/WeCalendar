@@ -60,6 +60,7 @@ export function NoteEditor({
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         blockquote: false,
+        link: false,
       }),
       Underline,
       Link.configure({ openOnClick: false, autolink: true }),
