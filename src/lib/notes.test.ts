@@ -5,9 +5,12 @@ import {
   canMoveNoteToFolder,
   filterNotes,
   foldersForNote,
+  folderForNote,
   folderNameForNote,
+  folderBadgeStyle,
   normalizeFolderColor,
   notePatchBumpsUpdatedAt,
+  noteShowsPrivateLock,
   notePreviewText,
   noteTitle,
   searchNotes,
@@ -179,6 +182,30 @@ describe("normalizeFolderColor", () => {
     expect(normalizeFolderColor("#bad")).toBe(DEFAULT_FOLDER_COLOR);
     expect(normalizeFolderColor(null)).toBe(DEFAULT_FOLDER_COLOR);
     expect(FOLDER_COLOR_PALETTE).toHaveLength(12);
+  });
+});
+
+describe("noteShowsPrivateLock", () => {
+  it("is true for private notes or notes in private folders", () => {
+    const folders = [
+      baseFolder({ id: "pf", visibility: "private" }),
+      baseFolder({ id: "sf", visibility: "shared" }),
+    ];
+    expect(noteShowsPrivateLock(baseNote({ visibility: "private" }), folders)).toBe(true);
+    expect(
+      noteShowsPrivateLock(baseNote({ visibility: "shared", folder_id: "pf" }), folders),
+    ).toBe(true);
+    expect(
+      noteShowsPrivateLock(baseNote({ visibility: "shared", folder_id: "sf" }), folders),
+    ).toBe(false);
+  });
+});
+
+describe("folderBadgeStyle", () => {
+  it("uses folder color for badge styling", () => {
+    const style = folderBadgeStyle("#4A86E8");
+    expect(style.color).toBe("#4A86E8");
+    expect(style.background).toBe("#4A86E822");
   });
 });
 

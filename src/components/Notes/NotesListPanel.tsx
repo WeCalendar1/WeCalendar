@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import {
-  folderNameForNote,
+  folderForNote,
+  folderBadgeStyle,
   formatNoteDate,
+  noteShowsPrivateLock,
   filterLabel,
   NOTE_DRAG_MIME,
   NOTES_SORT_OPTIONS,
@@ -14,6 +16,20 @@ import {
   type NotesFilter,
   type NotesSort,
 } from "@/lib/notes";
+
+const PRIVATE_LOCK_ICON = (
+  <svg
+    viewBox="0 0 24 24"
+    className="h-3.5 w-3.5 shrink-0"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    aria-hidden
+  >
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
 
 type NotesListPanelProps = {
   filter: NotesFilter;
@@ -144,7 +160,8 @@ export function NotesListPanel({
             {notes.map((note) => {
               const selected = note.id === selectedNoteId;
               const preview = notePreviewText(note.content);
-              const folderName = folderNameForNote(note, folders);
+              const folder = folderForNote(note, folders);
+              const showPrivateLock = noteShowsPrivateLock(note, folders);
               const isDragging = draggingNoteId === note.id;
               const menuOpen = menuNoteId === note.id;
 
@@ -179,15 +196,25 @@ export function NotesListPanel({
                     <div className="min-w-0 flex-1 text-left">
                       <div className="mb-1 flex items-start justify-between gap-2">
                         <span
-                          className="truncate text-sm font-semibold"
+                          className="flex min-w-0 items-center gap-1 truncate text-sm font-semibold"
                           style={{ color: selected || isDragging ? "var(--accent-text)" : "var(--foreground)" }}
                         >
                           {note.is_pinned && (
-                            <span className="mr-1" aria-label="Pinned">
+                            <span className="shrink-0" aria-label="Pinned">
                               📌
                             </span>
                           )}
-                          {noteTitle(note)}
+                          {showPrivateLock && (
+                            <span
+                              className="shrink-0"
+                              style={{ color: "#7c3aed" }}
+                              aria-label="Private note"
+                              title="Private note"
+                            >
+                              {PRIVATE_LOCK_ICON}
+                            </span>
+                          )}
+                          <span className="truncate">{noteTitle(note)}</span>
                         </span>
                         <span className="shrink-0 text-xs" style={{ color: "var(--text-muted)" }}>
                           {formatNoteDate(note.updated_at)}
@@ -199,8 +226,7 @@ export function NotesListPanel({
                         </p>
                       )}
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {note.visibility === "private" && <Badge label="Private" />}
-                        {folderName && <Badge label={folderName} accent />}
+                        {folder && <Badge label={folder.name} folderColor={folder.color} />}
                         {note.event_id && <Badge label="Event" />}
                         {note.linked_date && <Badge label="Date" />}
                       </div>
@@ -266,14 +292,16 @@ export function NotesListPanel({
   );
 }
 
-function Badge({ label, accent = false }: { label: string; accent?: boolean }) {
+function Badge({ label, folderColor }: { label: string; folderColor?: string }) {
+  const folderStyles = folderColor ? folderBadgeStyle(folderColor) : null;
   return (
     <span
       className="rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide"
       style={{
-        background: accent ? "var(--accent-muted)" : "var(--surface-2)",
-        color: accent ? "var(--accent)" : "var(--text-muted)",
-        textTransform: accent ? "none" : "uppercase",
+        background: folderStyles?.background ?? "var(--surface-2)",
+        color: folderStyles?.color ?? "var(--text-muted)",
+        border: folderStyles?.border ?? "1px solid transparent",
+        textTransform: folderColor ? "none" : "uppercase",
       }}
     >
       {label}
