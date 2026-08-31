@@ -1,6 +1,8 @@
-﻿"use client";
+"use client";
 
+import { useState } from "react";
 import { MiniCalendar } from "./MiniCalendar";
+
 import { SharedWorkspace } from "@/components/SharedWorkspace";
 import { TagCreatorInline } from "@/components/TagCreatorInline";
 import type { Tag } from "@/lib/tags";
@@ -41,6 +43,7 @@ export function Sidebar({
   canCreateEvent,
 }: SidebarProps) {
   const allOn = tags.length > 0 && activeTagIds.length === tags.length;
+  const [filtersOpen, setFiltersOpen] = useState(true);
 
   function toggleAll() {
     if (allOn) {
@@ -105,101 +108,140 @@ export function Sidebar({
 
         <MiniCalendar viewDate={viewDate} />
 
-        {/* Tag Filters */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
+        {/* Tag Filters — matches SharedWorkspace card style */}
+        <div
+          className="flex flex-col gap-0"
+          style={{
+            borderRadius: "var(--radius-xl)",
+            border: "1.5px solid var(--border)",
+            background: "var(--surface-2)",
+          }}
+        >
+          {/* Header - always visible, click to collapse */}
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((v) => !v)}
+            aria-expanded={filtersOpen}
+            aria-controls="sidebar-filters-body"
+            className="flex w-full cursor-pointer items-center justify-between px-3 py-2.5"
+            style={{ background: "transparent" }}
+          >
             <p
               className="text-xs font-semibold uppercase tracking-wider"
               style={{ color: "var(--text-muted)" }}
             >
               Filters
             </p>
-            {tags.length > 0 && (
-              <button
-                type="button"
-                onClick={toggleAll}
-                className="cursor-pointer text-xs font-semibold"
-                style={{ color: "var(--accent)" }}
+            <div className="flex items-center gap-2">
+              {filtersOpen && tags.length > 0 && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); toggleAll(); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); toggleAll(); } }}
+                  className="cursor-pointer text-xs font-semibold"
+                  style={{ color: "var(--accent)" }}
+                >
+                  {allOn ? "Clear all" : "Select all"}
+                </span>
+              )}
+              <svg
+                viewBox="0 0 16 16"
+                className="h-3.5 w-3.5 shrink-0 transition-transform duration-200"
+                style={{
+                  transform: filtersOpen ? "rotate(0deg)" : "rotate(-90deg)",
+                  color: "var(--text-muted)",
+                }}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
               >
-                {allOn ? "Clear all" : "Select all"}
-              </button>
-            )}
-          </div>
+                <path d="M4 6l4 4 4-4" />
+              </svg>
+            </div>
+          </button>
 
+          {/* Collapsible body */}
           <div
-            className="flex flex-col gap-1 p-2"
+            id="sidebar-filters-body"
             style={{
-              borderRadius: "var(--radius-xl)",
-              border: "1.5px solid var(--border)",
-              background: "var(--surface-2)",
+              overflow: "hidden",
+              maxHeight: filtersOpen ? "600px" : "0px",
+              transition: "max-height 0.25s ease-in-out",
             }}
           >
-            {tags.length === 0 && (
-              <p
-                className="px-2 py-1 text-xs"
-                style={{ color: "var(--text-muted)" }}
-              >
-                No tags yet - create one below.
-              </p>
-            )}
-
-            {tags.map((tag) => {
-              const active = activeTagIds.includes(tag.id);
-              return (
-                <label
-                  key={tag.id}
-                  htmlFor={`tag-${tag.id}`}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-1.5 text-sm font-medium"
-                  style={{
-                    background: active ? `${tag.color}18` : "transparent",
-                  }}
+            <div className="flex flex-col gap-1 px-3 pb-3">
+              {tags.length === 0 && (
+                <p
+                  className="px-2 py-1 text-xs"
+                  style={{ color: "var(--text-muted)" }}
                 >
-                  <span
-                    className="relative flex h-4 w-4 shrink-0 items-center justify-center"
+                  No tags yet - create one below.
+                </p>
+              )}
+
+              {tags.map((tag) => {
+                const active = activeTagIds.includes(tag.id);
+                return (
+                  <label
+                    key={tag.id}
+                    htmlFor={`tag-${tag.id}`}
+                    className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-1.5 text-sm font-medium"
                     style={{
-                      borderRadius: "var(--radius-sm)",
-                      border: active ? "none" : `2px solid ${tag.color}`,
-                      background: active ? tag.color : "transparent",
+                      background: active ? `${tag.color}18` : "transparent",
                     }}
                   >
-                    {active && (
-                      <svg
-                        viewBox="0 0 12 12"
-                        className="h-2.5 w-2.5"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M2 6l3 3 5-5" />
-                      </svg>
-                    )}
-                  </span>
-                  <input
-                    id={`tag-${tag.id}`}
-                    type="checkbox"
-                    checked={active}
-                    onChange={() => onTagToggle(tag.id)}
-                    className="sr-only"
-                  />
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ background: tag.color }}
-                  />
-                  <span style={{ color: "var(--foreground)" }}>{tag.name}</span>
-                </label>
-              );
-            })}
+                    <span
+                      className="relative flex h-4 w-4 shrink-0 items-center justify-center"
+                      style={{
+                        borderRadius: "var(--radius-sm)",
+                        border: active ? "none" : `2px solid ${tag.color}`,
+                        background: active ? tag.color : "transparent",
+                      }}
+                    >
+                      {active && (
+                        <svg
+                          viewBox="0 0 12 12"
+                          className="h-2.5 w-2.5"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M2 6l3 3 5-5" />
+                        </svg>
+                      )}
+                    </span>
+                    <input
+                      id={`tag-${tag.id}`}
+                      type="checkbox"
+                      checked={active}
+                      onChange={() => onTagToggle(tag.id)}
+                      className="sr-only"
+                    />
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ background: tag.color }}
+                    />
+                    <span style={{ color: "var(--foreground)" }}>{tag.name}</span>
+                  </label>
+                );
+              })}
 
-            {/* Inline tag creator - only shown when in a group */}
-            {activeGroupId && (
-              <div className="mt-1">
-                <TagCreatorInline onAdd={onCreateTag} />
-              </div>
-            )}
+              {/* Inline tag creator - only shown when in a group */}
+              {activeGroupId && (
+                <div className="mt-1">
+                  <TagCreatorInline onAdd={onCreateTag} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
       </div>
     </aside>
   );
