@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import { eventsForDay, eventPosition, formatEventTime, isMultiDayEvent, eventsSpanningDay, getSpanPosition } from "./events";
 import type { CalendarEvent } from "./events";
 
@@ -258,7 +258,7 @@ describe("getSpanPosition", () => {
       starts_at: new Date(2025, 5, 14, 9, 0).toISOString(), // Sat Jun 14
       ends_at:   new Date(2025, 5, 21, 17, 0).toISOString(), // Sat Jun 21
     });
-    const sun15 = new Date(2025, 5, 15); // Sunday Jun 15 — in the middle
+    const sun15 = new Date(2025, 5, 15); // Sunday Jun 15 - in the middle
     expect(getSpanPosition(longEvent, sun15, 0)).toBe("start");
   });
 });

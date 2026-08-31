@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Calendar } from "@/components/Calendar";
+import { ConflictToast } from "@/components/ConflictToast";
 import { CreateEventModal, type EventDraft } from "@/components/CreateEventModal";
 import { Navbar } from "@/components/Navbar";
 import { RightPanel } from "@/components/RightPanel";
@@ -18,10 +19,10 @@ import {
 } from "@/lib/calendar";
 import type { CalendarEvent } from "@/lib/events";
 import {
-  isSchedulingConflictError,
-  SCHEDULING_CONFLICT_MESSAGE,
+  conflictFingerprint,
+  conflictingEventGroups,
 } from "@/lib/scheduling";
-import { tagIdsForEvent, type EventTag, type Tag } from "@/lib/tags";
+import { colorForEvent, tagIdsForEvent, type EventTag, type Tag } from "@/lib/tags";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/types/database";
 
@@ -47,6 +48,13 @@ export function AppShell() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [modalDefaultDate, setModalDefaultDate] = useState<Date>(() => startOfDay(new Date()));
+  const [dismissedConflictFingerprint, setDismissedConflictFingerprint] = useState<string | null>(
+    null,
+  );
+  const [hiddenHighlightFingerprint, setHiddenHighlightFingerprint] = useState<string | null>(
+    null,
+  );
+  const [hiddenConflictKeys, setHiddenConflictKeys] = useState<Set<string>>(() => new Set());
 
   const supabase = useMemo(() => createClient(), []);
   const showRightPanel = screenView === "tasks" || screenView === "map";
@@ -297,7 +305,7 @@ export function AppShell() {
       );
     }
 
-    // Tag filter — if any tags active, only show events that have at least one
+    // Tag filter - if any tags active, only show events that have at least one
     if (activeTagIds.length > 0) {
       filtered = filtered.filter((event) => {
         const ids = tagIdsForEvent(event.id, eventTags);
@@ -307,6 +315,40 @@ export function AppShell() {
 
     return filtered;
   }, [events, searchQuery, activeTagIds, eventTags]);
+
+  const conflictGroups = useMemo(() => conflictingEventGroups(events), [events]);
+  const conflictFp = useMemo(
+    () => conflictFingerprint(conflictGroups.map((g) => g.key)),
+    [conflictGroups],
+  );
+  const conflictToastItems = useMemo(
+    () =>
+      conflictGroups.map((group) => {
+        const firstId = group.eventIds[0]!;
+        return {
+          key: group.key,
+          title: group.title,
+          color: colorForEvent(firstId, eventTags, tags) ?? "#6366f1",
+        };
+      }),
+    [conflictGroups, eventTags, tags],
+  );
+
+  const conflictToastOpen =
+    conflictGroups.length > 0 && dismissedConflictFingerprint !== conflictFp;
+
+  const highlightConflictIds = useMemo(() => {
+    if (conflictGroups.length === 0) return new Set<string>();
+    if (hiddenHighlightFingerprint === conflictFp) return new Set<string>();
+    const ids = new Set<string>();
+    for (const group of conflictGroups) {
+      if (hiddenConflictKeys.has(group.key)) continue;
+      for (const id of group.eventIds) ids.add(id);
+    }
+    return ids;
+  }, [conflictGroups, conflictFp, hiddenHighlightFingerprint, hiddenConflictKeys]);
+
+  const showConflictHighlights = highlightConflictIds.size > 0;
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
@@ -357,9 +399,6 @@ export function AppShell() {
       .single();
 
     if (error) {
-      if (isSchedulingConflictError(error)) {
-        throw new Error(SCHEDULING_CONFLICT_MESSAGE);
-      }
       throw new Error(error.message);
     }
 
@@ -399,9 +438,6 @@ export function AppShell() {
       .select("id");
 
     if (eventsError) {
-      if (isSchedulingConflictError(eventsError)) {
-        throw new Error(SCHEDULING_CONFLICT_MESSAGE);
-      }
       throw new Error(eventsError.message);
     }
 
@@ -443,9 +479,6 @@ export function AppShell() {
       .eq("id", eventId);
 
     if (error) {
-      if (isSchedulingConflictError(error)) {
-        throw new Error(SCHEDULING_CONFLICT_MESSAGE);
-      }
       throw new Error(error.message);
     }
 
@@ -470,20 +503,6 @@ export function AppShell() {
 
   async function handleUpdateSeries(recurrenceGroupId: string, drafts: EventDraft[]) {
     if (!activeGroupId) throw new Error("Join or create a shared workspace first.");
-    
-    // Client-side overlap check to prevent deleting if the recreation will fail
-    const otherEvents = events.filter((e) => e.recurrence_group_id !== recurrenceGroupId);
-    for (const draft of drafts) {
-      const s1 = draft.startsAt.getTime();
-      const e1 = draft.endsAt.getTime();
-      for (const other of otherEvents) {
-        const s2 = new Date(other.starts_at).getTime();
-        const e2 = new Date(other.ends_at).getTime();
-        if (s1 < e2 && e1 > s2) {
-          throw new Error(SCHEDULING_CONFLICT_MESSAGE);
-        }
-      }
-    }
 
     const { error: deleteError } = await supabase
       .from("events")
@@ -677,6 +696,8 @@ export function AppShell() {
             events={filteredEvents}
             tags={tags}
             eventTags={eventTags}
+            conflictIds={highlightConflictIds}
+            showConflictHighlights={showConflictHighlights}
             onViewDateChange={setViewDate}
             onCalendarModeChange={setCalendarMode}
             onSelectEvent={openEventDetails}
@@ -700,6 +721,31 @@ export function AppShell() {
         />
       </div>
 
+      <ConflictToast
+        open={conflictToastOpen}
+        items={conflictToastItems}
+        hiddenKeys={hiddenConflictKeys}
+        onDismiss={() => setDismissedConflictFingerprint(conflictFp)}
+        onHideHighlights={() => {
+          setDismissedConflictFingerprint(conflictFp);
+          setHiddenHighlightFingerprint(conflictFp);
+        }}
+        onToggleHidden={(key) => {
+          setHiddenConflictKeys((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+          });
+          // Re-enable highlights if user was in "hide all" mode
+          setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
+        }}
+        onSetHiddenKeys={(keys) => {
+          setHiddenConflictKeys(keys);
+          setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
+        }}
+      />
+
       <CreateEventModal
         key={
           selectedEvent
@@ -712,6 +758,7 @@ export function AppShell() {
         defaultDate={modalDefaultDate}
         event={selectedEvent}
         seriesEvents={seriesEvents}
+        existingEvents={events}
         tags={tags}
         initialTagIds={selectedEventTagIds}
         onClose={closeEventModal}
