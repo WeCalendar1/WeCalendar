@@ -1,9 +1,9 @@
 {
-  "0": "events.ts",
-  "1": "calendar.ts",
+  "0": "calendar.ts",
+  "1": "CreateEventModal.tsx",
   "2": "WeCalendar — Full Project Context",
   "3": "compilerOptions",
-  "4": "notes.ts",
+  "4": "NotesApp.tsx",
   "5": "WeCalendar",
   "6": "AppShell.tsx",
   "7": "20260730120000_init_schema.sql",
@@ -28,15 +28,6 @@
   "26": "public.events",
   "27": "seed.sql",
   "28": "vitest.config.mts",
-  "29": "NotesApp.tsx",
-  "30": "eventPicker.ts",
   "31": "20260826120000_allow_event_overlaps.sql",
-  "32": "public.events",
-  "33": "NotesFolderSidebar.tsx",
-  "34": "NotesFolderDialog.tsx",
-  "35": "NoteEditor.tsx",
-  "36": "NotesApp",
-  "37": "20260831120000_notes_updated_at_content_only.sql",
-  "38": "public.note_folders",
-  "39": "20260831130000_note_folder_colors.sql"
+  "32": "public.events"
 }
