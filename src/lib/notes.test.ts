@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  canMoveNoteToFolder,
   filterNotes,
+  foldersForNote,
+  folderNameForNote,
+  notePatchBumpsUpdatedAt,
   notePreviewText,
   noteTitle,
   searchNotes,
   sortNotesForList,
   type Note,
+  type NoteFolder,
 } from "./notes";
 
 const baseNote = (overrides: Partial<Note> = {}): Note => ({
@@ -81,5 +86,55 @@ describe("sortNotesForList", () => {
       baseNote({ id: "c", is_pinned: false, updated_at: "2026-01-02T00:00:00Z" }),
     ];
     expect(sortNotesForList(notes).map((n) => n.id)).toEqual(["b", "a", "c"]);
+  });
+});
+
+const baseFolder = (overrides: Partial<NoteFolder> = {}): NoteFolder => ({
+  id: "f1",
+  group_id: "g1",
+  name: "Planning",
+  visibility: "shared",
+  sort_order: 0,
+  created_by: "u1",
+  created_at: "2026-01-01T00:00:00Z",
+  updated_at: "2026-01-01T00:00:00Z",
+  ...overrides,
+});
+
+describe("foldersForNote", () => {
+  it("returns folders matching note visibility", () => {
+    const folders = [
+      baseFolder({ id: "s1", visibility: "shared" }),
+      baseFolder({ id: "p1", visibility: "private" }),
+    ];
+    expect(foldersForNote(baseNote({ visibility: "shared" }), folders).map((f) => f.id)).toEqual([
+      "s1",
+    ]);
+  });
+});
+
+describe("canMoveNoteToFolder", () => {
+  it("allows matching visibility only", () => {
+    expect(canMoveNoteToFolder(baseNote({ visibility: "shared" }), baseFolder())).toBe(true);
+    expect(
+      canMoveNoteToFolder(baseNote({ visibility: "private" }), baseFolder({ visibility: "private" })),
+    ).toBe(true);
+    expect(canMoveNoteToFolder(baseNote({ visibility: "private" }), baseFolder())).toBe(false);
+  });
+});
+
+describe("folderNameForNote", () => {
+  it("returns folder name when assigned", () => {
+    const folders = [baseFolder({ id: "f9", name: "Trips" })];
+    expect(folderNameForNote(baseNote({ folder_id: "f9" }), folders)).toBe("Trips");
+  });
+});
+
+describe("notePatchBumpsUpdatedAt", () => {
+  it("is true only for title or content changes", () => {
+    expect(notePatchBumpsUpdatedAt({ folder_id: "f1" })).toBe(false);
+    expect(notePatchBumpsUpdatedAt({ is_pinned: true })).toBe(false);
+    expect(notePatchBumpsUpdatedAt({ title: "Hi" })).toBe(true);
+    expect(notePatchBumpsUpdatedAt({ content: { type: "doc", content: [] } })).toBe(true);
   });
 });

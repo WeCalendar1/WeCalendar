@@ -64,6 +64,12 @@ export function formatNoteDate(iso: string): string {
   });
 }
 
+export function notePatchBumpsUpdatedAt(
+  patch: Partial<Pick<Note, "title" | "content" | "folder_id" | "event_id" | "linked_date" | "visibility" | "is_pinned">>,
+): boolean {
+  return patch.title !== undefined || patch.content !== undefined;
+}
+
 export function sortNotesForList(notes: Note[]): Note[] {
   return [...notes].sort((a, b) => {
     if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
@@ -104,6 +110,31 @@ export function searchNotes(notes: Note[], query: string): Note[] {
     const preview = notePreviewText(note.content).toLowerCase();
     return title.includes(q) || preview.includes(q);
   });
+}
+
+export const NOTE_DRAG_MIME = "application/x-wecalendar-note-id";
+export const NOTE_DROP_REMOVE = "__remove__";
+
+export function foldersForNote(
+  note: Pick<Note, "visibility">,
+  folders: NoteFolder[],
+): NoteFolder[] {
+  return folders.filter((folder) => folder.visibility === note.visibility);
+}
+
+export function folderNameForNote(
+  note: Pick<Note, "folder_id">,
+  folders: NoteFolder[],
+): string | null {
+  if (!note.folder_id) return null;
+  return folders.find((folder) => folder.id === note.folder_id)?.name ?? null;
+}
+
+export function canMoveNoteToFolder(
+  note: Pick<Note, "visibility">,
+  folder: NoteFolder,
+): boolean {
+  return note.visibility === folder.visibility;
 }
 
 export function filterLabel(filter: NotesFilter, folders: NoteFolder[]): string {

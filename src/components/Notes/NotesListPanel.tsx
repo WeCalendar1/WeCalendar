@@ -1,11 +1,14 @@
 "use client";
 
-import type { Note } from "@/lib/notes";
+import { useState } from "react";
 import {
-  filterLabel,
+  folderNameForNote,
   formatNoteDate,
+  filterLabel,
+  NOTE_DRAG_MIME,
   notePreviewText,
   noteTitle,
+  type Note,
   type NoteFolder,
   type NotesFilter,
 } from "@/lib/notes";
@@ -16,9 +19,13 @@ type NotesListPanelProps = {
   notes: Note[];
   selectedNoteId: string | null;
   searchQuery: string;
+  draggingNoteId: string | null;
   onSearchChange: (query: string) => void;
   onSelectNote: (noteId: string) => void;
   onCreateNote: () => void;
+  onDragNoteStart: (noteId: string) => void;
+  onDragNoteEnd: () => void;
+  onRequestMoveNote: (note: Note) => void;
 };
 
 export function NotesListPanel({
@@ -27,10 +34,15 @@ export function NotesListPanel({
   notes,
   selectedNoteId,
   searchQuery,
+  draggingNoteId,
   onSearchChange,
   onSelectNote,
   onCreateNote,
+  onDragNoteStart,
+  onDragNoteEnd,
+  onRequestMoveNote,
 }: NotesListPanelProps) {
+  const [menuNoteId, setMenuNoteId] = useState<string | null>(null);
   const heading = filterLabel(filter, folders);
 
   return (
@@ -77,6 +89,11 @@ export function NotesListPanel({
             style={{ color: "var(--foreground)" }}
           />
         </div>
+        {draggingNoteId && (
+          <p className="mt-2 text-xs" style={{ color: "var(--accent)" }}>
+            Drop a note onto a folder in the sidebar to move it.
+          </p>
+        )}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -99,47 +116,118 @@ export function NotesListPanel({
             {notes.map((note) => {
               const selected = note.id === selectedNoteId;
               const preview = notePreviewText(note.content);
+              const folderName = folderNameForNote(note, folders);
+              const isDragging = draggingNoteId === note.id;
+              const menuOpen = menuNoteId === note.id;
+
               return (
-                <li key={note.id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelectNote(note.id)}
-                    className="w-full cursor-pointer border-b px-4 py-3 text-left"
-                    style={{
-                      borderColor: "var(--border)",
-                      background: selected ? "var(--accent-muted)" : "transparent",
-                      transition: "background var(--transition-fast)",
-                    }}
-                  >
-                    <div className="mb-1 flex items-start justify-between gap-2">
-                      <span
-                        className="truncate text-sm font-semibold"
-                        style={{ color: selected ? "var(--accent-text)" : "var(--foreground)" }}
-                      >
-                        {note.is_pinned && (
-                          <span className="mr-1" aria-label="Pinned">
-                            📌
-                          </span>
-                        )}
-                        {noteTitle(note)}
-                      </span>
-                      <span className="shrink-0 text-xs" style={{ color: "var(--text-muted)" }}>
-                        {formatNoteDate(note.updated_at)}
-                      </span>
-                    </div>
-                    {preview && (
-                      <p className="line-clamp-2 text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                        {preview}
-                      </p>
-                    )}
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      {note.visibility === "private" && (
-                        <Badge label="Private" />
+                <li
+                  key={note.id}
+                  draggable
+                  onDragStart={(e) => {
+                    if ((e.target as HTMLElement).closest("[data-note-action]")) {
+                      e.preventDefault();
+                      return;
+                    }
+                    e.dataTransfer.setData(NOTE_DRAG_MIME, note.id);
+                    e.dataTransfer.effectAllowed = "move";
+                    onDragNoteStart(note.id);
+                  }}
+                  onDragEnd={onDragNoteEnd}
+                  onClick={() => onSelectNote(note.id)}
+                  className="group relative cursor-grab border-b active:cursor-grabbing"
+                  style={{
+                    borderColor: "var(--border)",
+                    background: isDragging
+                      ? "var(--accent-muted)"
+                      : selected
+                        ? "var(--accent-muted)"
+                        : "transparent",
+                    boxShadow: isDragging ? "inset 3px 0 0 var(--accent)" : undefined,
+                    transition: "background var(--transition-fast), box-shadow var(--transition-fast)",
+                  }}
+                >
+                  <div className="flex items-stretch px-4 py-3 pr-2">
+                    <div className="min-w-0 flex-1 text-left">
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <span
+                          className="truncate text-sm font-semibold"
+                          style={{ color: selected || isDragging ? "var(--accent-text)" : "var(--foreground)" }}
+                        >
+                          {note.is_pinned && (
+                            <span className="mr-1" aria-label="Pinned">
+                              📌
+                            </span>
+                          )}
+                          {noteTitle(note)}
+                        </span>
+                        <span className="shrink-0 text-xs" style={{ color: "var(--text-muted)" }}>
+                          {formatNoteDate(note.updated_at)}
+                        </span>
+                      </div>
+                      {preview && (
+                        <p className="line-clamp-2 text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                          {preview}
+                        </p>
                       )}
-                      {note.event_id && <Badge label="Event" />}
-                      {note.linked_date && <Badge label="Date" />}
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {note.visibility === "private" && <Badge label="Private" />}
+                        {folderName && <Badge label={folderName} accent />}
+                        {note.event_id && <Badge label="Event" />}
+                        {note.linked_date && <Badge label="Date" />}
+                      </div>
                     </div>
-                  </button>
+
+                    <div className="relative flex shrink-0 items-start" data-note-action>
+                      <button
+                        type="button"
+                        draggable={false}
+                        aria-label={`Note actions for ${noteTitle(note)}`}
+                        aria-expanded={menuOpen}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuNoteId(menuOpen ? null : note.id);
+                        }}
+                        className="cursor-pointer rounded-md px-1.5 py-1 text-sm opacity-0 transition-opacity group-hover:opacity-100"
+                        style={{
+                          color: "var(--text-muted)",
+                          background: menuOpen ? "var(--surface-2)" : "transparent",
+                        }}
+                      >
+                        ⋯
+                      </button>
+                      {menuOpen && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            aria-hidden
+                            onClick={() => setMenuNoteId(null)}
+                          />
+                          <div
+                            className="absolute right-0 top-8 z-20 min-w-[10rem] py-1"
+                            style={{
+                              borderRadius: "var(--radius-md)",
+                              border: "1px solid var(--border)",
+                              background: "var(--surface)",
+                              boxShadow: "var(--shadow-md)",
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className="flex w-full cursor-pointer px-3 py-2 text-left text-sm font-medium"
+                              style={{ color: "var(--foreground)" }}
+                              onClick={() => {
+                                setMenuNoteId(null);
+                                onRequestMoveNote(note);
+                              }}
+                            >
+                              Move to folder…
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </li>
               );
             })}
@@ -150,11 +238,15 @@ export function NotesListPanel({
   );
 }
 
-function Badge({ label }: { label: string }) {
+function Badge({ label, accent = false }: { label: string; accent?: boolean }) {
   return (
     <span
-      className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-      style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
+      className="rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide"
+      style={{
+        background: accent ? "var(--accent-muted)" : "var(--surface-2)",
+        color: accent ? "var(--accent)" : "var(--text-muted)",
+        textTransform: accent ? "none" : "uppercase",
+      }}
     >
       {label}
     </span>
