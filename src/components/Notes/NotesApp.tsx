@@ -60,9 +60,9 @@ type NotesAppProps = {
     >,
   ) => Promise<void>;
   onDeleteNote: (noteId: string) => Promise<void>;
-  onCreateFolder: (name: string, visibility: "shared" | "private") => Promise<void>;
+  onCreateFolder: (name: string, visibility: "shared" | "private", color: string) => Promise<void>;
   onDeleteFolder: (folderId: string) => Promise<void>;
-  onRenameFolder: (folderId: string, name: string) => Promise<void>;
+  onUpdateFolder: (folderId: string, patch: { name: string; color: string }) => Promise<void>;
 };
 
 export function NotesApp({
@@ -87,7 +87,7 @@ export function NotesApp({
   onDeleteNote,
   onCreateFolder,
   onDeleteFolder,
-  onRenameFolder,
+  onUpdateFolder,
 }: NotesAppProps) {
   const [localSearch, setLocalSearch] = useState("");
   const [deleteNoteTarget, setDeleteNoteTarget] = useState<{ id: string; title: string } | null>(
@@ -209,7 +209,7 @@ export function NotesApp({
         onFilterChange={onFilterChange}
         onCreateFolder={onCreateFolder}
         onDeleteFolder={onDeleteFolder}
-        onRenameFolder={onRenameFolder}
+        onUpdateFolder={onUpdateFolder}
         draggingNoteId={draggingNoteId}
         dragOverTarget={dragOverTarget}
         onDragOverTarget={setDragOverTarget}

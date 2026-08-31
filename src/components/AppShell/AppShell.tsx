@@ -18,7 +18,7 @@ import {
   type ScreenView,
 } from "@/lib/calendar";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
-import { EMPTY_TIPTAP_DOC, notePatchBumpsUpdatedAt } from "@/lib/notes";
+import { EMPTY_TIPTAP_DOC, notePatchBumpsUpdatedAt, normalizeFolderColor } from "@/lib/notes";
 import type { CalendarEvent } from "@/lib/events";
 import {
   conflictFingerprint,
@@ -648,12 +648,17 @@ export function AppShell() {
     if (selectedNoteId === noteId) setSelectedNoteId(null);
   }
 
-  async function handleCreateNoteFolder(name: string, visibility: "shared" | "private") {
+  async function handleCreateNoteFolder(
+    name: string,
+    visibility: "shared" | "private",
+    color: string,
+  ) {
     if (!user || !activeGroupId) throw new Error("Join or create a workspace first.");
     const { error } = await supabase.from("note_folders").insert({
       group_id: activeGroupId,
       name,
       visibility,
+      color: normalizeFolderColor(color),
       created_by: user.id,
       sort_order: noteFolders.filter((f) => f.visibility === visibility).length,
     });
@@ -667,13 +672,22 @@ export function AppShell() {
     await loadNotes(activeGroupId);
   }
 
-  async function handleRenameNoteFolder(folderId: string, name: string) {
-    const trimmed = name.trim();
+  async function handleUpdateNoteFolder(
+    folderId: string,
+    patch: { name: string; color: string },
+  ) {
+    const trimmed = patch.name.trim();
     if (!trimmed) throw new Error("Folder name cannot be empty.");
-    const { error } = await supabase.from("note_folders").update({ name: trimmed }).eq("id", folderId);
+    const color = normalizeFolderColor(patch.color);
+    const { error } = await supabase
+      .from("note_folders")
+      .update({ name: trimmed, color })
+      .eq("id", folderId);
     if (error) throw new Error(error.message);
     setNoteFolders((prev) =>
-      prev.map((folder) => (folder.id === folderId ? { ...folder, name: trimmed } : folder)),
+      prev.map((folder) =>
+        folder.id === folderId ? { ...folder, name: trimmed, color } : folder,
+      ),
     );
   }
 
@@ -773,7 +787,7 @@ export function AppShell() {
             onDeleteNote={handleDeleteNote}
             onCreateFolder={handleCreateNoteFolder}
             onDeleteFolder={handleDeleteNoteFolder}
-            onRenameFolder={handleRenameNoteFolder}
+            onUpdateFolder={handleUpdateNoteFolder}
           />
         ) : (
           <>

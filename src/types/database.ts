@@ -307,6 +307,7 @@ export type Database = {
           id: string;
           group_id: string;
           name: string;
+          color: string;
           visibility: "shared" | "private";
           sort_order: number;
           created_by: string;
@@ -317,6 +318,7 @@ export type Database = {
           id?: string;
           group_id: string;
           name: string;
+          color?: string;
           visibility?: "shared" | "private";
           sort_order?: number;
           created_by: string;
@@ -327,6 +329,7 @@ export type Database = {
           id?: string;
           group_id?: string;
           name?: string;
+          color?: string;
           visibility?: "shared" | "private";
           sort_order?: number;
           created_by?: string;

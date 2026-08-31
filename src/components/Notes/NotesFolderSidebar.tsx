@@ -6,6 +6,7 @@ import type { NoteFolder, NotesFilter } from "@/lib/notes";
 import { NOTE_DRAG_MIME, NOTE_DROP_REMOVE } from "@/lib/notes";
 import type { Tables } from "@/types/database";
 import { NotesDialog } from "./NotesDialog";
+import { FolderColorIcon, NotesFolderDialog } from "./NotesFolderDialog";
 
 type Group = Tables<"groups">;
 
@@ -20,9 +21,9 @@ type NotesFolderSidebarProps = {
   onCreateGroup: (name: string) => Promise<void>;
   onJoinGroup: (inviteCode: string) => Promise<void>;
   onFilterChange: (filter: NotesFilter) => void;
-  onCreateFolder: (name: string, visibility: "shared" | "private") => Promise<void>;
+  onCreateFolder: (name: string, visibility: "shared" | "private", color: string) => Promise<void>;
   onDeleteFolder: (folderId: string) => Promise<void>;
-  onRenameFolder: (folderId: string, name: string) => Promise<void>;
+  onUpdateFolder: (folderId: string, patch: { name: string; color: string }) => Promise<void>;
   draggingNoteId: string | null;
   dragOverTarget: string | null;
   onDragOverTarget: (target: string | null) => void;
@@ -31,7 +32,7 @@ type NotesFolderSidebarProps = {
 
 type FolderDialogState =
   | { type: "create"; visibility: "shared" | "private" }
-  | { type: "rename"; folderId: string; folderName: string }
+  | { type: "edit"; folderId: string; folderName: string; color: string; visibility: "shared" | "private" }
   | { type: "delete"; folderId: string; folderName: string; visibility: "shared" | "private" }
   | null;
 
@@ -91,12 +92,6 @@ const NOTES_ICON = (
   </svg>
 );
 
-const FOLDER_ICON = (
-  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-  </svg>
-);
-
 const LOCK_ICON = (
   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
     <rect x="3" y="11" width="18" height="11" rx="2" />
@@ -131,7 +126,7 @@ export function NotesFolderSidebar({
   onFilterChange,
   onCreateFolder,
   onDeleteFolder,
-  onRenameFolder,
+  onUpdateFolder,
   draggingNoteId,
   dragOverTarget,
   onDragOverTarget,
@@ -162,16 +157,14 @@ export function NotesFolderSidebar({
   const sharedFolders = folders.filter((f) => f.visibility === "shared");
   const privateFolders = folders.filter((f) => f.visibility === "private");
 
-  async function handleDialogConfirm(value?: string) {
+  async function handleFolderFormConfirm(name: string, color: string) {
     if (!dialog) return;
     setBusy(true);
     try {
-      if (dialog.type === "create" && value) {
-        await onCreateFolder(value, dialog.visibility);
-      } else if (dialog.type === "rename" && value) {
-        await onRenameFolder(dialog.folderId, value);
-      } else if (dialog.type === "delete") {
-        await onDeleteFolder(dialog.folderId);
+      if (dialog.type === "create") {
+        await onCreateFolder(name, dialog.visibility, color);
+      } else if (dialog.type === "edit") {
+        await onUpdateFolder(dialog.folderId, { name, color });
       }
       setDialog(null);
     } finally {
@@ -179,39 +172,51 @@ export function NotesFolderSidebar({
     }
   }
 
-  const dialogProps =
+  async function handleDeleteConfirm() {
+    if (!dialog || dialog.type !== "delete") return;
+    setBusy(true);
+    try {
+      await onDeleteFolder(dialog.folderId);
+      setDialog(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const folderFormDialog =
     dialog?.type === "create"
       ? {
+          mode: "create" as const,
           title: dialog.visibility === "shared" ? "New shared folder" : "New private folder",
           description:
             dialog.visibility === "shared"
               ? "Everyone in this workspace can see notes in shared folders."
               : "Only you can see notes in private folders.",
-          mode: "prompt" as const,
-          defaultValue: "",
-          placeholder: "Folder name",
           confirmLabel: "Create",
         }
-      : dialog?.type === "rename"
+      : dialog?.type === "edit"
         ? {
-            title: "Rename folder",
-            mode: "prompt" as const,
-            defaultValue: dialog.folderName,
-            placeholder: "Folder name",
+            mode: "edit" as const,
+            title: "Edit folder",
+            defaultName: dialog.folderName,
+            defaultColor: dialog.color,
             confirmLabel: "Save",
           }
-        : dialog?.type === "delete"
-          ? {
-              title: `Delete "${dialog.folderName}"?`,
-              description:
-                dialog.visibility === "shared"
-                  ? "Notes in this folder will stay in your workspace but won't belong to a folder anymore."
-                  : "Notes in this folder will stay in your private notes but won't belong to a folder anymore.",
-              mode: "confirm" as const,
-              danger: true,
-              confirmLabel: "Delete folder",
-            }
-          : null;
+        : null;
+
+  const deleteDialogProps =
+    dialog?.type === "delete"
+      ? {
+          title: `Delete "${dialog.folderName}"?`,
+          description:
+            dialog.visibility === "shared"
+              ? "Notes in this folder will stay in your workspace but won't belong to a folder anymore."
+              : "Notes in this folder will stay in your private notes but won't belong to a folder anymore.",
+          mode: "confirm" as const,
+          danger: true,
+          confirmLabel: "Delete folder",
+        }
+      : null;
 
   return (
     <>
@@ -309,8 +314,14 @@ export function NotesFolderSidebar({
                 active={filter.type === "folder" && filter.folderId === folder.id}
                 dragOver={dragOverTarget === folder.id}
                 onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
-                onRename={() =>
-                  setDialog({ type: "rename", folderId: folder.id, folderName: folder.name })
+                onEdit={() =>
+                  setDialog({
+                    type: "edit",
+                    folderId: folder.id,
+                    folderName: folder.name,
+                    color: folder.color,
+                    visibility: "shared",
+                  })
                 }
                 onDelete={() =>
                   setDialog({
@@ -356,8 +367,14 @@ export function NotesFolderSidebar({
                 active={filter.type === "folder" && filter.folderId === folder.id}
                 dragOver={dragOverTarget === folder.id}
                 onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
-                onRename={() =>
-                  setDialog({ type: "rename", folderId: folder.id, folderName: folder.name })
+                onEdit={() =>
+                  setDialog({
+                    type: "edit",
+                    folderId: folder.id,
+                    folderName: folder.name,
+                    color: folder.color,
+                    visibility: "private",
+                  })
                 }
                 onDelete={() =>
                   setDialog({
@@ -381,13 +398,23 @@ export function NotesFolderSidebar({
         </div>
       </aside>
 
-      {dialogProps && (
+      {folderFormDialog && (
+        <NotesFolderDialog
+          open
+          busy={busy}
+          onClose={() => setDialog(null)}
+          onConfirm={handleFolderFormConfirm}
+          {...folderFormDialog}
+        />
+      )}
+
+      {deleteDialogProps && (
         <NotesDialog
           open
           busy={busy}
           onClose={() => setDialog(null)}
-          onConfirm={handleDialogConfirm}
-          {...dialogProps}
+          onConfirm={handleDeleteConfirm}
+          {...deleteDialogProps}
         />
       )}
     </>
@@ -399,7 +426,7 @@ function FolderRow({
   active,
   dragOver,
   onSelect,
-  onRename,
+  onEdit,
   onDelete,
   onDragOver,
   onDragLeave,
@@ -409,7 +436,7 @@ function FolderRow({
   active: boolean;
   dragOver: boolean;
   onSelect: () => void;
-  onRename: () => void;
+  onEdit: () => void;
   onDelete: () => void;
   onDragOver: (event: DragEvent) => void;
   onDragLeave: () => void;
@@ -437,11 +464,11 @@ function FolderRow({
           color: active ? "var(--accent)" : "var(--foreground)",
         }}
       >
-        {FOLDER_ICON}
+        <FolderColorIcon color={folder.color} />
         <span className="truncate">{folder.name}</span>
       </button>
       <div className="hidden gap-0.5 pr-1 group-hover:flex">
-        <button type="button" onClick={onRename} className="cursor-pointer px-1 text-xs" style={{ color: "var(--text-muted)" }}>
+        <button type="button" onClick={onEdit} className="cursor-pointer px-1 text-xs" style={{ color: "var(--text-muted)" }}>
           ✎
         </button>
         <button type="button" onClick={onDelete} className="cursor-pointer px-1 text-xs" style={{ color: "#dc2626" }}>
