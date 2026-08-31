@@ -9,6 +9,7 @@ import {
   sortNotesForList,
 } from "@/lib/notes";
 import { NoteEditor } from "./NoteEditor";
+import { NotesDialog } from "./NotesDialog";
 import { NotesFolderSidebar } from "./NotesFolderSidebar";
 import { NotesListPanel } from "./NotesListPanel";
 
@@ -83,6 +84,10 @@ export function NotesApp({
   onRenameFolder,
 }: NotesAppProps) {
   const [localSearch, setLocalSearch] = useState("");
+  const [deleteNoteTarget, setDeleteNoteTarget] = useState<{ id: string; title: string } | null>(
+    null,
+  );
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const effectiveSearch = localSearch || searchQuery;
 
@@ -116,6 +121,22 @@ export function NotesApp({
   function handleLocalSearch(query: string) {
     setLocalSearch(query);
     onSearchChange(query);
+  }
+
+  function requestDeleteNote(note: Note) {
+    setDeleteNoteTarget({ id: note.id, title: note.title.trim() || "Untitled note" });
+  }
+
+  async function confirmDeleteNote() {
+    if (!deleteNoteTarget) return;
+    setDeleteBusy(true);
+    try {
+      await onDeleteNote(deleteNoteTarget.id);
+      onSelectNote(visibleNotes.find((n) => n.id !== deleteNoteTarget.id)?.id ?? null);
+      setDeleteNoteTarget(null);
+    } finally {
+      setDeleteBusy(false);
+    }
   }
 
   if (!groupId) {
@@ -195,13 +216,7 @@ export function NotesApp({
               events={events}
               folders={folders}
               onUpdate={(patch) => void onUpdateNote(selectedNote.id, patch)}
-              onDelete={() => {
-                if (window.confirm("Delete this note?")) {
-                  void onDeleteNote(selectedNote.id).then(() => {
-                    onSelectNote(visibleNotes.find((n) => n.id !== selectedNote.id)?.id ?? null);
-                  });
-                }
-              }}
+              onDelete={() => requestDeleteNote(selectedNote)}
             />
             <NoteEditor
               key={selectedNote.id}
@@ -238,6 +253,18 @@ export function NotesApp({
       </div>
         </div>
       </div>
+
+      <NotesDialog
+        open={deleteNoteTarget !== null}
+        title={deleteNoteTarget ? `Delete "${deleteNoteTarget.title}"?` : ""}
+        description="This note will be permanently removed. This cannot be undone."
+        mode="confirm"
+        danger
+        busy={deleteBusy}
+        confirmLabel="Delete note"
+        onClose={() => setDeleteNoteTarget(null)}
+        onConfirm={confirmDeleteNote}
+      />
     </div>
   );
 }
