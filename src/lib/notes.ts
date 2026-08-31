@@ -96,10 +96,59 @@ export function notePatchBumpsUpdatedAt(
   return patch.title !== undefined || patch.content !== undefined;
 }
 
-export function sortNotesForList(notes: Note[]): Note[] {
+export type NotesSort =
+  | "updated"
+  | "updated-oldest"
+  | "title-asc"
+  | "title-desc"
+  | "length-asc"
+  | "length-desc"
+  | "created-newest"
+  | "created-oldest";
+
+export const DEFAULT_NOTES_SORT: NotesSort = "updated";
+
+export const NOTES_SORT_OPTIONS: { value: NotesSort; label: string }[] = [
+  { value: "updated", label: "Date edited (newest)" },
+  { value: "updated-oldest", label: "Date edited (oldest)" },
+  { value: "title-asc", label: "Title (A–Z)" },
+  { value: "title-desc", label: "Title (Z–A)" },
+  { value: "length-desc", label: "Length (longest)" },
+  { value: "length-asc", label: "Length (shortest)" },
+  { value: "created-newest", label: "Date created (newest)" },
+  { value: "created-oldest", label: "Date created (oldest)" },
+];
+
+export function noteCharacterCount(note: Pick<Note, "title" | "content">): number {
+  return note.title.length + notePreviewText(note.content).length;
+}
+
+export function sortNotesForList(
+  notes: Note[],
+  sort: NotesSort = DEFAULT_NOTES_SORT,
+): Note[] {
   return [...notes].sort((a, b) => {
     if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
-    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+
+    switch (sort) {
+      case "title-asc":
+        return noteTitle(a).localeCompare(noteTitle(b), undefined, { sensitivity: "base" });
+      case "title-desc":
+        return noteTitle(b).localeCompare(noteTitle(a), undefined, { sensitivity: "base" });
+      case "length-asc":
+        return noteCharacterCount(a) - noteCharacterCount(b);
+      case "length-desc":
+        return noteCharacterCount(b) - noteCharacterCount(a);
+      case "created-oldest":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "created-newest":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case "updated-oldest":
+        return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+      case "updated":
+      default:
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    }
   });
 }
 

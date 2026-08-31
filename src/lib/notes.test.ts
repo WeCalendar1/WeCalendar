@@ -90,6 +90,45 @@ describe("sortNotesForList", () => {
     ];
     expect(sortNotesForList(notes).map((n) => n.id)).toEqual(["b", "a", "c"]);
   });
+
+  it("sorts by title ascending", () => {
+    const notes = [
+      baseNote({ id: "b", title: "Bravo" }),
+      baseNote({ id: "a", title: "Alpha" }),
+    ];
+    expect(sortNotesForList(notes, "title-asc").map((n) => n.id)).toEqual(["a", "b"]);
+  });
+
+  it("sorts by created date newest first", () => {
+    const notes = [
+      baseNote({ id: "old", created_at: "2026-01-01T00:00:00Z" }),
+      baseNote({ id: "new", created_at: "2026-01-03T00:00:00Z" }),
+    ];
+    expect(sortNotesForList(notes, "created-newest").map((n) => n.id)).toEqual(["new", "old"]);
+  });
+
+  it("sorts by updated date oldest first", () => {
+    const notes = [
+      baseNote({ id: "new", updated_at: "2026-01-03T00:00:00Z" }),
+      baseNote({ id: "old", updated_at: "2026-01-01T00:00:00Z" }),
+    ];
+    expect(sortNotesForList(notes, "updated-oldest").map((n) => n.id)).toEqual(["old", "new"]);
+  });
+
+  it("sorts by character count descending", () => {
+    const notes = [
+      baseNote({ id: "short", title: "Hi" }),
+      baseNote({
+        id: "long",
+        title: "Hello",
+        content: {
+          type: "doc",
+          content: [{ type: "paragraph", content: [{ type: "text", text: "extra body text" }] }],
+        },
+      }),
+    ];
+    expect(sortNotesForList(notes, "length-desc").map((n) => n.id)).toEqual(["long", "short"]);
+  });
 });
 
 const baseFolder = (overrides: Partial<NoteFolder> = {}): NoteFolder => ({
