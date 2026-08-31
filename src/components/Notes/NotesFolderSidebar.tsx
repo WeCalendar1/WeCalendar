@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { NoteFolder, NotesFilter } from "@/lib/notes";
+import { NotesDialog } from "./NotesDialog";
 
 type NotesFolderSidebarProps = {
   filter: NotesFilter;
@@ -12,6 +14,12 @@ type NotesFolderSidebarProps = {
   onDeleteFolder: (folderId: string) => Promise<void>;
   onRenameFolder: (folderId: string, name: string) => Promise<void>;
 };
+
+type FolderDialogState =
+  | { type: "create"; visibility: "shared" | "private" }
+  | { type: "rename"; folderId: string; folderName: string }
+  | { type: "delete"; folderId: string; folderName: string; visibility: "shared" | "private" }
+  | null;
 
 function NavItem({
   active,
@@ -106,137 +114,199 @@ export function NotesFolderSidebar({
   onDeleteFolder,
   onRenameFolder,
 }: NotesFolderSidebarProps) {
+  const [dialog, setDialog] = useState<FolderDialogState>(null);
+  const [busy, setBusy] = useState(false);
+
   const sharedFolders = folders.filter((f) => f.visibility === "shared");
   const privateFolders = folders.filter((f) => f.visibility === "private");
 
-  async function promptNewFolder(visibility: "shared" | "private") {
-    const name = window.prompt(
-      visibility === "shared" ? "New shared folder name" : "New private folder name",
-    );
-    if (!name?.trim()) return;
-    await onCreateFolder(name.trim(), visibility);
+  async function handleDialogConfirm(value?: string) {
+    if (!dialog) return;
+    setBusy(true);
+    try {
+      if (dialog.type === "create" && value) {
+        await onCreateFolder(value, dialog.visibility);
+      } else if (dialog.type === "rename" && value) {
+        await onRenameFolder(dialog.folderId, value);
+      } else if (dialog.type === "delete") {
+        await onDeleteFolder(dialog.folderId);
+      }
+      setDialog(null);
+    } finally {
+      setBusy(false);
+    }
   }
 
+  const dialogProps =
+    dialog?.type === "create"
+      ? {
+          title: dialog.visibility === "shared" ? "New shared folder" : "New private folder",
+          description:
+            dialog.visibility === "shared"
+              ? "Everyone in this workspace can see notes in shared folders."
+              : "Only you can see notes in private folders.",
+          mode: "prompt" as const,
+          defaultValue: "",
+          placeholder: "Folder name",
+          confirmLabel: "Create",
+        }
+      : dialog?.type === "rename"
+        ? {
+            title: "Rename folder",
+            mode: "prompt" as const,
+            defaultValue: dialog.folderName,
+            placeholder: "Folder name",
+            confirmLabel: "Save",
+          }
+        : dialog?.type === "delete"
+          ? {
+              title: `Delete "${dialog.folderName}"?`,
+              description:
+                dialog.visibility === "shared"
+                  ? "Notes in this folder will stay in your workspace but won't belong to a folder anymore."
+                  : "Notes in this folder will stay in your private notes but won't belong to a folder anymore.",
+              mode: "confirm" as const,
+              danger: true,
+              confirmLabel: "Delete folder",
+            }
+          : null;
+
   return (
-    <aside
-      className="flex w-52 shrink-0 flex-col overflow-y-auto border-r py-3"
-      style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-    >
-      <div className="space-y-0.5 px-2">
-        <NavItem
-          active={isFilterActive(filter, { type: "all" })}
-          label="All Notes"
-          icon={NOTES_ICON}
-          onClick={() => onFilterChange({ type: "all" })}
-        />
-        <NavItem
-          active={isFilterActive(filter, { type: "pinned" })}
-          label="Pinned"
-          icon={PIN_ICON}
-          onClick={() => onFilterChange({ type: "pinned" })}
-        />
-        <NavItem
-          active={isFilterActive(filter, { type: "recent" })}
-          label="Recent"
-          icon={CLOCK_ICON}
-          onClick={() => onFilterChange({ type: "recent" })}
-        />
-        <NavItem
-          active={isFilterActive(filter, { type: "shared" })}
-          label="Shared"
-          icon={PEOPLE_ICON}
-          onClick={() => onFilterChange({ type: "shared" })}
-        />
-        <NavItem
-          active={isFilterActive(filter, { type: "private" })}
-          label="Private"
-          icon={LOCK_ICON}
-          onClick={() => onFilterChange({ type: "private" })}
-        />
-      </div>
+    <>
+      <aside
+        className="flex w-52 shrink-0 flex-col overflow-y-auto border-r py-3"
+        style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+      >
+        <div className="space-y-0.5 px-2">
+          <NavItem
+            active={isFilterActive(filter, { type: "all" })}
+            label="All Notes"
+            icon={NOTES_ICON}
+            onClick={() => onFilterChange({ type: "all" })}
+          />
+          <NavItem
+            active={isFilterActive(filter, { type: "pinned" })}
+            label="Pinned"
+            icon={PIN_ICON}
+            onClick={() => onFilterChange({ type: "pinned" })}
+          />
+          <NavItem
+            active={isFilterActive(filter, { type: "recent" })}
+            label="Recent"
+            icon={CLOCK_ICON}
+            onClick={() => onFilterChange({ type: "recent" })}
+          />
+          <NavItem
+            active={isFilterActive(filter, { type: "shared" })}
+            label="Shared"
+            icon={PEOPLE_ICON}
+            onClick={() => onFilterChange({ type: "shared" })}
+          />
+          <NavItem
+            active={isFilterActive(filter, { type: "private" })}
+            label="Private"
+            icon={LOCK_ICON}
+            onClick={() => onFilterChange({ type: "private" })}
+          />
+        </div>
 
-      <div className="mt-4 px-3">
-        <div className="mb-1 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-            Shared Folders
-          </p>
-          <button
-            type="button"
-            aria-label="New shared folder"
-            onClick={() => void promptNewFolder("shared")}
-            className="cursor-pointer text-xs font-semibold"
-            style={{ color: "var(--accent)" }}
-          >
-            +
-          </button>
-        </div>
-        <div className="space-y-0.5">
-          {sharedFolders.map((folder) => (
-            <FolderRow
-              key={folder.id}
-              folder={folder}
-              active={filter.type === "folder" && filter.folderId === folder.id}
-              onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
-              onRename={() => {
-                const name = window.prompt("Rename folder", folder.name);
-                if (name?.trim()) void onRenameFolder(folder.id, name.trim());
-              }}
-              onDelete={() => {
-                if (window.confirm(`Delete folder "${folder.name}"? Notes will be moved out of the folder.`)) {
-                  void onDeleteFolder(folder.id);
-                }
-              }}
-            />
-          ))}
-          {sharedFolderCount === 0 && (
-            <p className="px-3 py-1 text-xs" style={{ color: "var(--text-muted)" }}>
-              No shared folders yet
+        <div className="mt-4 px-3">
+          <div className="mb-1 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Shared Folders
             </p>
-          )}
+            <button
+              type="button"
+              aria-label="New shared folder"
+              onClick={() => setDialog({ type: "create", visibility: "shared" })}
+              className="cursor-pointer text-xs font-semibold"
+              style={{ color: "var(--accent)" }}
+            >
+              +
+            </button>
+          </div>
+          <div className="space-y-0.5">
+            {sharedFolders.map((folder) => (
+              <FolderRow
+                key={folder.id}
+                folder={folder}
+                active={filter.type === "folder" && filter.folderId === folder.id}
+                onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
+                onRename={() =>
+                  setDialog({ type: "rename", folderId: folder.id, folderName: folder.name })
+                }
+                onDelete={() =>
+                  setDialog({
+                    type: "delete",
+                    folderId: folder.id,
+                    folderName: folder.name,
+                    visibility: "shared",
+                  })
+                }
+              />
+            ))}
+            {sharedFolderCount === 0 && (
+              <p className="px-3 py-1 text-xs" style={{ color: "var(--text-muted)" }}>
+                No shared folders yet
+              </p>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="mt-4 px-3">
-        <div className="mb-1 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-            Private Folders
-          </p>
-          <button
-            type="button"
-            aria-label="New private folder"
-            onClick={() => void promptNewFolder("private")}
-            className="cursor-pointer text-xs font-semibold"
-            style={{ color: "var(--accent)" }}
-          >
-            +
-          </button>
-        </div>
-        <div className="space-y-0.5">
-          {privateFolders.map((folder) => (
-            <FolderRow
-              key={folder.id}
-              folder={folder}
-              active={filter.type === "folder" && filter.folderId === folder.id}
-              onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
-              onRename={() => {
-                const name = window.prompt("Rename folder", folder.name);
-                if (name?.trim()) void onRenameFolder(folder.id, name.trim());
-              }}
-              onDelete={() => {
-                if (window.confirm(`Delete folder "${folder.name}"?`)) {
-                  void onDeleteFolder(folder.id);
-                }
-              }}
-            />
-          ))}
-          {privateFolderCount === 0 && (
-            <p className="px-3 py-1 text-xs" style={{ color: "var(--text-muted)" }}>
-              No private folders yet
+        <div className="mt-4 px-3">
+          <div className="mb-1 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Private Folders
             </p>
-          )}
+            <button
+              type="button"
+              aria-label="New private folder"
+              onClick={() => setDialog({ type: "create", visibility: "private" })}
+              className="cursor-pointer text-xs font-semibold"
+              style={{ color: "var(--accent)" }}
+            >
+              +
+            </button>
+          </div>
+          <div className="space-y-0.5">
+            {privateFolders.map((folder) => (
+              <FolderRow
+                key={folder.id}
+                folder={folder}
+                active={filter.type === "folder" && filter.folderId === folder.id}
+                onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
+                onRename={() =>
+                  setDialog({ type: "rename", folderId: folder.id, folderName: folder.name })
+                }
+                onDelete={() =>
+                  setDialog({
+                    type: "delete",
+                    folderId: folder.id,
+                    folderName: folder.name,
+                    visibility: "private",
+                  })
+                }
+              />
+            ))}
+            {privateFolderCount === 0 && (
+              <p className="px-3 py-1 text-xs" style={{ color: "var(--text-muted)" }}>
+                No private folders yet
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+
+      {dialogProps && (
+        <NotesDialog
+          open
+          busy={busy}
+          onClose={() => setDialog(null)}
+          onConfirm={handleDialogConfirm}
+          {...dialogProps}
+        />
+      )}
+    </>
   );
 }
 
