@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Calendar } from "@/components/Calendar";
 import { ConflictToast } from "@/components/ConflictToast";
@@ -26,7 +26,7 @@ import {
 } from "@/lib/scheduling";
 import { colorForEvent, tagIdsForEvent, type EventTag, type Tag } from "@/lib/tags";
 import { createClient } from "@/lib/supabase/client";
-import type { Tables } from "@/types/database";
+import type { Tables, Json } from "@/types/database";
 
 type Group = Tables<"groups">;
 
@@ -62,8 +62,13 @@ export function AppShell() {
   const [hiddenConflictKeys, setHiddenConflictKeys] = useState<Set<string>>(() => new Set());
 
   const supabase = useMemo(() => createClient(), []);
+  const selectedNoteIdRef = useRef<string | null>(null);
   const showRightPanel = screenView === "map";
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
+
+  useEffect(() => {
+    selectedNoteIdRef.current = selectedNoteId;
+  }, [selectedNoteId]);
 
   // ─── Data loaders ────────────────────────────────────────────────────────
 
@@ -196,7 +201,18 @@ export function AppShell() {
       if (notesResult.error) {
         console.error("loadNotes", notesResult.error);
       } else {
-        setNotes(notesResult.data ?? []);
+        const incoming = notesResult.data ?? [];
+        setNotes((prev) => {
+          const activeId = selectedNoteIdRef.current;
+          if (!activeId) return incoming;
+          const local = prev.find((note) => note.id === activeId);
+          if (!local) return incoming;
+          return incoming.map((note) =>
+            note.id === activeId
+              ? { ...note, title: local.title, content: local.content }
+              : note,
+          );
+        });
       }
     },
     [supabase],
@@ -564,6 +580,17 @@ export function AppShell() {
     return data?.id ?? null;
   }
 
+  function handleNoteDraftChange(
+    noteId: string,
+    patch: { title?: string; content?: Json },
+  ) {
+    setNotes((prev) =>
+      prev.map((note) =>
+        note.id === noteId ? { ...note, ...patch, updated_at: new Date().toISOString() } : note,
+      ),
+    );
+  }
+
   async function handleUpdateNote(
     noteId: string,
     patch: Partial<
@@ -579,11 +606,13 @@ export function AppShell() {
       >
     >,
   ) {
+    handleNoteDraftChange(noteId, patch);
     const { error } = await supabase.from("notes").update(patch).eq("id", noteId);
-    if (error) throw new Error(error.message);
-    setNotes((prev) =>
-      prev.map((note) => (note.id === noteId ? { ...note, ...patch, updated_at: new Date().toISOString() } : note)),
-    );
+    if (error) {
+      console.error("handleUpdateNote", error);
+      if (activeGroupId) await loadNotes(activeGroupId);
+      throw new Error(error.message);
+    }
   }
 
   async function handleDeleteNote(noteId: string) {
@@ -711,6 +740,7 @@ export function AppShell() {
             onSelectNote={setSelectedNoteId}
             onSearchChange={setNotesSearchQuery}
             onCreateNote={handleCreateNote}
+            onNoteDraftChange={handleNoteDraftChange}
             onUpdateNote={handleUpdateNote}
             onDeleteNote={handleDeleteNote}
             onCreateFolder={handleCreateNoteFolder}

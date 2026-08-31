@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -13,23 +13,46 @@ import type { Json } from "@/types/database";
 import { EMPTY_TIPTAP_DOC } from "@/lib/notes";
 import { NoteToolbar } from "./NoteToolbar";
 
+const SAVE_DEBOUNCE_MS = 500;
+
 type NoteEditorProps = {
   noteId: string;
   title: string;
   content: Json;
-  onTitleChange: (title: string) => void;
-  onContentChange: (content: Json) => void;
+  onDraftChange: (patch: { title?: string; content?: Json }) => void;
+  onSave: (patch: { title?: string; content?: Json }) => void;
 };
 
 export function NoteEditor({
   noteId,
   title,
   content,
-  onTitleChange,
-  onContentChange,
+  onDraftChange,
+  onSave,
 }: NoteEditorProps) {
+  const [localTitle, setLocalTitle] = useState(title);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSave = useRef<{ title?: string; content?: Json }>({});
   const lastNoteId = useRef(noteId);
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+
+  const flushSave = () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    if (Object.keys(pendingSave.current).length === 0) return;
+    const next = pendingSave.current;
+    pendingSave.current = {};
+    onSaveRef.current(next);
+  };
+
+  const queueSave = (patch: { title?: string; content?: Json }) => {
+    pendingSave.current = { ...pendingSave.current, ...patch };
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(flushSave, SAVE_DEBOUNCE_MS);
+  };
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -49,29 +72,35 @@ export function NoteEditor({
     editorProps: {
       attributes: {
         class: "note-editor-content outline-none min-h-[50vh] px-6 py-4",
+        spellcheck: "false",
+        autocorrect: "off",
+        autocapitalize: "off",
       },
     },
     onUpdate: ({ editor: ed }) => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        onContentChange(ed.getJSON() as Json);
-      }, 400);
+      const nextContent = ed.getJSON() as Json;
+      onDraftChange({ content: nextContent });
+      queueSave({ content: nextContent });
     },
   });
 
+  // Reset local draft only when switching notes.
   useEffect(() => {
-    if (!editor) return;
-    if (lastNoteId.current !== noteId) {
-      lastNoteId.current = noteId;
-      editor.commands.setContent((content ?? EMPTY_TIPTAP_DOC) as object);
-    }
-  }, [noteId, content, editor]);
+    if (lastNoteId.current === noteId) return;
 
-  useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-    };
-  }, []);
+    flushSave();
+    lastNoteId.current = noteId;
+    setLocalTitle(title);
+    editor?.commands.setContent((content ?? EMPTY_TIPTAP_DOC) as object);
+  }, [noteId, title, content, editor]);
+
+  useEffect(() => () => flushSave(), []);
+
+  function handleTitleChange(nextTitle: string) {
+    setLocalTitle(nextTitle);
+    onDraftChange({ title: nextTitle });
+    queueSave({ title: nextTitle });
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -79,9 +108,12 @@ export function NoteEditor({
       <div className="min-h-0 flex-1 overflow-y-auto">
         <input
           type="text"
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
+          value={localTitle}
+          onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Title"
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
           className="w-full border-none bg-transparent px-6 pt-6 text-2xl font-bold outline-none"
           style={{
             color: "var(--foreground)",
