@@ -3,9 +3,10 @@
 import { useMemo, useState } from "react";
 import type { CalendarEvent } from "@/lib/events";
 import { formatLinkedEventLabel } from "@/lib/eventPicker";
-import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
+import type { Note, NoteFolder, NotesFilter, NotesSort } from "@/lib/notes";
 import {
   canMoveNoteToFolder,
+  DEFAULT_NOTES_SORT,
   filterNotes,
   searchNotes,
   sortNotesForList,
@@ -100,14 +101,15 @@ export function NotesApp({
   const [moveBusy, setMoveBusy] = useState(false);
   const [draggingNoteId, setDraggingNoteId] = useState<string | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const [notesSort, setNotesSort] = useState<NotesSort>(DEFAULT_NOTES_SORT);
 
   const effectiveSearch = localSearch || searchQuery;
 
   const visibleNotes = useMemo(() => {
     let result = filterNotes(notes, filter);
     result = searchNotes(result, effectiveSearch);
-    return sortNotesForList(result);
-  }, [notes, filter, effectiveSearch]);
+    return sortNotesForList(result, notesSort);
+  }, [notes, filter, effectiveSearch, notesSort]);
 
   const selectedNote = notes.find((n) => n.id === selectedNoteId) ?? null;
 
@@ -224,8 +226,10 @@ export function NotesApp({
         notes={visibleNotes}
         selectedNoteId={selectedNoteId}
         searchQuery={localSearch}
+        sort={notesSort}
         draggingNoteId={draggingNoteId}
         onSearchChange={handleLocalSearch}
+        onSortChange={setNotesSort}
         onSelectNote={(id) => onSelectNote(id)}
         onCreateNote={() => void handleCreateNote()}
         onDragNoteStart={setDraggingNoteId}

@@ -6,11 +6,13 @@ import {
   formatNoteDate,
   filterLabel,
   NOTE_DRAG_MIME,
+  NOTES_SORT_OPTIONS,
   notePreviewText,
   noteTitle,
   type Note,
   type NoteFolder,
   type NotesFilter,
+  type NotesSort,
 } from "@/lib/notes";
 
 type NotesListPanelProps = {
@@ -19,8 +21,10 @@ type NotesListPanelProps = {
   notes: Note[];
   selectedNoteId: string | null;
   searchQuery: string;
+  sort: NotesSort;
   draggingNoteId: string | null;
   onSearchChange: (query: string) => void;
+  onSortChange: (sort: NotesSort) => void;
   onSelectNote: (noteId: string) => void;
   onCreateNote: () => void;
   onDragNoteStart: (noteId: string) => void;
@@ -34,8 +38,10 @@ export function NotesListPanel({
   notes,
   selectedNoteId,
   searchQuery,
+  sort,
   draggingNoteId,
   onSearchChange,
+  onSortChange,
   onSelectNote,
   onCreateNote,
   onDragNoteStart,
@@ -89,6 +95,28 @@ export function NotesListPanel({
             style={{ color: "var(--foreground)" }}
           />
         </div>
+        <label className="mt-2 flex items-center gap-2">
+          <span className="shrink-0 text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+            Sort
+          </span>
+          <select
+            value={sort}
+            onChange={(e) => onSortChange(e.target.value as NotesSort)}
+            className="min-w-0 flex-1 cursor-pointer rounded-lg border px-2 py-1 text-xs font-medium outline-none"
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--surface-2)",
+              color: "var(--foreground)",
+            }}
+            aria-label="Sort notes"
+          >
+            {NOTES_SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
         {draggingNoteId && (
           <p className="mt-2 text-xs" style={{ color: "var(--accent)" }}>
             Drop a note onto a folder in the sidebar to move it.
