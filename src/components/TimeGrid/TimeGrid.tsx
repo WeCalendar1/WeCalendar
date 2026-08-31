@@ -11,8 +11,10 @@ import {
   eventPosition,
   eventsForDay,
   formatEventTime,
+  layoutOverlappingEvents,
   type CalendarEvent,
 } from "@/lib/events";
+
 import { colorForEvent, type EventTag, type Tag } from "@/lib/tags";
 
 export const HOUR_HEIGHT_PX = 52;
@@ -137,39 +139,53 @@ export function TimeGrid({
               className="grid h-full"
               style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}
             >
-              {days.map((day) => (
-                <div key={day.date.toISOString()} className="relative">
-                  {eventsForDay(events, day.date).map((event) => {
-                    const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
-                    const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
-                    const warn =
-                      showConflictHighlights && Boolean(conflictIds?.has(event.id));
-                    return (
-                      <button
-                        key={event.id}
-                        type="button"
-                        className="pointer-events-auto absolute right-1 left-1 overflow-hidden px-1.5 py-1 text-left text-[11px] font-semibold text-white"
-                        title={`${event.title} · ${formatEventTime(event.starts_at)}`}
-                        onClick={() => onSelectEvent?.(event)}
-                        style={{
-                          top,
-                          height,
-                          borderRadius: "var(--radius-sm)",
-                          background: color,
-                          boxShadow: warn
-                            ? "0 0 0 2px #dc2626, var(--shadow-sm)"
-                            : "var(--shadow-sm)",
-                        }}
-                      >
-                        <div className="truncate">{event.title}</div>
-                        <div className="truncate opacity-90">
-                          {formatEventTime(event.starts_at)}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
+              {days.map((day) => {
+                  const layouts = layoutOverlappingEvents(eventsForDay(events, day.date));
+                  return (
+                    <div key={day.date.toISOString()} className="relative">
+                      {layouts.map(({ event, column, totalColumns }) => {
+                        const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
+                        const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+                        const warn =
+                          showConflictHighlights && Boolean(conflictIds?.has(event.id));
+
+                        // Sub-column geometry: small inset gap between adjacent events
+                        const GAP = 2; // px gap between sub-columns
+                        const widthPct = 100 / totalColumns;
+                        const leftPct = column * widthPct;
+
+                        return (
+                          <button
+                            key={event.id}
+                            type="button"
+                            className="pointer-events-auto absolute overflow-hidden px-1.5 py-1 text-left text-[11px] font-semibold text-white"
+                            title={`${event.title} · ${formatEventTime(event.starts_at)}`}
+                            onClick={() => onSelectEvent?.(event)}
+                            style={{
+                              top,
+                              height,
+                              left: `calc(${leftPct}% + ${column === 0 ? 4 : GAP}px)`,
+                              right: column === totalColumns - 1
+                                ? "4px"
+                                : `calc(${100 - leftPct - widthPct}% + ${GAP}px)`,
+                              borderRadius: "var(--radius-sm)",
+                              background: color,
+                              boxShadow: warn
+                                ? "0 0 0 2px #dc2626, var(--shadow-sm)"
+                                : "var(--shadow-sm)",
+                            }}
+                          >
+                            <div className="truncate">{event.title}</div>
+                            <div className="truncate opacity-90">
+                              {formatEventTime(event.starts_at)}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+
             </div>
           </div>
 
