@@ -1,18 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
+import { SharedWorkspace } from "@/components/SharedWorkspace";
 import type { NoteFolder, NotesFilter } from "@/lib/notes";
+import { NOTE_DRAG_MIME, NOTE_DROP_REMOVE } from "@/lib/notes";
+import type { Tables } from "@/types/database";
 import { NotesDialog } from "./NotesDialog";
+
+type Group = Tables<"groups">;
 
 type NotesFolderSidebarProps = {
   filter: NotesFilter;
   folders: NoteFolder[];
   sharedFolderCount: number;
   privateFolderCount: number;
+  groups: Group[];
+  activeGroupId: string | null;
+  onSelectGroup: (groupId: string) => void;
+  onCreateGroup: (name: string) => Promise<void>;
+  onJoinGroup: (inviteCode: string) => Promise<void>;
   onFilterChange: (filter: NotesFilter) => void;
   onCreateFolder: (name: string, visibility: "shared" | "private") => Promise<void>;
   onDeleteFolder: (folderId: string) => Promise<void>;
   onRenameFolder: (folderId: string, name: string) => Promise<void>;
+  draggingNoteId: string | null;
+  dragOverTarget: string | null;
+  onDragOverTarget: (target: string | null) => void;
+  onDropNoteOnFolder: (folderId: string | null) => void;
 };
 
 type FolderDialogState =
@@ -109,13 +123,41 @@ export function NotesFolderSidebar({
   folders,
   sharedFolderCount,
   privateFolderCount,
+  groups,
+  activeGroupId,
+  onSelectGroup,
+  onCreateGroup,
+  onJoinGroup,
   onFilterChange,
   onCreateFolder,
   onDeleteFolder,
   onRenameFolder,
+  draggingNoteId,
+  dragOverTarget,
+  onDragOverTarget,
+  onDropNoteOnFolder,
 }: NotesFolderSidebarProps) {
   const [dialog, setDialog] = useState<FolderDialogState>(null);
   const [busy, setBusy] = useState(false);
+  const isDragging = draggingNoteId !== null;
+
+  function readDraggedNoteId(event: DragEvent): string | null {
+    return event.dataTransfer.getData(NOTE_DRAG_MIME) || draggingNoteId;
+  }
+
+  function handleFolderDragOver(event: DragEvent, target: string) {
+    if (!isDragging && !event.dataTransfer.types.includes(NOTE_DRAG_MIME)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    onDragOverTarget(target);
+  }
+
+  function handleFolderDrop(event: DragEvent, folderId: string | null) {
+    event.preventDefault();
+    if (!readDraggedNoteId(event)) return;
+    onDropNoteOnFolder(folderId);
+    onDragOverTarget(null);
+  }
 
   const sharedFolders = folders.filter((f) => f.visibility === "shared");
   const privateFolders = folders.filter((f) => f.visibility === "private");
@@ -174,9 +216,19 @@ export function NotesFolderSidebar({
   return (
     <>
       <aside
-        className="flex w-52 shrink-0 flex-col overflow-y-auto border-r py-3"
+        className="flex w-64 shrink-0 flex-col overflow-y-auto border-r py-3"
         style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
       >
+        <div className="mb-3 px-2">
+          <SharedWorkspace
+            groups={groups}
+            activeGroupId={activeGroupId}
+            onSelectGroup={onSelectGroup}
+            onCreateGroup={onCreateGroup}
+            onJoinGroup={onJoinGroup}
+          />
+        </div>
+
         <div className="space-y-0.5 px-2">
           <NavItem
             active={isFilterActive(filter, { type: "all" })}
@@ -210,6 +262,30 @@ export function NotesFolderSidebar({
           />
         </div>
 
+        {isDragging && (
+          <div className="mt-3 px-2">
+            <div
+              onDragOver={(e) => handleFolderDragOver(e, NOTE_DROP_REMOVE)}
+              onDragLeave={() => onDragOverTarget(null)}
+              onDrop={(e) => handleFolderDrop(e, null)}
+              className="flex cursor-copy items-center gap-2 px-3 py-2 text-xs font-medium"
+              style={{
+                borderRadius: "var(--radius-md)",
+                border:
+                  dragOverTarget === NOTE_DROP_REMOVE
+                    ? "2px dashed var(--accent)"
+                    : "1.5px dashed var(--border)",
+                background:
+                  dragOverTarget === NOTE_DROP_REMOVE ? "var(--accent-muted)" : "var(--surface)",
+                color: dragOverTarget === NOTE_DROP_REMOVE ? "var(--accent)" : "var(--text-secondary)",
+              }}
+            >
+              <span aria-hidden>📄</span>
+              Drop here to remove from folder
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 px-3">
           <div className="mb-1 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
@@ -231,6 +307,7 @@ export function NotesFolderSidebar({
                 key={folder.id}
                 folder={folder}
                 active={filter.type === "folder" && filter.folderId === folder.id}
+                dragOver={dragOverTarget === folder.id}
                 onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
                 onRename={() =>
                   setDialog({ type: "rename", folderId: folder.id, folderName: folder.name })
@@ -243,11 +320,14 @@ export function NotesFolderSidebar({
                     visibility: "shared",
                   })
                 }
+                onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+                onDragLeave={() => onDragOverTarget(null)}
+                onDrop={(e) => handleFolderDrop(e, folder.id)}
               />
             ))}
             {sharedFolderCount === 0 && (
-              <p className="px-3 py-1 text-xs" style={{ color: "var(--text-muted)" }}>
-                No shared folders yet
+              <p className="px-1 py-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Organize shared notes into folders. Drag notes here after creating one.
               </p>
             )}
           </div>
@@ -274,6 +354,7 @@ export function NotesFolderSidebar({
                 key={folder.id}
                 folder={folder}
                 active={filter.type === "folder" && filter.folderId === folder.id}
+                dragOver={dragOverTarget === folder.id}
                 onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
                 onRename={() =>
                   setDialog({ type: "rename", folderId: folder.id, folderName: folder.name })
@@ -286,11 +367,14 @@ export function NotesFolderSidebar({
                     visibility: "private",
                   })
                 }
+                onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+                onDragLeave={() => onDragOverTarget(null)}
+                onDrop={(e) => handleFolderDrop(e, folder.id)}
               />
             ))}
             {privateFolderCount === 0 && (
-              <p className="px-3 py-1 text-xs" style={{ color: "var(--text-muted)" }}>
-                No private folders yet
+              <p className="px-1 py-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Only you can see private folders and the notes inside them.
               </p>
             )}
           </div>
@@ -313,18 +397,36 @@ export function NotesFolderSidebar({
 function FolderRow({
   folder,
   active,
+  dragOver,
   onSelect,
   onRename,
   onDelete,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: {
   folder: NoteFolder;
   active: boolean;
+  dragOver: boolean;
   onSelect: () => void;
   onRename: () => void;
   onDelete: () => void;
+  onDragOver: (event: DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (event: DragEvent) => void;
 }) {
   return (
-    <div className="group flex items-center">
+    <div
+      className="group flex items-center"
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      style={{
+        borderRadius: "var(--radius-md)",
+        outline: dragOver ? "2px dashed var(--accent)" : "2px dashed transparent",
+        background: dragOver ? "var(--accent-muted)" : undefined,
+      }}
+    >
       <button
         type="button"
         onClick={onSelect}

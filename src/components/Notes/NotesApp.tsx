@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { CalendarEvent } from "@/lib/events";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
 import {
+  canMoveNoteToFolder,
   filterNotes,
   searchNotes,
   sortNotesForList,
@@ -12,6 +13,7 @@ import { NoteEditor } from "./NoteEditor";
 import { NotesDialog } from "./NotesDialog";
 import { NotesFolderSidebar } from "./NotesFolderSidebar";
 import { NotesListPanel } from "./NotesListPanel";
+import { NotesMoveToFolderDialog } from "./NotesMoveToFolderDialog";
 
 import type { Tables, Json } from "@/types/database";
 
@@ -29,6 +31,8 @@ type NotesAppProps = {
   groupName: string | null;
   groups: Group[];
   onSelectGroup: (groupId: string) => void;
+  onCreateGroup: (name: string) => Promise<void>;
+  onJoinGroup: (inviteCode: string) => Promise<void>;
   folders: NoteFolder[];
   notes: Note[];
   events: CalendarEvent[];
@@ -66,6 +70,8 @@ export function NotesApp({
   groupName,
   groups,
   onSelectGroup,
+  onCreateGroup,
+  onJoinGroup,
   folders,
   notes,
   events,
@@ -88,6 +94,10 @@ export function NotesApp({
     null,
   );
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [moveNoteTarget, setMoveNoteTarget] = useState<Note | null>(null);
+  const [moveBusy, setMoveBusy] = useState(false);
+  const [draggingNoteId, setDraggingNoteId] = useState<string | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
 
   const effectiveSearch = localSearch || searchQuery;
 
@@ -139,6 +149,35 @@ export function NotesApp({
     }
   }
 
+  async function handleMoveNoteToFolder(noteId: string, folderId: string | null) {
+    const note = notes.find((n) => n.id === noteId);
+    if (!note) return;
+    if (folderId) {
+      const folder = folders.find((f) => f.id === folderId);
+      if (!folder || !canMoveNoteToFolder(note, folder)) return;
+    }
+    if (note.folder_id === folderId) return;
+    await onUpdateNote(noteId, { folder_id: folderId });
+  }
+
+  async function confirmMoveNote(folderId: string | null) {
+    if (!moveNoteTarget) return;
+    setMoveBusy(true);
+    try {
+      await handleMoveNoteToFolder(moveNoteTarget.id, folderId);
+      setMoveNoteTarget(null);
+    } finally {
+      setMoveBusy(false);
+    }
+  }
+
+  function handleDropNoteOnFolder(folderId: string | null) {
+    if (!draggingNoteId) return;
+    void handleMoveNoteToFolder(draggingNoteId, folderId);
+    setDraggingNoteId(null);
+    setDragOverTarget(null);
+  }
+
   if (!groupId) {
     return (
       <div className="flex flex-1 items-center justify-center p-8 text-center">
@@ -157,43 +196,24 @@ export function NotesApp({
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
-      <div className="flex min-w-0 flex-1 flex-col">
-        {groups.length > 0 && (
-          <div
-            className="flex items-center gap-2 border-b px-4 py-2"
-            style={{ borderColor: "var(--border)", background: "var(--surface)" }}
-          >
-            <label className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-              Workspace
-            </label>
-            <select
-              value={groupId ?? ""}
-              onChange={(e) => onSelectGroup(e.target.value)}
-              className="min-w-0 flex-1 cursor-pointer rounded-lg border px-2 py-1 text-sm font-medium outline-none"
-              style={{
-                borderColor: "var(--border)",
-                background: "var(--surface-2)",
-                color: "var(--foreground)",
-              }}
-            >
-              {groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <div className="flex min-h-0 flex-1 overflow-hidden">
       <NotesFolderSidebar
         filter={filter}
         folders={folders}
         sharedFolderCount={sharedFolders.length}
         privateFolderCount={privateFolders.length}
+        groups={groups}
+        activeGroupId={groupId}
+        onSelectGroup={onSelectGroup}
+        onCreateGroup={onCreateGroup}
+        onJoinGroup={onJoinGroup}
         onFilterChange={onFilterChange}
         onCreateFolder={onCreateFolder}
         onDeleteFolder={onDeleteFolder}
         onRenameFolder={onRenameFolder}
+        draggingNoteId={draggingNoteId}
+        dragOverTarget={dragOverTarget}
+        onDragOverTarget={setDragOverTarget}
+        onDropNoteOnFolder={handleDropNoteOnFolder}
       />
 
       <NotesListPanel
@@ -202,9 +222,16 @@ export function NotesApp({
         notes={visibleNotes}
         selectedNoteId={selectedNoteId}
         searchQuery={localSearch}
+        draggingNoteId={draggingNoteId}
         onSearchChange={handleLocalSearch}
         onSelectNote={(id) => onSelectNote(id)}
         onCreateNote={() => void handleCreateNote()}
+        onDragNoteStart={setDraggingNoteId}
+        onDragNoteEnd={() => {
+          setDraggingNoteId(null);
+          setDragOverTarget(null);
+        }}
+        onRequestMoveNote={setMoveNoteTarget}
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col" style={{ background: "var(--surface)" }}>
@@ -251,8 +278,6 @@ export function NotesApp({
           </div>
         )}
       </div>
-        </div>
-      </div>
 
       <NotesDialog
         open={deleteNoteTarget !== null}
@@ -264,6 +289,15 @@ export function NotesApp({
         confirmLabel="Delete note"
         onClose={() => setDeleteNoteTarget(null)}
         onConfirm={confirmDeleteNote}
+      />
+
+      <NotesMoveToFolderDialog
+        open={moveNoteTarget !== null}
+        note={moveNoteTarget}
+        folders={folders}
+        busy={moveBusy}
+        onClose={() => setMoveNoteTarget(null)}
+        onMove={confirmMoveNote}
       />
     </div>
   );
@@ -318,9 +352,10 @@ function NoteMetaBar({
         onChange={(e) => onUpdate({ folder_id: e.target.value || null })}
         className="cursor-pointer rounded-lg border px-2 py-1 text-xs font-medium outline-none"
         style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}
-        aria-label="Folder"
+        aria-label="Move to folder"
+        title="Move to folder"
       >
-        <option value="">No folder</option>
+        <option value="">Move to folder…</option>
         {folders
           .filter((f) => f.visibility === note.visibility)
           .map((folder) => (

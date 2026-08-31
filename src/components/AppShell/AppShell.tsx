@@ -18,7 +18,7 @@ import {
   type ScreenView,
 } from "@/lib/calendar";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
-import { EMPTY_TIPTAP_DOC } from "@/lib/notes";
+import { EMPTY_TIPTAP_DOC, notePatchBumpsUpdatedAt } from "@/lib/notes";
 import type { CalendarEvent } from "@/lib/events";
 import {
   conflictFingerprint,
@@ -580,15 +580,40 @@ export function AppShell() {
     return data?.id ?? null;
   }
 
+  function applyNotePatchLocally(
+    noteId: string,
+    patch: Partial<
+      Pick<
+        Note,
+        | "title"
+        | "content"
+        | "folder_id"
+        | "event_id"
+        | "linked_date"
+        | "visibility"
+        | "is_pinned"
+      >
+    >,
+    bumpUpdatedAt: boolean,
+  ) {
+    setNotes((prev) =>
+      prev.map((note) =>
+        note.id === noteId
+          ? {
+              ...note,
+              ...patch,
+              ...(bumpUpdatedAt ? { updated_at: new Date().toISOString() } : {}),
+            }
+          : note,
+      ),
+    );
+  }
+
   function handleNoteDraftChange(
     noteId: string,
     patch: { title?: string; content?: Json },
   ) {
-    setNotes((prev) =>
-      prev.map((note) =>
-        note.id === noteId ? { ...note, ...patch, updated_at: new Date().toISOString() } : note,
-      ),
-    );
+    applyNotePatchLocally(noteId, patch, true);
   }
 
   async function handleUpdateNote(
@@ -606,7 +631,8 @@ export function AppShell() {
       >
     >,
   ) {
-    handleNoteDraftChange(noteId, patch);
+    const bumpUpdatedAt = notePatchBumpsUpdatedAt(patch);
+    applyNotePatchLocally(noteId, patch, bumpUpdatedAt);
     const { error } = await supabase.from("notes").update(patch).eq("id", noteId);
     if (error) {
       console.error("handleUpdateNote", error);
@@ -730,6 +756,8 @@ export function AppShell() {
             groupName={activeGroup?.name ?? null}
             groups={groups}
             onSelectGroup={setActiveGroupId}
+            onCreateGroup={handleCreateGroup}
+            onJoinGroup={handleJoinGroup}
             folders={noteFolders}
             notes={notes}
             events={events}
