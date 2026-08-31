@@ -107,6 +107,105 @@ const PEOPLE_ICON = (
   </svg>
 );
 
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className="h-3.5 w-3.5 shrink-0"
+      style={{
+        transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+        color: "var(--text-muted)",
+        transition: "transform 120ms ease-out",
+      }}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 6l4 4 4-4" />
+    </svg>
+  );
+}
+
+function FolderSection({
+  title,
+  count,
+  open,
+  onToggle,
+  onCreate,
+  createLabel,
+  emptyMessage,
+  isDragging,
+  onDragEnter,
+  children,
+}: {
+  title: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  onCreate: () => void;
+  createLabel: string;
+  emptyMessage: string;
+  isDragging: boolean;
+  onDragEnter: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mt-4 px-3" onDragEnter={isDragging && !open ? onDragEnter : undefined}>
+      <div className="mb-1 flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 py-0.5 text-left"
+        >
+          <ChevronIcon open={open} />
+          <span
+            className="truncate text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {title}
+          </span>
+          {count > 0 && (
+            <span className="shrink-0 text-xs tabular-nums" style={{ color: "var(--text-muted)" }}>
+              {count}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          aria-label={createLabel}
+          onClick={onCreate}
+          className="shrink-0 cursor-pointer px-1 text-xs font-semibold"
+          style={{ color: "var(--accent)" }}
+        >
+          +
+        </button>
+      </div>
+      <div
+        className="grid"
+        style={{
+          gridTemplateRows: open ? "1fr" : "0fr",
+          transition: "grid-template-rows 140ms cubic-bezier(0.2, 0, 0, 1)",
+        }}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="space-y-0.5">
+            {children}
+            {count === 0 && (
+              <p className="px-1 py-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                {emptyMessage}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function isFilterActive(a: NotesFilter, b: NotesFilter): boolean {
   if (a.type !== b.type) return false;
   if (a.type === "folder" && b.type === "folder") return a.folderId === b.folderId;
@@ -134,6 +233,8 @@ export function NotesFolderSidebar({
 }: NotesFolderSidebarProps) {
   const [dialog, setDialog] = useState<FolderDialogState>(null);
   const [busy, setBusy] = useState(false);
+  const [sharedFoldersOpen, setSharedFoldersOpen] = useState(true);
+  const [privateFoldersOpen, setPrivateFoldersOpen] = useState(true);
   const isDragging = draggingNoteId !== null;
 
   function readDraggedNoteId(event: DragEvent): string | null {
@@ -291,111 +392,89 @@ export function NotesFolderSidebar({
           </div>
         )}
 
-        <div className="mt-4 px-3">
-          <div className="mb-1 flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Shared Folders
-            </p>
-            <button
-              type="button"
-              aria-label="New shared folder"
-              onClick={() => setDialog({ type: "create", visibility: "shared" })}
-              className="cursor-pointer text-xs font-semibold"
-              style={{ color: "var(--accent)" }}
-            >
-              +
-            </button>
-          </div>
-          <div className="space-y-0.5">
-            {sharedFolders.map((folder) => (
-              <FolderRow
-                key={folder.id}
-                folder={folder}
-                active={filter.type === "folder" && filter.folderId === folder.id}
-                dragOver={dragOverTarget === folder.id}
-                onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
-                onEdit={() =>
-                  setDialog({
-                    type: "edit",
-                    folderId: folder.id,
-                    folderName: folder.name,
-                    color: folder.color,
-                    visibility: "shared",
-                  })
-                }
-                onDelete={() =>
-                  setDialog({
-                    type: "delete",
-                    folderId: folder.id,
-                    folderName: folder.name,
-                    visibility: "shared",
-                  })
-                }
-                onDragOver={(e) => handleFolderDragOver(e, folder.id)}
-                onDragLeave={() => onDragOverTarget(null)}
-                onDrop={(e) => handleFolderDrop(e, folder.id)}
-              />
-            ))}
-            {sharedFolderCount === 0 && (
-              <p className="px-1 py-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Organize shared notes into folders. Drag notes here after creating one.
-              </p>
-            )}
-          </div>
-        </div>
+        <FolderSection
+          title="Shared Folders"
+          count={sharedFolderCount}
+          open={sharedFoldersOpen}
+          onToggle={() => setSharedFoldersOpen((open) => !open)}
+          onCreate={() => setDialog({ type: "create", visibility: "shared" })}
+          createLabel="New shared folder"
+          emptyMessage="Organize shared notes into folders. Drag notes here after creating one."
+          isDragging={isDragging}
+          onDragEnter={() => setSharedFoldersOpen(true)}
+        >
+          {sharedFolders.map((folder) => (
+            <FolderRow
+              key={folder.id}
+              folder={folder}
+              active={filter.type === "folder" && filter.folderId === folder.id}
+              dragOver={dragOverTarget === folder.id}
+              onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
+              onEdit={() =>
+                setDialog({
+                  type: "edit",
+                  folderId: folder.id,
+                  folderName: folder.name,
+                  color: folder.color,
+                  visibility: "shared",
+                })
+              }
+              onDelete={() =>
+                setDialog({
+                  type: "delete",
+                  folderId: folder.id,
+                  folderName: folder.name,
+                  visibility: "shared",
+                })
+              }
+              onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+              onDragLeave={() => onDragOverTarget(null)}
+              onDrop={(e) => handleFolderDrop(e, folder.id)}
+            />
+          ))}
+        </FolderSection>
 
-        <div className="mt-4 px-3">
-          <div className="mb-1 flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Private Folders
-            </p>
-            <button
-              type="button"
-              aria-label="New private folder"
-              onClick={() => setDialog({ type: "create", visibility: "private" })}
-              className="cursor-pointer text-xs font-semibold"
-              style={{ color: "var(--accent)" }}
-            >
-              +
-            </button>
-          </div>
-          <div className="space-y-0.5">
-            {privateFolders.map((folder) => (
-              <FolderRow
-                key={folder.id}
-                folder={folder}
-                active={filter.type === "folder" && filter.folderId === folder.id}
-                dragOver={dragOverTarget === folder.id}
-                onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
-                onEdit={() =>
-                  setDialog({
-                    type: "edit",
-                    folderId: folder.id,
-                    folderName: folder.name,
-                    color: folder.color,
-                    visibility: "private",
-                  })
-                }
-                onDelete={() =>
-                  setDialog({
-                    type: "delete",
-                    folderId: folder.id,
-                    folderName: folder.name,
-                    visibility: "private",
-                  })
-                }
-                onDragOver={(e) => handleFolderDragOver(e, folder.id)}
-                onDragLeave={() => onDragOverTarget(null)}
-                onDrop={(e) => handleFolderDrop(e, folder.id)}
-              />
-            ))}
-            {privateFolderCount === 0 && (
-              <p className="px-1 py-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Only you can see private folders and the notes inside them.
-              </p>
-            )}
-          </div>
-        </div>
+        <FolderSection
+          title="Private Folders"
+          count={privateFolderCount}
+          open={privateFoldersOpen}
+          onToggle={() => setPrivateFoldersOpen((open) => !open)}
+          onCreate={() => setDialog({ type: "create", visibility: "private" })}
+          createLabel="New private folder"
+          emptyMessage="Only you can see private folders and the notes inside them."
+          isDragging={isDragging}
+          onDragEnter={() => setPrivateFoldersOpen(true)}
+        >
+          {privateFolders.map((folder) => (
+            <FolderRow
+              key={folder.id}
+              folder={folder}
+              active={filter.type === "folder" && filter.folderId === folder.id}
+              dragOver={dragOverTarget === folder.id}
+              onSelect={() => onFilterChange({ type: "folder", folderId: folder.id })}
+              onEdit={() =>
+                setDialog({
+                  type: "edit",
+                  folderId: folder.id,
+                  folderName: folder.name,
+                  color: folder.color,
+                  visibility: "private",
+                })
+              }
+              onDelete={() =>
+                setDialog({
+                  type: "delete",
+                  folderId: folder.id,
+                  folderName: folder.name,
+                  visibility: "private",
+                })
+              }
+              onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+              onDragLeave={() => onDragOverTarget(null)}
+              onDrop={(e) => handleFolderDrop(e, folder.id)}
+            />
+          ))}
+        </FolderSection>
       </aside>
 
       {folderFormDialog && (
