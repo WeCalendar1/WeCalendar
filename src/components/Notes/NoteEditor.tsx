@@ -35,7 +35,10 @@ export function NoteEditor({
   const pendingSave = useRef<{ title?: string; content?: Json }>({});
   const lastNoteId = useRef(noteId);
   const onSaveRef = useRef(onSave);
-  onSaveRef.current = onSave;
+
+  useEffect(() => {
+    onSaveRef.current = onSave;
+  }, [onSave]);
 
   const flushSave = () => {
     if (saveTimer.current) {
