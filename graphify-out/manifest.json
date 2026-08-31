@@ -462,9 +462,9 @@
     "semantic_hash": ""
   },
   "src/components/Notes/NoteEditor.tsx": {
-    "mtime": 1788146768.6252165,
-    "seen": 1788146953.5243337,
-    "ast_hash": "9a86bf7e0debc3018f17c4b4b1189723",
+    "mtime": 1788147080.4268658,
+    "seen": 1788147229.8866162,
+    "ast_hash": "3c60969dfaff8c52634ff610ecc96093",
     "semantic_hash": ""
   },
   "src/components/Notes/NoteToolbar.tsx": {
