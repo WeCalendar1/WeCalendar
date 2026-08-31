@@ -25,19 +25,37 @@ export function NotesLinkEventDialog({
   onClose,
   onSelect,
 }: NotesLinkEventDialogProps) {
-  const [titleQuery, setTitleQuery] = useState("");
-  const [onOrAfterDate, setOnOrAfterDate] = useState("");
-
   useEffect(() => {
     if (!open) return;
-    setTitleQuery("");
-    setOnOrAfterDate("");
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <NotesLinkEventDialogContent
+      events={events}
+      selectedEventId={selectedEventId}
+      busy={busy}
+      onClose={onClose}
+      onSelect={onSelect}
+    />
+  );
+}
+
+function NotesLinkEventDialogContent({
+  events,
+  selectedEventId,
+  busy = false,
+  onClose,
+  onSelect,
+}: Omit<NotesLinkEventDialogProps, "open">) {
+  const [titleQuery, setTitleQuery] = useState("");
+  const [onOrAfterDate, setOnOrAfterDate] = useState("");
 
   const groups = useMemo(
     () =>
@@ -52,8 +70,6 @@ export function NotesLinkEventDialog({
     () => groups.reduce((count, group) => count + group.events.length, 0),
     [groups],
   );
-
-  if (!open) return null;
 
   return (
     <div

@@ -33,15 +33,6 @@ export function NotesFolderDialog({
   onClose,
   onConfirm,
 }: NotesFolderDialogProps) {
-  const [name, setName] = useState(defaultName);
-  const [color, setColor] = useState<FolderColor>(normalizeFolderColor(defaultColor));
-
-  useEffect(() => {
-    if (!open) return;
-    setName(defaultName);
-    setColor(normalizeFolderColor(defaultColor));
-  }, [open, defaultName, defaultColor]);
-
   useEffect(() => {
     if (!open) return;
     function onKeyDown(event: KeyboardEvent) {
@@ -52,6 +43,38 @@ export function NotesFolderDialog({
   }, [open, onClose]);
 
   if (!open) return null;
+
+  return (
+    <NotesFolderDialogForm
+      key={`${mode}:${defaultName}:${defaultColor}`}
+      mode={mode}
+      title={title}
+      description={description}
+      defaultName={defaultName}
+      defaultColor={defaultColor}
+      confirmLabel={confirmLabel}
+      busy={busy}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    />
+  );
+}
+
+type NotesFolderDialogFormProps = Omit<NotesFolderDialogProps, "open">;
+
+function NotesFolderDialogForm({
+  mode,
+  title,
+  description,
+  defaultName = "",
+  defaultColor = DEFAULT_FOLDER_COLOR,
+  confirmLabel,
+  busy = false,
+  onClose,
+  onConfirm,
+}: NotesFolderDialogFormProps) {
+  const [name, setName] = useState(defaultName);
+  const [color, setColor] = useState<FolderColor>(normalizeFolderColor(defaultColor));
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
