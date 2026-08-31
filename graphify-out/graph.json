@@ -212,6 +212,19 @@
       "norm_label": "yearviewprops"
     },
     {
+      "label": "CalendarMode",
+      "file_type": "code",
+      "source_file": "src/lib/calendar.ts",
+      "source_location": "L1",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_lib_calendar_calendarmode",
+      "community": 1,
+      "community_name": "calendar.ts",
+      "norm_label": "calendarmode"
+    },
+    {
       "label": "Mode",
       "file_type": "code",
       "source_file": "src/components/Auth/LoginForm.tsx",
@@ -228,7 +241,7 @@
       "label": "NavbarProps",
       "file_type": "code",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L9",
+      "source_location": "L242",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
@@ -236,19 +249,6 @@
       "community": 11,
       "community_name": "Navbar.tsx",
       "norm_label": "navbarprops"
-    },
-    {
-      "label": "CalendarMode",
-      "file_type": "code",
-      "source_file": "src/lib/calendar.ts",
-      "source_location": "L1",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_lib_calendar_calendarmode",
-      "community": 11,
-      "community_name": "Navbar.tsx",
-      "norm_label": "calendarmode"
     },
     {
       "label": "ScreenView",
@@ -262,6 +262,19 @@
       "community": 11,
       "community_name": "Navbar.tsx",
       "norm_label": "screenview"
+    },
+    {
+      "label": "ConflictGroup",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.ts",
+      "source_location": "L56",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_lib_scheduling_conflictgroup",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "conflictgroup"
     },
     {
       "label": "Group",
@@ -306,7 +319,7 @@
       "label": "Group",
       "file_type": "code",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L9",
+      "source_location": "L11",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
@@ -319,7 +332,7 @@
       "label": "SidebarProps",
       "file_type": "code",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L11",
+      "source_location": "L13",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
@@ -340,71 +353,6 @@
       "community": 4,
       "community_name": "Sidebar.tsx",
       "norm_label": "tagcreatorinlineprops"
-    },
-    {
-      "label": "Database",
-      "file_type": "code",
-      "source_file": "src/types/database.ts",
-      "source_location": "L9",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_types_database_database",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "database"
-    },
-    {
-      "label": "Json",
-      "file_type": "code",
-      "source_file": "src/types/database.ts",
-      "source_location": "L1",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_types_database_json",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "json"
-    },
-    {
-      "label": "Tables",
-      "file_type": "code",
-      "source_file": "src/types/database.ts",
-      "source_location": "L364",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_types_database_tables",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "tables"
-    },
-    {
-      "label": "TablesInsert",
-      "file_type": "code",
-      "source_file": "src/types/database.ts",
-      "source_location": "L367",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_types_database_tablesinsert",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "tablesinsert"
-    },
-    {
-      "label": "TablesUpdate",
-      "file_type": "code",
-      "source_file": "src/types/database.ts",
-      "source_location": "L370",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_types_database_tablesupdate",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "tablesupdate"
     },
     {
       "label": "Group",
@@ -524,17 +472,69 @@
       "norm_label": "taskpanelprops"
     },
     {
-      "label": "ConflictGroup",
+      "label": "Database",
       "file_type": "code",
-      "source_file": "src/lib/scheduling.ts",
-      "source_location": "L56",
+      "source_file": "src/types/database.ts",
+      "source_location": "L9",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "id": "src_lib_scheduling_conflictgroup",
+      "id": "src_types_database_database",
       "community": 6,
       "community_name": "AppShell.tsx",
-      "norm_label": "conflictgroup"
+      "norm_label": "database"
+    },
+    {
+      "label": "Json",
+      "file_type": "code",
+      "source_file": "src/types/database.ts",
+      "source_location": "L1",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_types_database_json",
+      "community": 6,
+      "community_name": "AppShell.tsx",
+      "norm_label": "json"
+    },
+    {
+      "label": "Tables",
+      "file_type": "code",
+      "source_file": "src/types/database.ts",
+      "source_location": "L364",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_types_database_tables",
+      "community": 6,
+      "community_name": "AppShell.tsx",
+      "norm_label": "tables"
+    },
+    {
+      "label": "TablesInsert",
+      "file_type": "code",
+      "source_file": "src/types/database.ts",
+      "source_location": "L367",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_types_database_tablesinsert",
+      "community": 6,
+      "community_name": "AppShell.tsx",
+      "norm_label": "tablesinsert"
+    },
+    {
+      "label": "TablesUpdate",
+      "file_type": "code",
+      "source_file": "src/types/database.ts",
+      "source_location": "L370",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_types_database_tablesupdate",
+      "community": 6,
+      "community_name": "AppShell.tsx",
+      "norm_label": "tablesupdate"
     },
     {
       "label": "Calendar()",
@@ -691,6 +691,30 @@
       "community": 0,
       "community_name": "events.ts",
       "norm_label": "yearview()"
+    },
+    {
+      "label": "formatHourLabel()",
+      "file_type": "code",
+      "source_file": "src/lib/calendar.ts",
+      "source_location": "L110",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_lib_calendar_formathourlabel",
+      "community": 0,
+      "community_name": "events.ts",
+      "norm_label": "formathourlabel()"
+    },
+    {
+      "label": "getMinutesSinceMidnight()",
+      "file_type": "code",
+      "source_file": "src/lib/calendar.ts",
+      "source_location": "L160",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_lib_calendar_getminutessincemidnight",
+      "community": 0,
+      "community_name": "events.ts",
+      "norm_label": "getminutessincemidnight()"
     },
     {
       "label": "startOfDay()",
@@ -957,18 +981,6 @@
       "norm_label": "formatdaylabel()"
     },
     {
-      "label": "formatHourLabel()",
-      "file_type": "code",
-      "source_file": "src/lib/calendar.ts",
-      "source_location": "L110",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_lib_calendar_formathourlabel",
-      "community": 1,
-      "community_name": "calendar.ts",
-      "norm_label": "formathourlabel()"
-    },
-    {
       "label": "formatMonthYear()",
       "file_type": "code",
       "source_file": "src/lib/calendar.ts",
@@ -1015,18 +1027,6 @@
       "community": 1,
       "community_name": "calendar.ts",
       "norm_label": "formatyearlabel()"
-    },
-    {
-      "label": "getMinutesSinceMidnight()",
-      "file_type": "code",
-      "source_file": "src/lib/calendar.ts",
-      "source_location": "L160",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_lib_calendar_getminutessincemidnight",
-      "community": 1,
-      "community_name": "calendar.ts",
-      "norm_label": "getminutessincemidnight()"
     },
     {
       "label": "getMonthGrid()",
@@ -1224,7 +1224,7 @@
       "label": "Navbar()",
       "file_type": "code",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L65",
+      "source_location": "L293",
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_navbar_navbar_navbar",
@@ -1236,13 +1236,25 @@
       "label": "ProfileMenu()",
       "file_type": "code",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L325",
+      "source_location": "L535",
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_navbar_navbar_profilemenu",
       "community": 11,
       "community_name": "Navbar.tsx",
       "norm_label": "profilemenu()"
+    },
+    {
+      "label": "ViewModePicker()",
+      "file_type": "code",
+      "source_file": "src/components/Navbar/Navbar.tsx",
+      "source_location": "L20",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_components_navbar_navbar_viewmodepicker",
+      "community": 11,
+      "community_name": "Navbar.tsx",
+      "norm_label": "viewmodepicker()"
     },
     {
       "label": "createClient()",
@@ -1305,16 +1317,100 @@
       "norm_label": "rootlayout()"
     },
     {
-      "label": "GET()",
+      "label": "Home()",
       "file_type": "code",
-      "source_file": "src/app/auth/callback/route.ts",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L3",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_app_page_home",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "home()"
+    },
+    {
+      "label": "AppShell()",
+      "file_type": "code",
+      "source_file": "src/components/AppShell/AppShell.tsx",
+      "source_location": "L33",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_components_appshell_appshell_appshell",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "appshell()"
+    },
+    {
+      "label": "conflictFingerprint()",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.ts",
+      "source_location": "L114",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_lib_scheduling_conflictfingerprint",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "conflictfingerprint()"
+    },
+    {
+      "label": "conflictingEventGroups()",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.ts",
+      "source_location": "L67",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_lib_scheduling_conflictingeventgroups",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "conflictingeventgroups()"
+    },
+    {
+      "label": "conflictingEventIds()",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.ts",
+      "source_location": "L35",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_lib_scheduling_conflictingeventids",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "conflictingeventids()"
+    },
+    {
+      "label": "draftOverlapsExisting()",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.ts",
+      "source_location": "L91",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_lib_scheduling_draftoverlapsexisting",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "draftoverlapsexisting()"
+    },
+    {
+      "label": "isSchedulingConflictError()",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.ts",
       "source_location": "L4",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_app_auth_callback_route_get",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "get()"
+      "id": "src_lib_scheduling_isschedulingconflicterror",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "isschedulingconflicterror()"
+    },
+    {
+      "label": "rangesOverlap()",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.ts",
+      "source_location": "L25",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_lib_scheduling_rangesoverlap",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "rangesoverlap()"
     },
     {
       "label": "SharedWorkspace()",
@@ -1344,7 +1440,7 @@
       "label": "Sidebar()",
       "file_type": "code",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L28",
+      "source_location": "L30",
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_sidebar_sidebar_sidebar",
@@ -1365,40 +1461,16 @@
       "norm_label": "tagcreatorinline()"
     },
     {
-      "label": "createClient()",
+      "label": "GET()",
       "file_type": "code",
-      "source_file": "src/lib/supabase/server.ts",
-      "source_location": "L5",
+      "source_file": "src/app/auth/callback/route.ts",
+      "source_location": "L4",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_lib_supabase_server_createclient",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "createclient()"
-    },
-    {
-      "label": "Home()",
-      "file_type": "code",
-      "source_file": "src/app/page.tsx",
-      "source_location": "L3",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_app_page_home",
+      "id": "src_app_auth_callback_route_get",
       "community": 6,
       "community_name": "AppShell.tsx",
-      "norm_label": "home()"
-    },
-    {
-      "label": "AppShell()",
-      "file_type": "code",
-      "source_file": "src/components/AppShell/AppShell.tsx",
-      "source_location": "L33",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_components_appshell_appshell_appshell",
-      "community": 6,
-      "community_name": "AppShell.tsx",
-      "norm_label": "appshell()"
+      "norm_label": "get()"
     },
     {
       "label": "ConflictToast()",
@@ -1473,76 +1545,16 @@
       "norm_label": "getinitials()"
     },
     {
-      "label": "conflictFingerprint()",
+      "label": "createClient()",
       "file_type": "code",
-      "source_file": "src/lib/scheduling.ts",
-      "source_location": "L114",
+      "source_file": "src/lib/supabase/server.ts",
+      "source_location": "L5",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_lib_scheduling_conflictfingerprint",
+      "id": "src_lib_supabase_server_createclient",
       "community": 6,
       "community_name": "AppShell.tsx",
-      "norm_label": "conflictfingerprint()"
-    },
-    {
-      "label": "conflictingEventGroups()",
-      "file_type": "code",
-      "source_file": "src/lib/scheduling.ts",
-      "source_location": "L67",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_lib_scheduling_conflictingeventgroups",
-      "community": 6,
-      "community_name": "AppShell.tsx",
-      "norm_label": "conflictingeventgroups()"
-    },
-    {
-      "label": "conflictingEventIds()",
-      "file_type": "code",
-      "source_file": "src/lib/scheduling.ts",
-      "source_location": "L35",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_lib_scheduling_conflictingeventids",
-      "community": 6,
-      "community_name": "AppShell.tsx",
-      "norm_label": "conflictingeventids()"
-    },
-    {
-      "label": "draftOverlapsExisting()",
-      "file_type": "code",
-      "source_file": "src/lib/scheduling.ts",
-      "source_location": "L91",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_lib_scheduling_draftoverlapsexisting",
-      "community": 6,
-      "community_name": "AppShell.tsx",
-      "norm_label": "draftoverlapsexisting()"
-    },
-    {
-      "label": "isSchedulingConflictError()",
-      "file_type": "code",
-      "source_file": "src/lib/scheduling.ts",
-      "source_location": "L4",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_lib_scheduling_isschedulingconflicterror",
-      "community": 6,
-      "community_name": "AppShell.tsx",
-      "norm_label": "isschedulingconflicterror()"
-    },
-    {
-      "label": "rangesOverlap()",
-      "file_type": "code",
-      "source_file": "src/lib/scheduling.ts",
-      "source_location": "L25",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_lib_scheduling_rangesoverlap",
-      "community": 6,
-      "community_name": "AppShell.tsx",
-      "norm_label": "rangesoverlap()"
+      "norm_label": "createclient()"
     },
     {
       "label": "Calendar.tsx",
@@ -2183,10 +2195,21 @@
       "norm_label": "navbar.tsx"
     },
     {
+      "label": "MODE_ORDER",
+      "file_type": "code",
+      "source_file": "src/components/Navbar/Navbar.tsx",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "src_components_navbar_navbar_mode_order",
+      "community": 11,
+      "community_name": "Navbar.tsx",
+      "norm_label": "mode_order"
+    },
+    {
       "label": "MODES",
       "file_type": "code",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L25",
+      "source_location": "L11",
       "_origin": "ast",
       "id": "src_components_navbar_navbar_modes",
       "community": 11,
@@ -2197,23 +2220,12 @@
       "label": "SCREENS",
       "file_type": "code",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L32",
+      "source_location": "L260",
       "_origin": "ast",
       "id": "src_components_navbar_navbar_screens",
       "community": 11,
       "community_name": "Navbar.tsx",
       "norm_label": "screens"
-    },
-    {
-      "label": "client.ts",
-      "file_type": "code",
-      "source_file": "src/lib/supabase/client.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_lib_supabase_client",
-      "community": 11,
-      "community_name": "Navbar.tsx",
-      "norm_label": "client.ts"
     },
     {
       "label": "CONTEXT.md",
@@ -3228,6 +3240,61 @@
       "norm_label": "public.events"
     },
     {
+      "label": "app/page.tsx",
+      "file_type": "code",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_app_page",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "app/page.tsx"
+    },
+    {
+      "label": "AppShell/index.ts",
+      "file_type": "code",
+      "source_file": "src/components/AppShell/index.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_components_appshell_index",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "appshell/index.ts"
+    },
+    {
+      "label": "scheduling.ts",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_lib_scheduling",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "scheduling.ts"
+    },
+    {
+      "label": "SCHEDULING_CONFLICT_MESSAGE",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.ts",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "src_lib_scheduling_scheduling_conflict_message",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "scheduling_conflict_message"
+    },
+    {
+      "label": "scheduling.test.ts",
+      "file_type": "code",
+      "source_file": "src/lib/scheduling.test.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_lib_scheduling_test",
+      "community": 23,
+      "community_name": "scheduling.ts",
+      "norm_label": "scheduling.test.ts"
+    },
+    {
       "label": "20260818160000_lists_realtime.sql",
       "file_type": "code",
       "source_file": "supabase/migrations/20260818160000_lists_realtime.sql",
@@ -3657,17 +3724,6 @@
       "norm_label": "public.events"
     },
     {
-      "label": "route.ts",
-      "file_type": "code",
-      "source_file": "src/app/auth/callback/route.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_app_auth_callback_route",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "route.ts"
-    },
-    {
       "label": "SharedWorkspace/index.ts",
       "file_type": "code",
       "source_file": "src/components/SharedWorkspace/index.ts",
@@ -3754,28 +3810,6 @@
       "community": 4,
       "community_name": "Sidebar.tsx",
       "norm_label": "tagcreatorinline.tsx"
-    },
-    {
-      "label": "server.ts",
-      "file_type": "code",
-      "source_file": "src/lib/supabase/server.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_lib_supabase_server",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "server.ts"
-    },
-    {
-      "label": "database.ts",
-      "file_type": "code",
-      "source_file": "src/types/database.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_types_database",
-      "community": 4,
-      "community_name": "Sidebar.tsx",
-      "norm_label": "database.ts"
     },
     {
       "label": "schema.md",
@@ -4075,15 +4109,15 @@
       "norm_label": "wecalendar"
     },
     {
-      "label": "app/page.tsx",
+      "label": "route.ts",
       "file_type": "code",
-      "source_file": "src/app/page.tsx",
+      "source_file": "src/app/auth/callback/route.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "src_app_page",
+      "id": "src_app_auth_callback_route",
       "community": 6,
       "community_name": "AppShell.tsx",
-      "norm_label": "app/page.tsx"
+      "norm_label": "route.ts"
     },
     {
       "label": "AppShell.tsx",
@@ -4095,17 +4129,6 @@
       "community": 6,
       "community_name": "AppShell.tsx",
       "norm_label": "appshell.tsx"
-    },
-    {
-      "label": "AppShell/index.ts",
-      "file_type": "code",
-      "source_file": "src/components/AppShell/index.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_components_appshell_index",
-      "community": 6,
-      "community_name": "AppShell.tsx",
-      "norm_label": "appshell/index.ts"
     },
     {
       "label": "ConflictToast.tsx",
@@ -4196,37 +4219,37 @@
       "norm_label": "auth.ts"
     },
     {
-      "label": "scheduling.ts",
+      "label": "client.ts",
       "file_type": "code",
-      "source_file": "src/lib/scheduling.ts",
+      "source_file": "src/lib/supabase/client.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "src_lib_scheduling",
+      "id": "src_lib_supabase_client",
       "community": 6,
       "community_name": "AppShell.tsx",
-      "norm_label": "scheduling.ts"
+      "norm_label": "client.ts"
     },
     {
-      "label": "SCHEDULING_CONFLICT_MESSAGE",
+      "label": "server.ts",
       "file_type": "code",
-      "source_file": "src/lib/scheduling.ts",
-      "source_location": "L18",
-      "_origin": "ast",
-      "id": "src_lib_scheduling_scheduling_conflict_message",
-      "community": 6,
-      "community_name": "AppShell.tsx",
-      "norm_label": "scheduling_conflict_message"
-    },
-    {
-      "label": "scheduling.test.ts",
-      "file_type": "code",
-      "source_file": "src/lib/scheduling.test.ts",
+      "source_file": "src/lib/supabase/server.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "src_lib_scheduling_test",
+      "id": "src_lib_supabase_server",
       "community": 6,
       "community_name": "AppShell.tsx",
-      "norm_label": "scheduling.test.ts"
+      "norm_label": "server.ts"
+    },
+    {
+      "label": "database.ts",
+      "file_type": "code",
+      "source_file": "src/types/database.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_types_database",
+      "community": 6,
+      "community_name": "AppShell.tsx",
+      "norm_label": "database.ts"
     },
     {
       "label": "20260730120000_init_schema.sql",
@@ -5448,7 +5471,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L355",
+      "source_location": "L565",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_navbar_navbar_profilemenu",
@@ -7440,7 +7463,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L3",
+      "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -7452,7 +7475,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L4",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -7464,7 +7487,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L5",
+      "source_location": "L7",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -7476,7 +7499,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L6",
+      "source_location": "L8",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -7488,7 +7511,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L7",
+      "source_location": "L9",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -8796,7 +8819,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L3",
+      "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -8808,7 +8831,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L4",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -8820,7 +8843,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L5",
+      "source_location": "L7",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -8832,7 +8855,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L6",
+      "source_location": "L8",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -8844,7 +8867,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L7",
+      "source_location": "L9",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
@@ -10649,7 +10672,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L25",
+      "source_location": "L11",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_navbar_navbar",
@@ -10660,7 +10683,40 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L32",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_navbar_navbar",
+      "target": "src_components_navbar_navbar_mode_order",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/Navbar/Navbar.tsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_navbar_navbar",
+      "target": "src_components_navbar_navbar_viewmodepicker",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/Navbar/Navbar.tsx",
+      "source_location": "L242",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_navbar_navbar",
+      "target": "src_components_navbar_navbar_navbarprops",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/Navbar/Navbar.tsx",
+      "source_location": "L260",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_navbar_navbar",
@@ -10671,18 +10727,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L325",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_components_navbar_navbar",
-      "target": "src_components_navbar_navbar_profilemenu",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L65",
+      "source_location": "L293",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_navbar_navbar",
@@ -10693,11 +10738,11 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Navbar/Navbar.tsx",
-      "source_location": "L9",
+      "source_location": "L535",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_navbar_navbar",
-      "target": "src_components_navbar_navbar_navbarprops",
+      "target": "src_components_navbar_navbar_profilemenu",
       "confidence_score": 1.0
     },
     {
@@ -10796,6 +10841,17 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
+      "target": "src_components_sidebar_sidebar_group",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/Sidebar/Sidebar.tsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_sidebar_sidebar",
       "target": "src_components_sidebar_sidebar_sidebarprops",
       "confidence_score": 1.0
     },
@@ -10803,22 +10859,11 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L28",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_sidebar_sidebar",
       "target": "src_components_sidebar_sidebar_sidebar",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L9",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_components_sidebar_sidebar",
-      "target": "src_components_sidebar_sidebar_group",
       "confidence_score": 1.0
     },
     {
@@ -13530,5 +13575,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "38ec22a57a44bbbfe96751df9ea38be96327fbb2"
+  "built_at_commit": "703c6e85fadf33efac71136c8274c3b429c9e49e"
 }

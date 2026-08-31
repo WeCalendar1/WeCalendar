@@ -1,16 +1,16 @@
 # Graph Report - WeCalendar  (2026-08-30)
 
 ## Corpus Check
-- 73 files · ~32,950 words
+- 73 files · ~33,941 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 440 nodes · 741 edges · 30 communities (23 shown, 7 thin omitted)
+- 442 nodes · 743 edges · 31 communities (24 shown, 7 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `38ec22a5`
+- Built from commit: `703c6e85`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -37,6 +37,7 @@
 - next.config.ts
 - postcss.config.mjs
 - public.events
+- scheduling.ts
 - public.events
 - public.events
 
@@ -55,27 +56,27 @@
 ## Surprising Connections (you probably didn't know these)
 - `ProfilePage()` --calls--> `createClient()`  [EXTRACTED]
   src/app/profile/page.tsx → src/lib/supabase/client.ts
+- `AppShell()` --calls--> `getInitials()`  [EXTRACTED]
+  src/components/AppShell/AppShell.tsx → src/lib/auth.ts
 - `AppShell()` --calls--> `formatViewLabel()`  [EXTRACTED]
   src/components/AppShell/AppShell.tsx → src/lib/calendar.ts
 - `AppShell()` --calls--> `shiftViewDate()`  [EXTRACTED]
   src/components/AppShell/AppShell.tsx → src/lib/calendar.ts
 - `AppShell()` --calls--> `startOfDay()`  [EXTRACTED]
   src/components/AppShell/AppShell.tsx → src/lib/calendar.ts
-- `AppShell()` --calls--> `createClient()`  [EXTRACTED]
-  src/components/AppShell/AppShell.tsx → src/lib/supabase/client.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (30 total, 7 thin omitted)
+## Communities (31 total, 7 thin omitted)
 
 ### Community 0 - "events.ts"
-Cohesion: 0.09
-Nodes (42): Calendar(), CalendarProps, barEdges(), barRadius(), CalendarCell(), CalendarCellProps, conflictBarShadow(), conflictOutline() (+34 more)
+Cohesion: 0.08
+Nodes (44): Calendar(), CalendarProps, barEdges(), barRadius(), CalendarCell(), CalendarCellProps, conflictBarShadow(), conflictOutline() (+36 more)
 
 ### Community 1 - "calendar.ts"
 Cohesion: 0.14
-Nodes (30): CreateEventModal(), CreateEventModalProps, DayPicker(), DayPickerProps, EventDraft, groupConsecutiveDates(), PICKER_DAYS, toDateInput() (+22 more)
+Nodes (29): CreateEventModal(), CreateEventModalProps, DayPicker(), DayPickerProps, EventDraft, groupConsecutiveDates(), PICKER_DAYS, toDateInput() (+21 more)
 
 ### Community 2 - "WeCalendar — Full Project Context"
 Cohesion: 0.06
@@ -86,8 +87,8 @@ Cohesion: 0.06
 Nodes (31): dom, dom.iterable, esnext, **/*.mts, .next/dev/types/**/*.ts, next-env.d.ts, .next/types/**/*.ts, node_modules (+23 more)
 
 ### Community 4 - "Sidebar.tsx"
-Cohesion: 0.11
-Nodes (18): GET(), Group, SharedWorkspace(), SharedWorkspaceProps, MiniCalendar(), MiniCalendarProps, WEEKDAYS, Group (+10 more)
+Cohesion: 0.16
+Nodes (11): Group, SharedWorkspace(), SharedWorkspaceProps, MiniCalendar(), MiniCalendarProps, WEEKDAYS, Group, Sidebar() (+3 more)
 
 ### Community 5 - "WeCalendar"
 Cohesion: 0.07
@@ -95,7 +96,7 @@ Nodes (25): Apply the migration, Option A — Supabase Dashboard (simplest), Opt
 
 ### Community 6 - "AppShell.tsx"
 Cohesion: 0.10
-Nodes (24): AppShell(), Group, ConflictToast(), ConflictToastItem, ConflictToastProps, RightPanel(), RightPanelProps, CATEGORIES (+16 more)
+Nodes (23): GET(), Group, ConflictToast(), ConflictToastItem, ConflictToastProps, RightPanel(), RightPanelProps, CATEGORIES (+15 more)
 
 ### Community 7 - "20260730120000_init_schema.sql"
 Cohesion: 0.14
@@ -114,8 +115,8 @@ Cohesion: 0.10
 Nodes (21): eslint, eslint-config-next, devDependencies, eslint, eslint-config-next, tailwindcss, @tailwindcss/postcss, @types/node (+13 more)
 
 ### Community 11 - "Navbar.tsx"
-Cohesion: 0.11
-Nodes (12): ProfilePage(), formatAuthError(), LoginForm(), Mode, MODES, Navbar(), NavbarProps, ProfileMenu() (+4 more)
+Cohesion: 0.10
+Nodes (12): ProfilePage(), formatAuthError(), LoginForm(), Mode, MODE_ORDER, MODES, Navbar(), NavbarProps (+4 more)
 
 ### Community 12 - "WeCalendar — project context"
 Cohesion: 0.13
@@ -137,25 +138,29 @@ Nodes (4): copyCookies(), updateSession(), config, proxy()
 Cohesion: 0.40
 Nodes (3): metadata, nunitoSans, varelaRound
 
+### Community 23 - "scheduling.ts"
+Cohesion: 0.25
+Nodes (8): AppShell(), conflictFingerprint(), ConflictGroup, conflictingEventGroups(), conflictingEventIds(), draftOverlapsExisting(), rangesOverlap(), SCHEDULING_CONFLICT_MESSAGE
+
 ## Knowledge Gaps
-- **167 isolated node(s):** `eslintConfig`, `nextConfig`, `name`, `version`, `private` (+162 more)
+- **168 isolated node(s):** `eslintConfig`, `nextConfig`, `name`, `version`, `private` (+163 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createClient()` connect `Navbar.tsx` to `AppShell.tsx`?**
+- **Why does `createClient()` connect `Navbar.tsx` to `AppShell.tsx`, `scheduling.ts`?**
   _High betweenness centrality (0.017) - this node is a cross-community bridge._
 - **Why does `WeCalendar — Full Project Context` connect `WeCalendar — Full Project Context` to `6. Component Reference`?**
   _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **Why does `Tag` connect `events.ts` to `calendar.ts`, `Sidebar.tsx`, `AppShell.tsx`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
 - **What connects `eslintConfig`, `nextConfig`, `name` to the rest of the system?**
-  _167 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _168 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `events.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.08757062146892655 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08408249603384453 - nodes in this community are weakly interconnected._
 - **Should `calendar.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.13781512605042018 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.14260249554367202 - nodes in this community are weakly interconnected._
 - **Should `WeCalendar — Full Project Context` be split into smaller, more focused modules?**
   _Cohesion score 0.06060606060606061 - nodes in this community are weakly interconnected._

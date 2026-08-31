@@ -115,8 +115,8 @@
     "semantic_hash": "07dc0df219132d9253247d928ba3cb8e"
   },
   "src/components/Navbar/Navbar.tsx": {
-    "mtime": 1788137111.171776,
-    "ast_hash": "40e380079edad1681796f8188fbc218a",
+    "mtime": 1788138631.3204136,
+    "ast_hash": "6cbdb538f0e0b987d904fc67bc413e7b",
     "semantic_hash": ""
   },
   "src/components/Navbar/index.ts": {
@@ -150,8 +150,8 @@
     "semantic_hash": ""
   },
   "src/components/Sidebar/Sidebar.tsx": {
-    "mtime": 1788137111.2622278,
-    "ast_hash": "457d5b204a596c34b5a1a654c1b95049",
+    "mtime": 1788139520.0648227,
+    "ast_hash": "039b8313e88d0d0afc5fd20cfdcb6163",
     "semantic_hash": ""
   },
   "src/components/Sidebar/index.ts": {
@@ -375,8 +375,8 @@
     "semantic_hash": ""
   },
   "src/components/ConflictToast/ConflictToast.tsx": {
-    "mtime": 1788137111.062586,
-    "ast_hash": "5038b8f1372b6f678b4499bfa0672687",
+    "mtime": 1788138293.2280934,
+    "ast_hash": "dd111d138774471ad2a81f4f1c99e444",
     "semantic_hash": ""
   },
   "src/components/ConflictToast/index.ts": {
