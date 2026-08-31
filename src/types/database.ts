@@ -302,6 +302,134 @@ export type Database = {
           },
         ];
       };
+      note_folders: {
+        Row: {
+          id: string;
+          group_id: string;
+          name: string;
+          visibility: "shared" | "private";
+          sort_order: number;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          name: string;
+          visibility?: "shared" | "private";
+          sort_order?: number;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          name?: string;
+          visibility?: "shared" | "private";
+          sort_order?: number;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "note_folders_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "note_folders_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notes: {
+        Row: {
+          id: string;
+          group_id: string;
+          folder_id: string | null;
+          event_id: string | null;
+          linked_date: string | null;
+          title: string;
+          content: Json;
+          content_format: "tiptap" | "markdown" | "plain";
+          visibility: "shared" | "private";
+          is_pinned: boolean;
+          sort_order: number;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          folder_id?: string | null;
+          event_id?: string | null;
+          linked_date?: string | null;
+          title?: string;
+          content?: Json;
+          content_format?: "tiptap" | "markdown" | "plain";
+          visibility?: "shared" | "private";
+          is_pinned?: boolean;
+          sort_order?: number;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          folder_id?: string | null;
+          event_id?: string | null;
+          linked_date?: string | null;
+          title?: string;
+          content?: Json;
+          content_format?: "tiptap" | "markdown" | "plain";
+          visibility?: "shared" | "private";
+          is_pinned?: boolean;
+          sort_order?: number;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notes_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notes_folder_id_fkey";
+            columns: ["folder_id"];
+            isOneToOne: false;
+            referencedRelation: "note_folders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notes_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notes_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       event_tags: {
         Row: {
           event_id: string;
@@ -353,6 +481,22 @@ export type Database = {
       };
       is_list_group_member: {
         Args: { p_list_id: string };
+        Returns: boolean;
+      };
+      is_event_group_member: {
+        Args: { p_event_id: string };
+        Returns: boolean;
+      };
+      can_view_note_folder: {
+        Args: { p_folder_id: string };
+        Returns: boolean;
+      };
+      can_view_note: {
+        Args: { p_note_id: string };
+        Returns: boolean;
+      };
+      can_edit_note: {
+        Args: { p_note_id: string };
         Returns: boolean;
       };
     };

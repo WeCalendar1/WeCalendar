@@ -1,5 +1,5 @@
 export type CalendarMode = "day" | "week" | "month" | "year";
-export type ScreenView = "calendar" | "tasks" | "map";
+export type ScreenView = "calendar" | "notes" | "map";
 
 export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());

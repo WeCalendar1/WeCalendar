@@ -6,9 +6,9 @@ import { Calendar } from "@/components/Calendar";
 import { ConflictToast } from "@/components/ConflictToast";
 import { CreateEventModal, type EventDraft } from "@/components/CreateEventModal";
 import { Navbar } from "@/components/Navbar";
+import { NotesApp, type NoteDraftContext } from "@/components/Notes";
 import { RightPanel } from "@/components/RightPanel";
 import { Sidebar } from "@/components/Sidebar";
-import type { ListCategory, ListItem, SharedList } from "@/components/TaskPanel";
 import { getInitials } from "@/lib/auth";
 import {
   formatViewLabel,
@@ -17,6 +17,8 @@ import {
   type CalendarMode,
   type ScreenView,
 } from "@/lib/calendar";
+import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
+import { EMPTY_TIPTAP_DOC } from "@/lib/notes";
 import type { CalendarEvent } from "@/lib/events";
 import {
   conflictFingerprint,
@@ -43,8 +45,11 @@ export function AppShell() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [eventTags, setEventTags] = useState<EventTag[]>([]);
-  const [lists, setLists] = useState<SharedList[]>([]);
-  const [listItems, setListItems] = useState<ListItem[]>([]);
+  const [noteFolders, setNoteFolders] = useState<NoteFolder[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [notesSearchQuery, setNotesSearchQuery] = useState("");
+  const [notesFilter, setNotesFilter] = useState<NotesFilter>({ type: "all" });
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [modalDefaultDate, setModalDefaultDate] = useState<Date>(() => startOfDay(new Date()));
@@ -57,7 +62,8 @@ export function AppShell() {
   const [hiddenConflictKeys, setHiddenConflictKeys] = useState<Set<string>>(() => new Set());
 
   const supabase = useMemo(() => createClient(), []);
-  const showRightPanel = screenView === "tasks" || screenView === "map";
+  const showRightPanel = screenView === "map";
+  const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
 
   // ─── Data loaders ────────────────────────────────────────────────────────
 
@@ -160,48 +166,38 @@ export function AppShell() {
     [supabase],
   );
 
-  const loadLists = useCallback(
+  const loadNotes = useCallback(
     async (groupId: string | null) => {
       if (!groupId) {
-        setLists([]);
-        setListItems([]);
+        setNoteFolders([]);
+        setNotes([]);
         return;
       }
 
-      const { data: nextLists, error: listsError } = await supabase
-        .from("lists")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("created_at", { ascending: true });
+      const [foldersResult, notesResult] = await Promise.all([
+        supabase
+          .from("note_folders")
+          .select("*")
+          .eq("group_id", groupId)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("notes")
+          .select("*")
+          .eq("group_id", groupId)
+          .order("updated_at", { ascending: false }),
+      ]);
 
-      if (listsError) {
-        console.error("loadLists", listsError);
-        return;
+      if (foldersResult.error) {
+        console.error("loadNoteFolders", foldersResult.error);
+      } else {
+        setNoteFolders(foldersResult.data ?? []);
       }
 
-      const loadedLists = nextLists ?? [];
-      setLists(loadedLists);
-
-      if (loadedLists.length === 0) {
-        setListItems([]);
-        return;
+      if (notesResult.error) {
+        console.error("loadNotes", notesResult.error);
+      } else {
+        setNotes(notesResult.data ?? []);
       }
-
-      const { data: nextItems, error: itemsError } = await supabase
-        .from("list_items")
-        .select("*")
-        .in(
-          "list_id",
-          loadedLists.map((list) => list.id),
-        )
-        .order("sort_order", { ascending: true });
-
-      if (itemsError) {
-        console.error("loadListItems", itemsError);
-        return;
-      }
-
-      setListItems(nextItems ?? []);
     },
     [supabase],
   );
@@ -235,8 +231,8 @@ export function AppShell() {
       setEvents([]);
       setTags([]);
       setEventTags([]);
-      setLists([]);
-      setListItems([]);
+      setNoteFolders([]);
+      setNotes([]);
       return;
     }
     void loadGroups();
@@ -250,8 +246,8 @@ export function AppShell() {
     void loadEvents(activeGroupId);
     void loadTags(activeGroupId);
     void loadEventTags(activeGroupId);
-    void loadLists(activeGroupId);
-  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadLists]);
+    void loadNotes(activeGroupId);
+  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadNotes]);
 
   // ─── Realtime subscriptions ───────────────────────────────────────────────
 
@@ -277,18 +273,18 @@ export function AppShell() {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "lists", filter: `group_id=eq.${activeGroupId}` },
-        () => { void loadLists(activeGroupId); },
+        { event: "*", schema: "public", table: "note_folders", filter: `group_id=eq.${activeGroupId}` },
+        () => { void loadNotes(activeGroupId); },
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "list_items" },
-        () => { void loadLists(activeGroupId); },
+        { event: "*", schema: "public", table: "notes", filter: `group_id=eq.${activeGroupId}` },
+        () => { void loadNotes(activeGroupId); },
       )
       .subscribe();
 
     return () => { void supabase.removeChannel(channel); };
-  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadLists, supabase]);
+  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadNotes, supabase]);
 
   // ─── Filtered events ──────────────────────────────────────────────────────
 
@@ -543,87 +539,109 @@ export function AppShell() {
     );
   }
 
-  async function handleCreateList(name: string, category: ListCategory) {
+  async function handleCreateNote(context?: NoteDraftContext): Promise<string | null> {
     if (!user || !activeGroupId) {
       throw new Error("Join or create a shared workspace first.");
     }
-    const { error } = await supabase.from("lists").insert({
+
+    const { data, error } = await supabase
+      .from("notes")
+      .insert({
+        group_id: activeGroupId,
+        folder_id: context?.folderId ?? null,
+        event_id: context?.eventId ?? null,
+        linked_date: context?.linkedDate ?? null,
+        visibility: context?.visibility ?? "shared",
+        title: "",
+        content: EMPTY_TIPTAP_DOC,
+        created_by: user.id,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw new Error(error.message);
+    await loadNotes(activeGroupId);
+    return data?.id ?? null;
+  }
+
+  async function handleUpdateNote(
+    noteId: string,
+    patch: Partial<
+      Pick<
+        Note,
+        | "title"
+        | "content"
+        | "folder_id"
+        | "event_id"
+        | "linked_date"
+        | "visibility"
+        | "is_pinned"
+      >
+    >,
+  ) {
+    const { error } = await supabase.from("notes").update(patch).eq("id", noteId);
+    if (error) throw new Error(error.message);
+    setNotes((prev) =>
+      prev.map((note) => (note.id === noteId ? { ...note, ...patch, updated_at: new Date().toISOString() } : note)),
+    );
+  }
+
+  async function handleDeleteNote(noteId: string) {
+    const { error } = await supabase.from("notes").delete().eq("id", noteId);
+    if (error) throw new Error(error.message);
+    setNotes((prev) => prev.filter((note) => note.id !== noteId));
+    if (selectedNoteId === noteId) setSelectedNoteId(null);
+  }
+
+  async function handleCreateNoteFolder(name: string, visibility: "shared" | "private") {
+    if (!user || !activeGroupId) throw new Error("Join or create a workspace first.");
+    const { error } = await supabase.from("note_folders").insert({
       group_id: activeGroupId,
       name,
-      category,
+      visibility,
       created_by: user.id,
+      sort_order: noteFolders.filter((f) => f.visibility === visibility).length,
     });
     if (error) throw new Error(error.message);
-    await loadLists(activeGroupId);
+    await loadNotes(activeGroupId);
   }
 
-  async function handleDeleteList(listId: string) {
-    const { error } = await supabase.from("lists").delete().eq("id", listId);
+  async function handleDeleteNoteFolder(folderId: string) {
+    const { error } = await supabase.from("note_folders").delete().eq("id", folderId);
     if (error) throw new Error(error.message);
-    await loadLists(activeGroupId);
+    await loadNotes(activeGroupId);
   }
 
-  async function handleRenameList(listId: string, name: string) {
+  async function handleRenameNoteFolder(folderId: string, name: string) {
     const trimmed = name.trim();
-    if (!trimmed) throw new Error("List name cannot be empty.");
-    const { error } = await supabase.from("lists").update({ name: trimmed }).eq("id", listId);
+    if (!trimmed) throw new Error("Folder name cannot be empty.");
+    const { error } = await supabase.from("note_folders").update({ name: trimmed }).eq("id", folderId);
     if (error) throw new Error(error.message);
-    setLists((prev) =>
-      prev.map((list) => (list.id === listId ? { ...list, name: trimmed } : list)),
+    setNoteFolders((prev) =>
+      prev.map((folder) => (folder.id === folderId ? { ...folder, name: trimmed } : folder)),
     );
   }
 
-  async function handleAddListItem(listId: string, content: string) {
-    if (!user) throw new Error("Sign in to add items.");
-    const siblingCount = listItems.filter((item) => item.list_id === listId).length;
-    const { error } = await supabase.from("list_items").insert({
-      list_id: listId,
-      content,
-      created_by: user.id,
-      sort_order: siblingCount,
-    });
-    if (error) throw new Error(error.message);
-    await loadLists(activeGroupId);
+  function openNotesForEvent(noteId: string) {
+    setScreenView("notes");
+    setNotesFilter({ type: "event", eventId: selectedEvent!.id });
+    setSelectedNoteId(noteId);
+    closeEventModal();
   }
 
-  async function handleToggleListItem(itemId: string, isChecked: boolean) {
-    const { error } = await supabase
-      .from("list_items")
-      .update({ is_checked: isChecked })
-      .eq("id", itemId);
-    if (error) throw new Error(error.message);
-    setListItems((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, is_checked: isChecked } : item)),
-    );
-  }
-
-  async function handleDeleteListItem(itemId: string) {
-    const { error } = await supabase.from("list_items").delete().eq("id", itemId);
-    if (error) throw new Error(error.message);
-    setListItems((prev) => prev.filter((item) => item.id !== itemId));
-  }
-
-  async function handleReorderListItems(listId: string, orderedItemIds: string[]) {
-    const orderById = new Map(orderedItemIds.map((id, index) => [id, index]));
-    setListItems((prev) =>
-      prev.map((item) => {
-        if (item.list_id !== listId) return item;
-        const nextOrder = orderById.get(item.id);
-        return nextOrder === undefined ? item : { ...item, sort_order: nextOrder };
-      }),
-    );
-
-    const results = await Promise.all(
-      orderedItemIds.map((id, index) =>
-        supabase.from("list_items").update({ sort_order: index }).eq("id", id),
-      ),
-    );
-    const firstError = results.find((result) => result.error)?.error;
-    if (firstError) {
-      await loadLists(activeGroupId);
-      throw new Error(firstError.message);
+  async function handleCreateNoteForEvent(eventId: string) {
+    const id = await handleCreateNote({ eventId, visibility: "shared" });
+    if (id) {
+      setScreenView("notes");
+      setNotesFilter({ type: "event", eventId });
+      setSelectedNoteId(id);
+      closeEventModal();
     }
   }
+
+  const eventLinkedNotes = selectedEvent
+    ? notes.filter((n) => n.event_id === selectedEvent.id)
+    : [];
 
   const userInitials = getInitials(
     (user?.user_metadata?.display_name as string | undefined) || user?.email,
@@ -647,7 +665,7 @@ export function AppShell() {
         calendarMode={calendarMode}
         screenView={screenView}
         sidebarOpen={sidebarOpen}
-        searchQuery={searchQuery}
+        searchQuery={screenView === "notes" ? notesSearchQuery : searchQuery}
         userInitials={userInitials}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onToday={() => setViewDate(startOfDay(new Date()))}
@@ -655,70 +673,85 @@ export function AppShell() {
         onNext={() => setViewDate((d) => shiftViewDate(d, calendarMode, 1))}
         onCalendarModeChange={setCalendarMode}
         onScreenViewChange={setScreenView}
-        onSearchChange={setSearchQuery}
+        onSearchChange={screenView === "notes" ? setNotesSearchQuery : setSearchQuery}
       />
 
       <div className="flex min-h-0 flex-1">
-        <Sidebar
-          open={sidebarOpen}
-          viewDate={viewDate}
-          activeTagIds={activeTagIds}
-          onCreateEvent={() => openCreateModal()}
-          onTagToggle={handleTagToggle}
-          tags={tags}
-          onCreateTag={handleCreateTag}
-          groups={groups}
-          activeGroupId={activeGroupId}
-          onSelectGroup={setActiveGroupId}
-          onCreateGroup={handleCreateGroup}
-          onJoinGroup={handleJoinGroup}
-          canCreateEvent={Boolean(activeGroupId)}
-        />
-
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
-          {!activeGroupId && (
-            <div
-              className="mb-3 rounded-xl px-4 py-3 text-sm"
-              style={{
-                background: "var(--accent-muted)",
-                color: "var(--accent-text)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              Create a shared workspace or join with an invite code to sync calendars
-              between accounts.
-            </div>
-          )}
-          <Calendar
+        {screenView === "calendar" && (
+          <Sidebar
+            open={sidebarOpen}
             viewDate={viewDate}
-            calendarMode={calendarMode}
             activeTagIds={activeTagIds}
-            events={filteredEvents}
+            onCreateEvent={() => openCreateModal()}
+            onTagToggle={handleTagToggle}
             tags={tags}
-            eventTags={eventTags}
-            conflictIds={highlightConflictIds}
-            showConflictHighlights={showConflictHighlights}
-            onViewDateChange={setViewDate}
-            onCalendarModeChange={setCalendarMode}
-            onSelectEvent={openEventDetails}
-            onDayDoubleClick={openCreateModal}
+            onCreateTag={handleCreateTag}
+            groups={groups}
+            activeGroupId={activeGroupId}
+            onSelectGroup={setActiveGroupId}
+            onCreateGroup={handleCreateGroup}
+            onJoinGroup={handleJoinGroup}
+            canCreateEvent={Boolean(activeGroupId)}
           />
-        </main>
+        )}
 
-        <RightPanel
-          visible={showRightPanel}
-          view={screenView}
-          groupId={activeGroupId}
-          lists={lists}
-          items={listItems}
-          onCreateList={handleCreateList}
-          onRenameList={handleRenameList}
-          onDeleteList={handleDeleteList}
-          onAddItem={handleAddListItem}
-          onToggleItem={handleToggleListItem}
-          onDeleteItem={handleDeleteListItem}
-          onReorderItems={handleReorderListItems}
-        />
+        {screenView === "notes" ? (
+          <NotesApp
+            groupId={activeGroupId}
+            groupName={activeGroup?.name ?? null}
+            groups={groups}
+            onSelectGroup={setActiveGroupId}
+            folders={noteFolders}
+            notes={notes}
+            events={events}
+            searchQuery={notesSearchQuery}
+            filter={notesFilter}
+            selectedNoteId={selectedNoteId}
+            onFilterChange={setNotesFilter}
+            onSelectNote={setSelectedNoteId}
+            onSearchChange={setNotesSearchQuery}
+            onCreateNote={handleCreateNote}
+            onUpdateNote={handleUpdateNote}
+            onDeleteNote={handleDeleteNote}
+            onCreateFolder={handleCreateNoteFolder}
+            onDeleteFolder={handleDeleteNoteFolder}
+            onRenameFolder={handleRenameNoteFolder}
+          />
+        ) : (
+          <>
+            <main className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
+              {!activeGroupId && (
+                <div
+                  className="mb-3 rounded-xl px-4 py-3 text-sm"
+                  style={{
+                    background: "var(--accent-muted)",
+                    color: "var(--accent-text)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  Create a shared workspace or join with an invite code to sync calendars
+                  between accounts.
+                </div>
+              )}
+              <Calendar
+                viewDate={viewDate}
+                calendarMode={calendarMode}
+                activeTagIds={activeTagIds}
+                events={filteredEvents}
+                tags={tags}
+                eventTags={eventTags}
+                conflictIds={highlightConflictIds}
+                showConflictHighlights={showConflictHighlights}
+                onViewDateChange={setViewDate}
+                onCalendarModeChange={setCalendarMode}
+                onSelectEvent={openEventDetails}
+                onDayDoubleClick={openCreateModal}
+              />
+            </main>
+
+            <RightPanel visible={showRightPanel} />
+          </>
+        )}
       </div>
 
       <ConflictToast
@@ -769,6 +802,9 @@ export function AppShell() {
         onDelete={handleDeleteEvent}
         onDeleteSeries={handleDeleteSeries}
         onCreateTag={handleCreateTag}
+        linkedNotes={eventLinkedNotes}
+        onOpenNote={openNotesForEvent}
+        onCreateNoteForEvent={handleCreateNoteForEvent}
       />
     </div>
   );
