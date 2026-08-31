@@ -4,6 +4,32 @@ export type NoteFolder = Tables<"note_folders">;
 export type Note = Tables<"notes">;
 export type NoteVisibility = Note["visibility"];
 
+/** Google Drive–style folder color presets */
+export const FOLDER_COLOR_PALETTE = [
+  "#80868B",
+  "#E66550",
+  "#F6BF26",
+  "#FAD165",
+  "#16A765",
+  "#7BD148",
+  "#42D692",
+  "#4A86E8",
+  "#6D9EEB",
+  "#A479E2",
+  "#F691B2",
+  "#AC725E",
+] as const;
+
+export type FolderColor = (typeof FOLDER_COLOR_PALETTE)[number];
+
+export const DEFAULT_FOLDER_COLOR: FolderColor = FOLDER_COLOR_PALETTE[0];
+
+export function normalizeFolderColor(color: string | null | undefined): FolderColor {
+  const upper = color?.toUpperCase();
+  const match = FOLDER_COLOR_PALETTE.find((c) => c.toUpperCase() === upper);
+  return match ?? DEFAULT_FOLDER_COLOR;
+}
+
 export type NotesFilter =
   | { type: "all" }
   | { type: "pinned" }

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { foldersForNote, noteTitle, type Note, type NoteFolder } from "@/lib/notes";
+import { FolderColorIcon } from "./NotesFolderDialog";
 
 type NotesMoveToFolderDialogProps = {
   open: boolean;
@@ -106,7 +107,7 @@ export function NotesMoveToFolderDialog({
                       border: "1px solid var(--border)",
                     }}
                   >
-                    <span aria-hidden>📁</span>
+                    <FolderColorIcon color={folder.color} />
                     <span className="min-w-0 truncate">{folder.name}</span>
                     {isCurrent && (
                       <span className="ml-auto shrink-0 text-xs font-semibold" style={{ color: "var(--accent)" }}>

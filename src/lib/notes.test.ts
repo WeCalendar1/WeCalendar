@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_FOLDER_COLOR,
+  FOLDER_COLOR_PALETTE,
   canMoveNoteToFolder,
   filterNotes,
   foldersForNote,
   folderNameForNote,
+  normalizeFolderColor,
   notePatchBumpsUpdatedAt,
   notePreviewText,
   noteTitle,
@@ -93,6 +96,7 @@ const baseFolder = (overrides: Partial<NoteFolder> = {}): NoteFolder => ({
   id: "f1",
   group_id: "g1",
   name: "Planning",
+  color: "#80868B",
   visibility: "shared",
   sort_order: 0,
   created_by: "u1",
@@ -127,6 +131,15 @@ describe("folderNameForNote", () => {
   it("returns folder name when assigned", () => {
     const folders = [baseFolder({ id: "f9", name: "Trips" })];
     expect(folderNameForNote(baseNote({ folder_id: "f9" }), folders)).toBe("Trips");
+  });
+});
+
+describe("normalizeFolderColor", () => {
+  it("returns palette color or default", () => {
+    expect(normalizeFolderColor("#4A86E8")).toBe("#4A86E8");
+    expect(normalizeFolderColor("#bad")).toBe(DEFAULT_FOLDER_COLOR);
+    expect(normalizeFolderColor(null)).toBe(DEFAULT_FOLDER_COLOR);
+    expect(FOLDER_COLOR_PALETTE).toHaveLength(12);
   });
 });
 
