@@ -19,8 +19,14 @@ type NotesDialogProps = {
   onConfirm: (value?: string) => void | Promise<void>;
 };
 
-export function NotesDialog({
-  open,
+type NotesDialogContentProps = Omit<NotesDialogProps, "open">;
+
+export function NotesDialog({ open, ...props }: NotesDialogProps) {
+  if (!open) return null;
+  return <NotesDialogContent {...props} />;
+}
+
+function NotesDialogContent({
   title,
   description,
   mode,
@@ -34,23 +40,16 @@ export function NotesDialog({
   busy = false,
   onClose,
   onConfirm,
-}: NotesDialogProps) {
+}: NotesDialogContentProps) {
   const [value, setValue] = useState(defaultValue);
 
   useEffect(() => {
-    if (open) setValue(defaultValue);
-  }, [open, defaultValue]);
-
-  useEffect(() => {
-    if (!open) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
-  if (!open) return null;
+  }, [onClose]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
