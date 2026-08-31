@@ -197,12 +197,40 @@ export function foldersForNote(
   return folders.filter((folder) => folder.visibility === note.visibility);
 }
 
+export function folderForNote(
+  note: Pick<Note, "folder_id">,
+  folders: NoteFolder[],
+): NoteFolder | null {
+  if (!note.folder_id) return null;
+  return folders.find((folder) => folder.id === note.folder_id) ?? null;
+}
+
 export function folderNameForNote(
   note: Pick<Note, "folder_id">,
   folders: NoteFolder[],
 ): string | null {
-  if (!note.folder_id) return null;
-  return folders.find((folder) => folder.id === note.folder_id)?.name ?? null;
+  return folderForNote(note, folders)?.name ?? null;
+}
+
+export function noteShowsPrivateLock(
+  note: Pick<Note, "visibility" | "folder_id">,
+  folders: NoteFolder[],
+): boolean {
+  if (note.visibility === "private") return true;
+  return folderForNote(note, folders)?.visibility === "private";
+}
+
+export function folderBadgeStyle(color: string | null | undefined): {
+  background: string;
+  color: string;
+  border: string;
+} {
+  const normalized = normalizeFolderColor(color);
+  return {
+    background: `${normalized}22`,
+    color: normalized,
+    border: `1px solid ${normalized}55`,
+  };
 }
 
 export function canMoveNoteToFolder(

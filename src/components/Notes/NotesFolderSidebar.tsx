@@ -170,7 +170,7 @@ function FolderSection({
           </span>
           {count > 0 && (
             <span className="shrink-0 text-xs tabular-nums" style={{ color: "var(--text-muted)" }}>
-              {count}
+              ({count})
             </span>
           )}
         </button>
