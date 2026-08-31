@@ -22,7 +22,6 @@
   "20": "postcss.config.mjs",
   "21": "20260807150000_events_no_overlap.sql",
   "22": "public.events",
-  "23": "scheduling.ts",
   "24": "20260818160000_lists_realtime.sql",
   "25": "20260824000000_recurrence_group_id.sql",
   "26": "public.events",

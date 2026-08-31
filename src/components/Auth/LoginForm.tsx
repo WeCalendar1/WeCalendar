@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { type FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -35,7 +35,7 @@ export function LoginForm() {
 
   const supabase = useMemo(() => createClient(), []);
 
-  // Password strength rules — derived from current value, no extra state needed
+  // Password strength rules - derived from current value, no extra state needed
   const pwRules = {
     length:    password.length >= 8,
     uppercase: /[A-Z]/.test(password),
@@ -243,7 +243,7 @@ export function LoginForm() {
             </button>
           </div>
 
-          {/* Requirements checklist — only shown in signup mode once user starts typing */}
+          {/* Requirements checklist - only shown in signup mode once user starts typing */}
           {mode === "signup" && password.length > 0 && (
             <ul
               className="grid grid-cols-2 gap-x-3 gap-y-1 pt-1"

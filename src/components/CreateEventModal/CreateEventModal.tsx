@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import type { CalendarEvent } from "@/lib/events";
 import { TagCreatorInline } from "@/components/TagCreatorInline";
 import type { Tag } from "@/lib/tags";
 import { getMonthGrid, addMonths, formatMonthYear } from "@/lib/calendar";
+import { draftOverlapsExisting } from "@/lib/scheduling";
 
 export type EventDraft = {
   title: string;
@@ -19,6 +20,8 @@ type CreateEventModalProps = {
   defaultDate: Date;
   event?: CalendarEvent | null;
   seriesEvents?: CalendarEvent[];
+  /** Other workspace events - used for soft overlap warnings */
+  existingEvents?: CalendarEvent[];
   /** All tags available for this group */
   tags: Tag[];
   /** Tag IDs already assigned to this event (when editing) */
@@ -97,11 +100,11 @@ function DayPicker({ selectedDates, onToggle }: DayPickerProps) {
   // Build hint line describing how many events will be created
   function buildHint(): string {
     if (selectedDates.size === 0) return "Click days to select";
-    if (selectedDates.size === 1) return "1 day — click more to add";
+    if (selectedDates.size === 1) return "1 day - click more to add";
     const parts = groups.map((g) =>
       g.length === 1 ? "1 day" : `${g.length} days`
     );
-    return `${eventCount} event${eventCount !== 1 ? "s" : ""} — ${parts.join(" + ")}`;
+    return `${eventCount} event${eventCount !== 1 ? "s" : ""} - ${parts.join(" + ")}`;
   }
 
   return (
@@ -241,6 +244,7 @@ export function CreateEventModal({
   defaultDate,
   event = null,
   seriesEvents = [],
+  existingEvents = [],
   tags,
   initialTagIds = [],
   onClose,
@@ -290,6 +294,28 @@ export function CreateEventModal({
   const [repeatFreq, setRepeatFreq] = useState<"daily" | "weekly" | "monthly">("weekly");
   const [repeatCount, setRepeatCount] = useState(4);
 
+  const softOverlap = useMemo(() => {
+    const excludeIds = new Set(seriesEvents.map((e) => e.id));
+    if (event) excludeIds.add(event.id);
+
+    const [sh, sm] = startTime.split(":").map(Number);
+    const [eh, em] = endTime.split(":").map(Number);
+    const titles = new Set<string>();
+
+    for (const dateStr of selectedDates) {
+      const [y, mo, d] = dateStr.split("-").map(Number);
+      const startsAt = new Date(y!, mo! - 1, d!, sh!, sm!, 0);
+      const endsAt = new Date(y!, mo! - 1, d!, eh!, em!, 0);
+      if (endsAt <= startsAt) continue;
+      const result = draftOverlapsExisting(startsAt, endsAt, existingEvents, excludeIds);
+      for (const title of result.titles) titles.add(title);
+    }
+
+    return {
+      overlaps: titles.size > 0,
+      titles: [...titles],
+    };
+  }, [selectedDates, startTime, endTime, existingEvents, event, seriesEvents]);
 
   if (!open) return null;
 
@@ -621,6 +647,24 @@ export function CreateEventModal({
             )}
             <TagCreatorInline onAdd={onCreateTag} />
           </div>
+
+          {softOverlap.overlaps && (
+            <p
+              className="rounded-lg px-3 py-2 text-sm"
+              style={{
+                background: "#fff5f5",
+                border: "1.5px solid #fca5a5",
+                color: "#b91c1c",
+              }}
+            >
+              Overlaps with{" "}
+              {softOverlap.titles.slice(0, 2).join(", ")}
+              {softOverlap.titles.length > 2
+                ? ` +${softOverlap.titles.length - 2} more`
+                : ""}
+              . You can still save. Conflicting events will be highlighted.
+            </p>
+          )}
 
           {error && (
             <p className="text-sm" style={{ color: "#b91c1c" }}>

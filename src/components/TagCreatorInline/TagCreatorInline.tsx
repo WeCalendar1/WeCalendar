@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { TAG_PALETTE } from "@/lib/tags";
@@ -95,7 +95,7 @@ export function TagCreatorInline({ onAdd }: TagCreatorInlineProps) {
         {/* Divider */}
         <div className="h-4 w-px shrink-0" style={{ background: "var(--border)" }} />
 
-        {/* Native colour picker — shows the selected colour as a small swatch */}
+        {/* Native colour picker - shows the selected colour as a small swatch */}
         <label
           title="Custom colour"
           className="relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden"
