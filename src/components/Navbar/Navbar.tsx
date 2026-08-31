@@ -6,6 +6,239 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { CalendarMode, ScreenView } from "@/lib/calendar";
 import { createClient } from "@/lib/supabase/client";
 
+// ─── Radial View-Mode Picker ────────────────────────────────────────────────
+
+const MODES: { id: CalendarMode; label: string }[] = [
+  { id: "day", label: "Day" },
+  { id: "week", label: "Week" },
+  { id: "month", label: "Month" },
+  { id: "year", label: "Year" },
+];
+
+const MODE_ORDER: CalendarMode[] = ["day", "week", "month", "year"];
+
+function ViewModePicker({
+  calendarMode,
+  onCalendarModeChange,
+}: {
+  calendarMode: CalendarMode;
+  onCalendarModeChange: (mode: CalendarMode) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const currentIndex = MODE_ORDER.indexOf(calendarMode);
+  const currentLabel = MODES.find((m) => m.id === calendarMode)?.label ?? calendarMode;
+
+  // Close on outside click / Escape
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  function shiftMode(dir: 1 | -1) {
+    const next = (currentIndex + dir + MODE_ORDER.length) % MODE_ORDER.length;
+    onCalendarModeChange(MODE_ORDER[next]!);
+  }
+
+  // Radial positions for 4 items arranged in a circle (top, right, bottom, left)
+  const RADIUS = 56; // px from center
+  const angles = [-90, 0, 90, 180]; // degrees, starting at top, going clockwise
+
+  return (
+    <div ref={containerRef} className="relative flex items-center">
+      {/* ‹ Left arrow */}
+      <button
+        type="button"
+        aria-label="Previous view mode"
+        onClick={() => shiftMode(-1)}
+        className="flex h-7 w-6 cursor-pointer items-center justify-center"
+        style={{
+          borderRadius: "var(--radius-md) 0 0 var(--radius-md)",
+          border: "1.5px solid var(--border)",
+          borderRight: "none",
+          background: "var(--surface)",
+          color: "var(--text-secondary)",
+          transition: "background var(--transition-base), color var(--transition-base)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+          (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+          (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+        }}
+      >
+        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
+      </button>
+
+      {/* Center label — opens radial picker */}
+      <button
+        type="button"
+        id="view-mode-picker-trigger"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-label={`Current view: ${currentLabel}. Click to change.`}
+        onClick={() => setOpen((v) => !v)}
+        className="cursor-pointer px-3 py-1 text-sm font-semibold"
+        style={{
+          border: "1.5px solid var(--border)",
+          background: open ? "var(--accent-muted)" : "var(--surface)",
+          color: open ? "var(--accent)" : "var(--foreground)",
+          minWidth: "4rem",
+          textAlign: "center",
+          transition: "background var(--transition-base), color var(--transition-base)",
+          lineHeight: "1.5rem",
+          boxShadow: "var(--shadow-sm)",
+        }}
+        onMouseEnter={(e) => {
+          if (!open) {
+            (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+            (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!open) {
+            (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+            (e.currentTarget as HTMLElement).style.color = "var(--foreground)";
+          }
+        }}
+      >
+        {currentLabel}
+      </button>
+
+      {/* › Right arrow */}
+      <button
+        type="button"
+        aria-label="Next view mode"
+        onClick={() => shiftMode(1)}
+        className="flex h-7 w-6 cursor-pointer items-center justify-center"
+        style={{
+          borderRadius: "0 var(--radius-md) var(--radius-md) 0",
+          border: "1.5px solid var(--border)",
+          borderLeft: "none",
+          background: "var(--surface)",
+          color: "var(--text-secondary)",
+          transition: "background var(--transition-base), color var(--transition-base)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+          (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+          (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+        }}
+      >
+        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </button>
+
+      {/* Radial picker popup */}
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Select calendar view"
+          className="pointer-events-auto absolute left-1/2 top-full z-50"
+          style={{
+            transform: "translateX(-50%)",
+            marginTop: "0.5rem",
+          }}
+        >
+          {/* Invisible hit-target backdrop to measure center */}
+          <div
+            className="relative flex items-center justify-center"
+            style={{ width: RADIUS * 2 + 80, height: RADIUS * 2 + 80 }}
+          >
+            {/* Decorative ring */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: "var(--surface)",
+                border: "1.5px solid var(--border)",
+                boxShadow: "var(--shadow-md)",
+                borderRadius: "50%",
+              }}
+            />
+
+            {/* Center label (current mode) */}
+            <span
+              className="relative z-10 text-xs font-bold"
+              style={{ color: "var(--accent)", pointerEvents: "none" }}
+            >
+              {currentLabel}
+            </span>
+
+            {/* Mode buttons placed in a circle */}
+            {MODES.map((mode, i) => {
+              const angleDeg = angles[i]!;
+              const angleRad = (angleDeg * Math.PI) / 180;
+              const x = Math.cos(angleRad) * RADIUS;
+              const y = Math.sin(angleRad) * RADIUS;
+              const isActive = mode.id === calendarMode;
+
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => {
+                    onCalendarModeChange(mode.id);
+                    setOpen(false);
+                  }}
+                  aria-label={mode.label}
+                  aria-pressed={isActive}
+                  className="absolute flex cursor-pointer items-center justify-center text-xs font-bold"
+                  style={{
+                    left: "50%",
+                    top: "50%",
+                    transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(1)`,
+                    width: 48,
+                    height: 28,
+                    borderRadius: "var(--radius-full)",
+                    border: isActive ? "2px solid var(--accent)" : "1.5px solid var(--border)",
+                    background: isActive ? "var(--accent)" : "var(--surface)",
+                    color: isActive ? "#fff" : "var(--foreground)",
+                    boxShadow: isActive ? "0 0 0 3px var(--accent-muted), var(--shadow-sm)" : "var(--shadow-sm)",
+                    transition: "all 0.15s ease",
+                    animation: "radial-pop 0.18s ease both",
+                    animationDelay: `${i * 30}ms`,
+                  }}
+                >
+                  {mode.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <style>{`
+            @keyframes radial-pop {
+              from { opacity: 0; transform: translate(calc(-50% + 0px), calc(-50% + 0px)) scale(0.5); }
+              to   { opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type NavbarProps = {
   monthLabel: string;
   calendarMode: CalendarMode;
@@ -22,12 +255,7 @@ type NavbarProps = {
   onSearchChange: (query: string) => void;
 };
 
-const MODES: { id: CalendarMode; label: string }[] = [
-  { id: "day", label: "Day" },
-  { id: "week", label: "Week" },
-  { id: "month", label: "Month" },
-  { id: "year", label: "Year" },
-];
+
 
 const SCREENS: { id: ScreenView; label: string; icon: ReactNode }[] = [
   {
@@ -257,29 +485,11 @@ export function Navbar({
           )}
         </div>
 
-        <label className="sr-only" htmlFor="calendar-mode">
-          Calendar mode
-        </label>
-        <select
-          id="calendar-mode"
-          value={calendarMode}
-          onChange={(e) => onCalendarModeChange(e.target.value as CalendarMode)}
-          className="cursor-pointer px-2.5 py-1.5 text-sm font-semibold"
-          style={{
-            borderRadius: "var(--radius-full)",
-            border: "1.5px solid var(--border)",
-            background: "var(--surface)",
-            color: "var(--foreground)",
-            boxShadow: "var(--shadow-sm)",
-            outline: "none",
-          }}
-        >
-          {MODES.map((mode) => (
-            <option key={mode.id} value={mode.id}>
-              {mode.label}
-            </option>
-          ))}
-        </select>
+        <ViewModePicker
+          calendarMode={calendarMode}
+          onCalendarModeChange={onCalendarModeChange}
+        />
+
 
         <div
           className="flex items-center p-1"
