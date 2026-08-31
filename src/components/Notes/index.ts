@@ -4,4 +4,5 @@ export { NotesDialog } from "./NotesDialog";
 export { NotesFolderSidebar } from "./NotesFolderSidebar";
 export { NotesListPanel } from "./NotesListPanel";
 export { NotesFolderDialog, FolderColorIcon } from "./NotesFolderDialog";
+export { NotesLinkEventDialog } from "./NotesLinkEventDialog";
 export { NotesMoveToFolderDialog } from "./NotesMoveToFolderDialog";

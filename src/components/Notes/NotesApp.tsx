@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { CalendarEvent } from "@/lib/events";
+import { formatLinkedEventLabel } from "@/lib/eventPicker";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
 import {
   canMoveNoteToFolder,
@@ -13,6 +14,7 @@ import { NoteEditor } from "./NoteEditor";
 import { NotesDialog } from "./NotesDialog";
 import { NotesFolderSidebar } from "./NotesFolderSidebar";
 import { NotesListPanel } from "./NotesListPanel";
+import { NotesLinkEventDialog } from "./NotesLinkEventDialog";
 import { NotesMoveToFolderDialog } from "./NotesMoveToFolderDialog";
 
 import type { Tables, Json } from "@/types/database";
@@ -329,6 +331,7 @@ function NoteMetaBar({
   ) => void;
   onDelete: () => void;
 }) {
+  const [linkEventOpen, setLinkEventOpen] = useState(false);
   const linkedEvent = note.event_id ? events.find((e) => e.id === note.event_id) : null;
 
   return (
@@ -365,20 +368,27 @@ function NoteMetaBar({
           ))}
       </select>
 
-      <select
-        value={note.event_id ?? ""}
-        onChange={(e) => onUpdate({ event_id: e.target.value || null })}
-        className="max-w-[10rem] cursor-pointer truncate rounded-lg border px-2 py-1 text-xs font-medium outline-none"
+      <button
+        type="button"
+        onClick={() => setLinkEventOpen(true)}
+        className="max-w-[14rem] cursor-pointer truncate rounded-lg border px-2 py-1 text-left text-xs font-medium outline-none"
         style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}
-        aria-label="Linked event"
+        aria-label="Link to calendar event"
+        title={linkedEvent ? formatLinkedEventLabel(linkedEvent) : "Choose a calendar event"}
       >
-        <option value="">No linked event</option>
-        {events.map((event) => (
-          <option key={event.id} value={event.id}>
-            {event.title}
-          </option>
-        ))}
-      </select>
+        {linkedEvent ? formatLinkedEventLabel(linkedEvent) : "Link event…"}
+      </button>
+
+      <NotesLinkEventDialog
+        open={linkEventOpen}
+        events={events}
+        selectedEventId={note.event_id}
+        onClose={() => setLinkEventOpen(false)}
+        onSelect={(eventId) => {
+          onUpdate({ event_id: eventId });
+          setLinkEventOpen(false);
+        }}
+      />
 
       <input
         type="date"
@@ -388,12 +398,6 @@ function NoteMetaBar({
         style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}
         aria-label="Linked date"
       />
-
-      {linkedEvent && (
-        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          Linked to {linkedEvent.title}
-        </span>
-      )}
 
       <div className="ml-auto flex items-center gap-1">
         <button
