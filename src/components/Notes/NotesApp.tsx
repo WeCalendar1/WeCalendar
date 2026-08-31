@@ -12,14 +12,14 @@ import { NoteEditor } from "./NoteEditor";
 import { NotesFolderSidebar } from "./NotesFolderSidebar";
 import { NotesListPanel } from "./NotesListPanel";
 
+import type { Tables, Json } from "@/types/database";
+
 export type NoteDraftContext = {
   folderId?: string | null;
   eventId?: string | null;
   linkedDate?: string | null;
   visibility?: "shared" | "private";
 };
-
-import type { Tables } from "@/types/database";
 
 type Group = Tables<"groups">;
 
@@ -38,6 +38,7 @@ type NotesAppProps = {
   onSelectNote: (noteId: string | null) => void;
   onSearchChange: (query: string) => void;
   onCreateNote: (context?: NoteDraftContext) => Promise<string | null>;
+  onNoteDraftChange: (noteId: string, patch: { title?: string; content?: Json }) => void;
   onUpdateNote: (
     noteId: string,
     patch: Partial<
@@ -74,6 +75,7 @@ export function NotesApp({
   onSelectNote,
   onSearchChange,
   onCreateNote,
+  onNoteDraftChange,
   onUpdateNote,
   onDeleteNote,
   onCreateFolder,
@@ -206,8 +208,8 @@ export function NotesApp({
               noteId={selectedNote.id}
               title={selectedNote.title}
               content={selectedNote.content}
-              onTitleChange={(title) => void onUpdateNote(selectedNote.id, { title })}
-              onContentChange={(content) => void onUpdateNote(selectedNote.id, { content })}
+              onDraftChange={(patch) => onNoteDraftChange(selectedNote.id, patch)}
+              onSave={(patch) => void onUpdateNote(selectedNote.id, patch)}
             />
           </>
         ) : (
