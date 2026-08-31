@@ -61,6 +61,7 @@ export function NoteEditor({
         heading: { levels: [1, 2, 3] },
         blockquote: false,
         link: false,
+        underline: false,
       }),
       Underline,
       Link.configure({ openOnClick: false, autolink: true }),
