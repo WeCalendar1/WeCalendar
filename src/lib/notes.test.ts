@@ -5,7 +5,6 @@ import {
   canMoveNoteToFolder,
   filterNotes,
   foldersForNote,
-  folderForNote,
   folderNameForNote,
   folderBadgeStyle,
   normalizeFolderColor,
