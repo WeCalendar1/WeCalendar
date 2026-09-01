@@ -7,10 +7,13 @@ import {
   formatEventPickerTimeRange,
   formatLinkedEventLabel,
 } from "@/lib/eventPicker";
+import { colorForEvent, type EventTag, type Tag } from "@/lib/tags";
 
 type NotesLinkEventDialogProps = {
   open: boolean;
   events: CalendarEvent[];
+  eventTags: EventTag[];
+  tags: Tag[];
   selectedEventId: string | null;
   busy?: boolean;
   onClose: () => void;
@@ -20,6 +23,8 @@ type NotesLinkEventDialogProps = {
 export function NotesLinkEventDialog({
   open,
   events,
+  eventTags,
+  tags,
   selectedEventId,
   busy = false,
   onClose,
@@ -39,6 +44,8 @@ export function NotesLinkEventDialog({
   return (
     <NotesLinkEventDialogContent
       events={events}
+      eventTags={eventTags}
+      tags={tags}
       selectedEventId={selectedEventId}
       busy={busy}
       onClose={onClose}
@@ -49,6 +56,8 @@ export function NotesLinkEventDialog({
 
 function NotesLinkEventDialogContent({
   events,
+  eventTags,
+  tags,
   selectedEventId,
   busy = false,
   onClose,
@@ -204,7 +213,7 @@ function NotesLinkEventDialogContent({
                           <span
                             className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
                             style={{
-                              background: "var(--accent)",
+                              background: colorForEvent(event.id, eventTags, tags) ?? "var(--accent)",
                               boxShadow: "0 0 0 1px rgb(0 0 0 / 12%)",
                             }}
                             aria-hidden

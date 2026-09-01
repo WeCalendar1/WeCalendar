@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { CalendarEvent } from "@/lib/events";
 import { formatLinkedEventLabel } from "@/lib/eventPicker";
 import type { Note, NoteFolder, NotesFilter, NotesSort } from "@/lib/notes";
+import type { EventTag, Tag } from "@/lib/tags";
 import {
   canMoveNoteToFolder,
   DEFAULT_NOTES_SORT,
@@ -39,6 +40,8 @@ type NotesAppProps = {
   folders: NoteFolder[];
   notes: Note[];
   events: CalendarEvent[];
+  eventTags: EventTag[];
+  tags: Tag[];
   searchQuery: string;
   filter: NotesFilter;
   selectedNoteId: string | null;
@@ -78,6 +81,8 @@ export function NotesApp({
   folders,
   notes,
   events,
+  eventTags,
+  tags,
   searchQuery,
   filter,
   selectedNoteId,
@@ -247,6 +252,8 @@ export function NotesApp({
               note={selectedNote}
               groupName={groupName}
               events={events}
+              eventTags={eventTags}
+              tags={tags}
               folders={folders}
               onUpdate={(patch) => void onUpdateNote(selectedNote.id, patch)}
               onDelete={() => requestDeleteNote(selectedNote)}
@@ -313,6 +320,8 @@ function NoteMetaBar({
   note,
   groupName,
   events,
+  eventTags,
+  tags,
   folders,
   onUpdate,
   onDelete,
@@ -320,6 +329,8 @@ function NoteMetaBar({
   note: Note;
   groupName: string | null;
   events: CalendarEvent[];
+  eventTags: EventTag[];
+  tags: Tag[];
   folders: NoteFolder[];
   onUpdate: (
     patch: Partial<
@@ -386,6 +397,8 @@ function NoteMetaBar({
       <NotesLinkEventDialog
         open={linkEventOpen}
         events={events}
+        eventTags={eventTags}
+        tags={tags}
         selectedEventId={note.event_id}
         onClose={() => setLinkEventOpen(false)}
         onSelect={(eventId) => {
