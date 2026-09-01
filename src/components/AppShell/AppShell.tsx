@@ -641,11 +641,57 @@ export function AppShell() {
     }
   }
 
+  function handleNotesFilterChange(newFilter: NotesFilter) {
+    if (newFilter.type === "trash" || notesFilter.type === "trash") {
+      setSelectedNoteId(null);
+    }
+    setNotesFilter(newFilter);
+  }
+
   async function handleDeleteNote(noteId: string) {
+    const deleted_at = new Date().toISOString();
+    const { error } = await supabase
+      .from("notes")
+      .update({ deleted_at })
+      .eq("id", noteId);
+    if (error) throw new Error(error.message);
+    setNotes((prev) =>
+      prev.map((note) => (note.id === noteId ? { ...note, deleted_at } : note)),
+    );
+    if (selectedNoteId === noteId) setSelectedNoteId(null);
+  }
+
+  async function handleRestoreNote(noteId: string) {
+    const { error } = await supabase
+      .from("notes")
+      .update({ deleted_at: null })
+      .eq("id", noteId);
+    if (error) throw new Error(error.message);
+    setNotes((prev) =>
+      prev.map((note) => (note.id === noteId ? { ...note, deleted_at: null } : note)),
+    );
+  }
+
+  async function handlePermanentlyDeleteNote(noteId: string) {
     const { error } = await supabase.from("notes").delete().eq("id", noteId);
     if (error) throw new Error(error.message);
     setNotes((prev) => prev.filter((note) => note.id !== noteId));
     if (selectedNoteId === noteId) setSelectedNoteId(null);
+  }
+
+  async function handleEmptyTrash() {
+    if (!activeGroupId) return;
+    const { error } = await supabase
+      .from("notes")
+      .delete()
+      .eq("group_id", activeGroupId)
+      .not("deleted_at", "is", null);
+    if (error) throw new Error(error.message);
+    setNotes((prev) => prev.filter((note) => !note.deleted_at));
+    if (selectedNoteId) {
+      const selected = notes.find((n) => n.id === selectedNoteId);
+      if (selected?.deleted_at) setSelectedNoteId(null);
+    }
   }
 
   async function handleCreateNoteFolder(
@@ -780,13 +826,16 @@ export function AppShell() {
             searchQuery={notesSearchQuery}
             filter={notesFilter}
             selectedNoteId={selectedNoteId}
-            onFilterChange={setNotesFilter}
+            onFilterChange={handleNotesFilterChange}
             onSelectNote={setSelectedNoteId}
             onSearchChange={setNotesSearchQuery}
             onCreateNote={handleCreateNote}
             onNoteDraftChange={handleNoteDraftChange}
             onUpdateNote={handleUpdateNote}
             onDeleteNote={handleDeleteNote}
+            onRestoreNote={handleRestoreNote}
+            onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
+            onEmptyTrash={handleEmptyTrash}
             onCreateFolder={handleCreateNoteFolder}
             onDeleteFolder={handleDeleteNoteFolder}
             onUpdateFolder={handleUpdateNoteFolder}

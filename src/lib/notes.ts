@@ -38,7 +38,8 @@ export type NotesFilter =
   | { type: "private" }
   | { type: "folder"; folderId: string }
   | { type: "event"; eventId: string }
-  | { type: "date"; date: string };
+  | { type: "date"; date: string }
+  | { type: "trash" };
 
 export const EMPTY_TIPTAP_DOC: Json = { type: "doc", content: [] };
 
@@ -153,27 +154,35 @@ export function sortNotesForList(
 }
 
 export function filterNotes(notes: Note[], filter: NotesFilter): Note[] {
+  if (filter.type === "trash") {
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return notes.filter((n) => n.deleted_at && new Date(n.deleted_at).getTime() >= weekAgo);
+  }
+
+  // For all other views, hide deleted notes
+  const activeNotes = notes.filter((n) => !n.deleted_at);
+
   switch (filter.type) {
     case "all":
-      return notes;
+      return activeNotes;
     case "pinned":
-      return notes.filter((n) => n.is_pinned);
+      return activeNotes.filter((n) => n.is_pinned);
     case "recent": {
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      return notes.filter((n) => new Date(n.updated_at).getTime() >= weekAgo);
+      return activeNotes.filter((n) => new Date(n.updated_at).getTime() >= weekAgo);
     }
     case "shared":
-      return notes.filter((n) => n.visibility === "shared");
+      return activeNotes.filter((n) => n.visibility === "shared");
     case "private":
-      return notes.filter((n) => n.visibility === "private");
+      return activeNotes.filter((n) => n.visibility === "private");
     case "folder":
-      return notes.filter((n) => n.folder_id === filter.folderId);
+      return activeNotes.filter((n) => n.folder_id === filter.folderId);
     case "event":
-      return notes.filter((n) => n.event_id === filter.eventId);
+      return activeNotes.filter((n) => n.event_id === filter.eventId);
     case "date":
-      return notes.filter((n) => n.linked_date === filter.date);
+      return activeNotes.filter((n) => n.linked_date === filter.date);
     default:
-      return notes;
+      return activeNotes;
   }
 }
 
@@ -264,6 +273,8 @@ export function filterLabel(filter: NotesFilter, folders: NoteFolder[]): string 
         month: "short",
         day: "numeric",
       });
+    case "trash":
+      return "Trash";
     default:
       return "Notes";
   }

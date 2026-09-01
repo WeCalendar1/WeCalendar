@@ -21,6 +21,7 @@ type NoteEditorProps = {
   content: Json;
   onDraftChange: (patch: { title?: string; content?: Json }) => void;
   onSave: (patch: { title?: string; content?: Json }) => void;
+  readOnly?: boolean;
 };
 
 export function NoteEditor({
@@ -29,6 +30,7 @@ export function NoteEditor({
   content,
   onDraftChange,
   onSave,
+  readOnly = false,
 }: NoteEditorProps) {
   const [localTitle, setLocalTitle] = useState(title);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -59,6 +61,7 @@ export function NoteEditor({
 
   const editor = useEditor({
     immediatelyRender: false,
+    editable: !readOnly,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
@@ -99,6 +102,10 @@ export function NoteEditor({
     editor?.commands.setContent((content ?? EMPTY_TIPTAP_DOC) as object);
   }, [noteId, title, content, editor]);
 
+  useEffect(() => {
+    editor?.setEditable(!readOnly);
+  }, [readOnly, editor]);
+
   useEffect(() => () => flushSave(), []);
 
   function handleTitleChange(nextTitle: string) {
@@ -109,12 +116,13 @@ export function NoteEditor({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <NoteToolbar editor={editor} />
+      {!readOnly && <NoteToolbar editor={editor} />}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <input
           type="text"
           value={localTitle}
           onChange={(e) => handleTitleChange(e.target.value)}
+          readOnly={readOnly}
           placeholder="Title"
           spellCheck={false}
           autoCorrect="off"

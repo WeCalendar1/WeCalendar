@@ -28,6 +28,7 @@ type NotesFolderSidebarProps = {
   dragOverTarget: string | null;
   onDragOverTarget: (target: string | null) => void;
   onDropNoteOnFolder: (folderId: string | null) => void;
+  onDropNoteOnTrash: () => void;
 };
 
 type FolderDialogState =
@@ -230,6 +231,7 @@ export function NotesFolderSidebar({
   dragOverTarget,
   onDragOverTarget,
   onDropNoteOnFolder,
+  onDropNoteOnTrash,
 }: NotesFolderSidebarProps) {
   const [dialog, setDialog] = useState<FolderDialogState>(null);
   const [busy, setBusy] = useState(false);
@@ -252,6 +254,13 @@ export function NotesFolderSidebar({
     event.preventDefault();
     if (!readDraggedNoteId(event)) return;
     onDropNoteOnFolder(folderId);
+    onDragOverTarget(null);
+  }
+
+  function handleTrashDrop(event: DragEvent) {
+    event.preventDefault();
+    if (!readDraggedNoteId(event)) return;
+    onDropNoteOnTrash();
     onDragOverTarget(null);
   }
 
@@ -336,12 +345,23 @@ export function NotesFolderSidebar({
         </div>
 
         <div className="space-y-0.5 px-2">
-          <NavItem
-            active={isFilterActive(filter, { type: "all" })}
-            label="All Notes"
-            icon={NOTES_ICON}
-            onClick={() => onFilterChange({ type: "all" })}
-          />
+          <div
+            onDragOver={(e) => handleFolderDragOver(e, NOTE_DROP_REMOVE)}
+            onDragLeave={() => onDragOverTarget(null)}
+            onDrop={(e) => handleFolderDrop(e, null)}
+            className="rounded-lg"
+            style={{
+              background: dragOverTarget === NOTE_DROP_REMOVE ? "var(--accent-muted)" : "transparent",
+              transition: "background 120ms ease-out",
+            }}
+          >
+            <NavItem
+              active={isFilterActive(filter, { type: "all" })}
+              label="All Notes"
+              icon={NOTES_ICON}
+              onClick={() => onFilterChange({ type: "all" })}
+            />
+          </div>
           <NavItem
             active={isFilterActive(filter, { type: "pinned" })}
             label="Pinned"
@@ -366,31 +386,38 @@ export function NotesFolderSidebar({
             icon={LOCK_ICON}
             onClick={() => onFilterChange({ type: "private" })}
           />
+          <div
+            onDragOver={(e) => handleFolderDragOver(e, "__trash__")}
+            onDragLeave={() => onDragOverTarget(null)}
+            onDrop={handleTrashDrop}
+            className="rounded-lg"
+            style={{
+              background: dragOverTarget === "__trash__" ? "var(--accent-muted)" : "transparent",
+              transition: "background 120ms ease-out",
+            }}
+          >
+            <NavItem
+              active={isFilterActive(filter, { type: "trash" })}
+              label="Trash"
+              icon={
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              }
+              onClick={() => onFilterChange({ type: "trash" })}
+            />
+          </div>
         </div>
 
-        {isDragging && (
-          <div className="mt-3 px-2">
-            <div
-              onDragOver={(e) => handleFolderDragOver(e, NOTE_DROP_REMOVE)}
-              onDragLeave={() => onDragOverTarget(null)}
-              onDrop={(e) => handleFolderDrop(e, null)}
-              className="flex cursor-copy items-center gap-2 px-3 py-2 text-xs font-medium"
-              style={{
-                borderRadius: "var(--radius-md)",
-                border:
-                  dragOverTarget === NOTE_DROP_REMOVE
-                    ? "2px dashed var(--accent)"
-                    : "1.5px dashed var(--border)",
-                background:
-                  dragOverTarget === NOTE_DROP_REMOVE ? "var(--accent-muted)" : "var(--surface)",
-                color: dragOverTarget === NOTE_DROP_REMOVE ? "var(--accent)" : "var(--text-secondary)",
-              }}
-            >
-              <span aria-hidden>📄</span>
-              Drop here to remove from folder
-            </div>
-          </div>
-        )}
+
 
         <FolderSection
           title="Shared Folders"

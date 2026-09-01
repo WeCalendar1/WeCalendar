@@ -45,6 +45,7 @@ type NotesListPanelProps = {
   onSortChange: (sort: NotesSort) => void;
   onSelectNote: (noteId: string) => void;
   onCreateNote: () => void;
+  onEmptyTrash: () => void;
   onDragNoteStart: (noteId: string) => void;
   onDragNoteEnd: () => void;
   onRequestMoveNote: (note: Note) => void;
@@ -64,6 +65,7 @@ export function NotesListPanel({
   onSortChange,
   onSelectNote,
   onCreateNote,
+  onEmptyTrash,
   onDragNoteStart,
   onDragNoteEnd,
   onRequestMoveNote,
@@ -90,18 +92,34 @@ export function NotesListPanel({
             {heading}
           </h2>
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={onCreateNote}
-              className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
-              style={{
-                borderRadius: "var(--radius-full)",
-                background: "var(--accent)",
-                color: "#fff",
-              }}
-            >
-              New
-            </button>
+            {filter.type === "trash" ? (
+              <button
+                type="button"
+                onClick={onEmptyTrash}
+                className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                style={{
+                  borderRadius: "var(--radius-full)",
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  color: "#dc2626",
+                }}
+              >
+                Empty Trash
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onCreateNote}
+                className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                style={{
+                  borderRadius: "var(--radius-full)",
+                  background: "var(--accent)",
+                  color: "#fff",
+                }}
+              >
+                New
+              </button>
+            )}
           </div>
         </div>
         <div
@@ -158,16 +176,18 @@ export function NotesListPanel({
         {notes.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
             <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-              No notes here yet
+              {filter.type === "trash" ? "Trash is empty" : "No notes here yet"}
             </p>
-            <button
-              type="button"
-              onClick={onCreateNote}
-              className="cursor-pointer text-sm font-semibold"
-              style={{ color: "var(--accent)" }}
-            >
-              Create your first note
-            </button>
+            {filter.type !== "trash" && (
+              <button
+                type="button"
+                onClick={onCreateNote}
+                className="cursor-pointer text-sm font-semibold"
+                style={{ color: "var(--accent)" }}
+              >
+                Create your first note
+              </button>
+            )}
           </div>
         ) : (
           <ul>
