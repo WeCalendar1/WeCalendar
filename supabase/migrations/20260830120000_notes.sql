@@ -1,10 +1,11 @@
 -- Notes: folders + rich-text notes with shared/private visibility and event/date links
+-- Idempotent: tables may already exist from a prior preview or manual apply.
 
 -- ---------------------------------------------------------------------------
 -- Tables
 -- ---------------------------------------------------------------------------
 
-create table public.note_folders (
+create table if not exists public.note_folders (
   id          uuid primary key default gen_random_uuid(),
   group_id    uuid not null references public.groups (id) on delete cascade,
   name        text not null,
@@ -16,7 +17,7 @@ create table public.note_folders (
   updated_at  timestamptz not null default now()
 );
 
-create table public.notes (
+create table if not exists public.notes (
   id              uuid primary key default gen_random_uuid(),
   group_id        uuid not null references public.groups (id) on delete cascade,
   folder_id       uuid references public.note_folders (id) on delete set null,
@@ -39,21 +40,23 @@ create table public.notes (
 -- Indexes
 -- ---------------------------------------------------------------------------
 
-create index note_folders_group_id_idx on public.note_folders (group_id);
-create index notes_group_id_idx on public.notes (group_id);
-create index notes_folder_id_idx on public.notes (folder_id);
-create index notes_event_id_idx on public.notes (event_id) where event_id is not null;
-create index notes_linked_date_idx on public.notes (group_id, linked_date) where linked_date is not null;
-create index notes_pinned_updated_idx on public.notes (group_id, is_pinned desc, updated_at desc);
+create index if not exists note_folders_group_id_idx on public.note_folders (group_id);
+create index if not exists notes_group_id_idx on public.notes (group_id);
+create index if not exists notes_folder_id_idx on public.notes (folder_id);
+create index if not exists notes_event_id_idx on public.notes (event_id) where event_id is not null;
+create index if not exists notes_linked_date_idx on public.notes (group_id, linked_date) where linked_date is not null;
+create index if not exists notes_pinned_updated_idx on public.notes (group_id, is_pinned desc, updated_at desc);
 
 -- ---------------------------------------------------------------------------
 -- Triggers
 -- ---------------------------------------------------------------------------
 
+drop trigger if exists note_folders_set_updated_at on public.note_folders;
 create trigger note_folders_set_updated_at
   before update on public.note_folders
   for each row execute function public.set_updated_at();
 
+drop trigger if exists notes_set_updated_at on public.notes;
 create trigger notes_set_updated_at
   before update on public.notes
   for each row execute function public.set_updated_at();
@@ -75,6 +78,7 @@ begin
 end;
 $$;
 
+drop trigger if exists notes_validate_event_group on public.notes;
 create trigger notes_validate_event_group
   before insert or update on public.notes
   for each row execute function public.validate_note_event_group();
@@ -146,6 +150,7 @@ grant execute on function public.can_edit_note(uuid) to authenticated;
 alter table public.note_folders enable row level security;
 alter table public.notes enable row level security;
 
+drop policy if exists "View note folders" on public.note_folders;
 create policy "View note folders"
   on public.note_folders for select
   using (
@@ -153,21 +158,25 @@ create policy "View note folders"
     or (visibility = 'private' and created_by = auth.uid())
   );
 
+drop policy if exists "Create note folders" on public.note_folders;
 create policy "Create note folders"
   on public.note_folders for insert
   with check (
     public.is_group_member(group_id) and created_by = auth.uid()
   );
 
+drop policy if exists "Update note folders" on public.note_folders;
 create policy "Update note folders"
   on public.note_folders for update
   using (public.can_view_note_folder(id))
   with check (public.is_group_member(group_id));
 
+drop policy if exists "Delete note folders" on public.note_folders;
 create policy "Delete note folders"
   on public.note_folders for delete
   using (public.can_view_note_folder(id));
 
+drop policy if exists "View notes" on public.notes;
 create policy "View notes"
   on public.notes for select
   using (
@@ -175,6 +184,7 @@ create policy "View notes"
     or (visibility = 'private' and created_by = auth.uid())
   );
 
+drop policy if exists "Create notes" on public.notes;
 create policy "Create notes"
   on public.notes for insert
   with check (
@@ -184,11 +194,13 @@ create policy "Create notes"
     and (event_id is null or public.is_event_group_member(event_id))
   );
 
+drop policy if exists "Update notes" on public.notes;
 create policy "Update notes"
   on public.notes for update
   using (public.can_edit_note(id))
   with check (public.is_group_member(group_id));
 
+drop policy if exists "Delete notes" on public.notes;
 create policy "Delete notes"
   on public.notes for delete
   using (public.can_edit_note(id));
@@ -197,8 +209,17 @@ create policy "Delete notes"
 -- Realtime
 -- ---------------------------------------------------------------------------
 
-alter publication supabase_realtime add table public.note_folders;
-alter publication supabase_realtime add table public.notes;
+do $$
+begin
+  alter publication supabase_realtime add table public.note_folders;
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.notes;
+exception when duplicate_object then null;
+end $$;
 
 grant select, insert, update, delete on public.note_folders to authenticated;
 grant select, insert, update, delete on public.notes to authenticated;
