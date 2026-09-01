@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -775,6 +775,8 @@ export function AppShell() {
             folders={noteFolders}
             notes={notes}
             events={events}
+            eventTags={eventTags}
+            tags={tags}
             searchQuery={notesSearchQuery}
             filter={notesFilter}
             selectedNoteId={selectedNoteId}
@@ -827,7 +829,7 @@ export function AppShell() {
       </div>
 
       <ConflictToast
-        open={conflictToastOpen}
+        open={conflictToastOpen && screenView === "calendar"}
         items={conflictToastItems}
         hiddenKeys={hiddenConflictKeys}
         onDismiss={() => setDismissedConflictFingerprint(conflictFp)}
