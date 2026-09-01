@@ -829,7 +829,7 @@ export function AppShell() {
       </div>
 
       <ConflictToast
-        open={conflictToastOpen}
+        open={conflictToastOpen && screenView === "calendar"}
         items={conflictToastItems}
         hiddenKeys={hiddenConflictKeys}
         onDismiss={() => setDismissedConflictFingerprint(conflictFp)}
