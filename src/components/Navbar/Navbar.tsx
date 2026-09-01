@@ -269,12 +269,12 @@ const SCREENS: { id: ScreenView; label: string; icon: ReactNode }[] = [
     ),
   },
   {
-    id: "tasks",
-    label: "Tasks",
+    id: "notes",
+    label: "Notes",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 11l3 3L22 4" />
-        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
       </svg>
     ),
   },
@@ -366,72 +366,90 @@ export function Navbar({
         </div>
       </div>
 
-      {/* Center: navigation controls */}
+      {/* Center: navigation controls (calendar only) */}
       <div className="flex flex-1 items-center justify-center gap-2 sm:justify-start sm:pl-4">
-        <button
-          type="button"
-          onClick={onToday}
-          className="btn-bounce cursor-pointer px-3 py-1.5 text-sm font-semibold"
-          style={{
-            borderRadius: "var(--radius-full)",
-            border: "1.5px solid var(--border)",
-            background: "var(--surface)",
-            color: "var(--foreground)",
-            boxShadow: "var(--shadow-sm)",
-            transition: "all var(--transition-base)",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)";
-            (e.currentTarget as HTMLElement).style.color = "var(--accent)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "var(--surface)";
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-            (e.currentTarget as HTMLElement).style.color = "var(--foreground)";
-          }}
-        >
-          Today
-        </button>
-
-        <div className="flex items-center gap-0.5">
-          {[
-            { onClick: onPrev, label: "Previous", path: "M15 6l-6 6 6 6" },
-            { onClick: onNext, label: "Next", path: "M9 6l6 6-6 6" },
-          ].map(({ onClick, label, path }) => (
+        {screenView === "calendar" ? (
+          <>
             <button
-              key={label}
               type="button"
-              onClick={onClick}
-              aria-label={label}
-              className="btn-bounce flex h-8 w-8 cursor-pointer items-center justify-center"
+              onClick={onToday}
+              className="btn-bounce cursor-pointer px-3 py-1.5 text-sm font-semibold"
               style={{
-                borderRadius: "var(--radius-md)",
-                color: "var(--text-secondary)",
-                transition: "background var(--transition-base), color var(--transition-base)",
+                borderRadius: "var(--radius-full)",
+                border: "1.5px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--foreground)",
+                boxShadow: "var(--shadow-sm)",
+                transition: "all var(--transition-base)",
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)";
                 (e.currentTarget as HTMLElement).style.color = "var(--accent)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "transparent";
-                (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+                (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+                (e.currentTarget as HTMLElement).style.color = "var(--foreground)";
               }}
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d={path} />
-              </svg>
+              Today
             </button>
-          ))}
-        </div>
 
-        <h1
-          className="truncate text-base font-semibold tracking-tight sm:text-lg"
-          style={{ color: "var(--foreground)" }}
-        >
-          {monthLabel}
-        </h1>
+            <div className="flex items-center gap-0.5">
+              {[
+                { onClick: onPrev, label: "Previous", path: "M15 6l-6 6 6 6" },
+                { onClick: onNext, label: "Next", path: "M9 6l6 6-6 6" },
+              ].map(({ onClick, label, path }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={onClick}
+                  aria-label={label}
+                  className="btn-bounce flex h-8 w-8 cursor-pointer items-center justify-center"
+                  style={{
+                    borderRadius: "var(--radius-md)",
+                    color: "var(--text-secondary)",
+                    transition: "background var(--transition-base), color var(--transition-base)",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+                    (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                    (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d={path} />
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            <h1
+              className="truncate text-base font-semibold tracking-tight sm:text-lg"
+              style={{ color: "var(--foreground)" }}
+            >
+              {monthLabel}
+            </h1>
+          </>
+        ) : screenView === "notes" ? (
+          <h1
+            className="truncate text-base font-semibold tracking-tight sm:text-lg"
+            style={{ color: "var(--foreground)" }}
+          >
+            Notes
+          </h1>
+        ) : (
+          <h1
+            className="truncate text-base font-semibold tracking-tight sm:text-lg"
+            style={{ color: "var(--foreground)" }}
+          >
+            Map
+          </h1>
+        )}
       </div>
 
       {/* Right: search + mode picker + view switcher + avatar */}
@@ -461,14 +479,14 @@ export function Navbar({
             <path d="M21 21l-4.35-4.35" />
           </svg>
           <input
-            id="calendar-search"
+            id="app-search"
             type="search"
-            placeholder="Search events…"
+            placeholder={screenView === "notes" ? "Search notes…" : "Search events…"}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-8 w-36 bg-transparent text-sm font-medium outline-none lg:w-48"
             style={{ color: "var(--foreground)" }}
-            aria-label="Search events"
+            aria-label={screenView === "notes" ? "Search notes" : "Search events"}
           />
           {searchQuery && (
             <button
@@ -485,11 +503,12 @@ export function Navbar({
           )}
         </div>
 
-        <ViewModePicker
-          calendarMode={calendarMode}
-          onCalendarModeChange={onCalendarModeChange}
-        />
-
+        {screenView === "calendar" && (
+          <ViewModePicker
+            calendarMode={calendarMode}
+            onCalendarModeChange={onCalendarModeChange}
+          />
+        )}
 
         <div
           className="flex items-center p-1"

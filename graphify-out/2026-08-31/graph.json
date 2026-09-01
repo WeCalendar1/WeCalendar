@@ -2079,7 +2079,7 @@
       "file_type": "code",
       "norm_label": "handletitlechange()",
       "source_file": "src/components/Notes/NoteEditor.tsx",
-      "source_location": "L100"
+      "source_location": "L101"
     },
     {
       "id": "src_components_notes_notesapp_notemetabar",
@@ -8017,7 +8017,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/Notes/NoteEditor.tsx",
-      "source_location": "L100",
+      "source_location": "L101",
       "weight": 1.0
     },
     {
@@ -17619,5 +17619,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "e1f7ee1a766ce0b2fe0c84db0881ea3183dc6dcf"
+  "built_at_commit": "d54e93546600b24640f73431b86912410d71fe69"
 }

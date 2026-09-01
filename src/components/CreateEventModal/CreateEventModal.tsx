@@ -6,6 +6,7 @@ import { TagCreatorInline } from "@/components/TagCreatorInline";
 import type { Tag } from "@/lib/tags";
 import { getMonthGrid, addMonths, formatMonthYear } from "@/lib/calendar";
 import { draftOverlapsExisting } from "@/lib/scheduling";
+import { noteTitle, type Note } from "@/lib/notes";
 
 export type EventDraft = {
   title: string;
@@ -34,6 +35,10 @@ type CreateEventModalProps = {
   onDelete?: (eventId: string) => Promise<void>;
   onDeleteSeries?: (recurrenceGroupId: string) => Promise<void>;
   onCreateTag: (name: string, color: string) => Promise<void>;
+  /** Notes linked to this event (when editing) */
+  linkedNotes?: Note[];
+  onOpenNote?: (noteId: string) => void;
+  onCreateNoteForEvent?: (eventId: string) => Promise<void>;
 };
 
 function toDateInput(date: Date): string {
@@ -255,6 +260,9 @@ export function CreateEventModal({
   onDelete,
   onDeleteSeries,
   onCreateTag,
+  linkedNotes = [],
+  onOpenNote,
+  onCreateNoteForEvent,
 }: CreateEventModalProps) {
   const isEditing = Boolean(event);
   const start = event ? new Date(event.starts_at) : defaultDate;
@@ -608,6 +616,49 @@ export function CreateEventModal({
                     {repeatFreq === "daily" ? "days" : repeatFreq === "weekly" ? "weeks" : "months"}
                   </span>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Linked notes ─────────────────────────────────────────────── */}
+          {isEditing && event && (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                Notes
+              </p>
+              {linkedNotes.length > 0 ? (
+                <ul className="space-y-1">
+                  {linkedNotes.map((note) => (
+                    <li key={note.id}>
+                      <button
+                        type="button"
+                        onClick={() => onOpenNote?.(note.id)}
+                        className="w-full cursor-pointer rounded-lg px-3 py-2 text-left text-sm font-medium"
+                        style={{
+                          border: "1px solid var(--border)",
+                          background: "var(--surface-2)",
+                          color: "var(--foreground)",
+                        }}
+                      >
+                        {noteTitle(note)}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  No notes linked to this event yet.
+                </p>
+              )}
+              {onCreateNoteForEvent && (
+                <button
+                  type="button"
+                  onClick={() => void onCreateNoteForEvent(event.id)}
+                  className="cursor-pointer self-start text-xs font-semibold"
+                  style={{ color: "var(--accent)" }}
+                >
+                  + Add note for this event
+                </button>
               )}
             </div>
           )}
