@@ -1,16 +1,16 @@
 # Graph Report - WeCalendar  (2026-09-01)
 
 ## Corpus Check
-- 88 files · ~43,135 words
+- 89 files · ~44,100 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 565 nodes · 1040 edges · 33 communities (24 shown, 9 thin omitted)
+- 569 nodes · 1042 edges · 35 communities (25 shown, 10 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e2812cd4`
+- Built from commit: `3d58ff71`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -38,6 +38,7 @@
 - postcss.config.mjs
 - public.events
 - public.events
+- public.notes
 - public.events
 - 20260831120000_notes_updated_at_content_only.sql
 - public.note_folders
@@ -69,15 +70,15 @@
 ## Import Cycles
 - None detected.
 
-## Communities (33 total, 9 thin omitted)
+## Communities (35 total, 10 thin omitted)
 
 ### Community 0 - "events.ts"
 Cohesion: 0.07
-Nodes (57): Calendar(), CalendarProps, barEdges(), barRadius(), CalendarCell(), CalendarCellProps, conflictBarShadow(), conflictOutline() (+49 more)
+Nodes (56): CalendarProps, barEdges(), barRadius(), CalendarCell(), CalendarCellProps, conflictBarShadow(), conflictOutline(), CalendarGrid() (+48 more)
 
 ### Community 1 - "calendar.ts"
-Cohesion: 0.13
-Nodes (30): CreateEventModal(), CreateEventModalProps, DayPicker(), DayPickerProps, EventDraft, groupConsecutiveDates(), PICKER_DAYS, toDateInput() (+22 more)
+Cohesion: 0.11
+Nodes (35): CreateEventModal(), CreateEventModalProps, DayPicker(), DayPickerProps, EventDraft, groupConsecutiveDates(), PICKER_DAYS, toDateInput() (+27 more)
 
 ### Community 2 - "WeCalendar — Full Project Context"
 Cohesion: 0.04
@@ -96,8 +97,8 @@ Cohesion: 0.07
 Nodes (25): Apply the migration, Option A — Supabase Dashboard (simplest), Option B — Supabase CLI, Out of scope (later phases), RPCs (use these from the app), Security, Smoke test (after auth exists), Tables (+17 more)
 
 ### Community 6 - "database.ts"
-Cohesion: 0.10
-Nodes (18): GET(), formatAuthError(), LoginForm(), Mode, Group, SharedWorkspace(), SharedWorkspaceProps, MiniCalendar() (+10 more)
+Cohesion: 0.12
+Nodes (16): GET(), Group, SharedWorkspace(), SharedWorkspaceProps, MiniCalendar(), MiniCalendarProps, WEEKDAYS, Group (+8 more)
 
 ### Community 7 - "20260730120000_init_schema.sql"
 Cohesion: 0.14
@@ -117,7 +118,7 @@ Nodes (32): eslint, eslint-config-next, devDependencies, eslint, eslint-config-n
 
 ### Community 11 - "AppShell.tsx"
 Cohesion: 0.07
-Nodes (25): ProfilePage(), AppShell(), Group, ConflictToast(), ConflictToastItem, ConflictToastProps, MODE_ORDER, MODES (+17 more)
+Nodes (23): ProfilePage(), AppShell(), Group, formatAuthError(), LoginForm(), Mode, Calendar(), ConflictToast() (+15 more)
 
 ### Community 12 - "WeCalendar — project context"
 Cohesion: 0.13
@@ -142,22 +143,22 @@ Nodes (3): metadata, nunitoSans, varelaRound
 ## Knowledge Gaps
 - **191 isolated node(s):** `eslintConfig`, `nextConfig`, `name`, `version`, `private` (+186 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createClient()` connect `AppShell.tsx` to `database.ts`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Why does `CalendarEvent` connect `events.ts` to `calendar.ts`, `AppShell.tsx`, `notes.ts`?**
-  _High betweenness centrality (0.010) - this node is a cross-community bridge._
+  _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **Why does `Tag` connect `events.ts` to `calendar.ts`, `AppShell.tsx`, `notes.ts`, `database.ts`?**
   _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **What connects `eslintConfig`, `nextConfig`, `name` to the rest of the system?**
   _191 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `events.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.06783511846802986 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07040328092959672 - nodes in this community are weakly interconnected._
 - **Should `calendar.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.12612612612612611 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10852713178294573 - nodes in this community are weakly interconnected._
 - **Should `WeCalendar — Full Project Context` be split into smaller, more focused modules?**
   _Cohesion score 0.0425531914893617 - nodes in this community are weakly interconnected._
+- **Should `compilerOptions` be split into smaller, more focused modules?**
+  _Cohesion score 0.0625 - nodes in this community are weakly interconnected._
