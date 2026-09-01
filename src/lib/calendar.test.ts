@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import {
   startOfDay,
   startOfMonth,
@@ -157,7 +157,7 @@ describe("getMonthGrid", () => {
 
   it("marks cells outside the month as not inCurrentMonth", () => {
     const grid = getMonthGrid(JUNE_2025, TODAY);
-    // June 2025 starts on Sunday so first cell is June 1 — no out-of-month prefix
+    // June 2025 starts on Sunday so first cell is June 1 - no out-of-month prefix
     // But the last few cells should be July
     const outOfMonth = grid.filter((d) => !d.inCurrentMonth);
     expect(outOfMonth.length).toBeGreaterThan(0);

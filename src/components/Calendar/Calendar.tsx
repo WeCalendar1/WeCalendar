@@ -15,6 +15,8 @@ type CalendarProps = {
   events: CalendarEvent[];
   tags: Tag[];
   eventTags: EventTag[];
+  conflictIds?: ReadonlySet<string>;
+  showConflictHighlights?: boolean;
   onViewDateChange: (date: Date) => void;
   onCalendarModeChange: (mode: CalendarMode) => void;
   onSelectEvent?: (event: CalendarEvent) => void;
@@ -28,6 +30,8 @@ export function Calendar({
   events,
   tags,
   eventTags,
+  conflictIds,
+  showConflictHighlights,
   onViewDateChange,
   onCalendarModeChange,
   onSelectEvent,
@@ -36,10 +40,28 @@ export function Calendar({
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
       {calendarMode === "day" && (
-        <DayView viewDate={viewDate} events={events} tags={tags} eventTags={eventTags} onSelectEvent={onSelectEvent} onDayDoubleClick={onDayDoubleClick} />
+        <DayView
+          viewDate={viewDate}
+          events={events}
+          tags={tags}
+          eventTags={eventTags}
+          conflictIds={conflictIds}
+          showConflictHighlights={showConflictHighlights}
+          onSelectEvent={onSelectEvent}
+          onDayDoubleClick={onDayDoubleClick}
+        />
       )}
       {calendarMode === "week" && (
-        <WeekView viewDate={viewDate} events={events} tags={tags} eventTags={eventTags} onSelectEvent={onSelectEvent} onDayDoubleClick={onDayDoubleClick} />
+        <WeekView
+          viewDate={viewDate}
+          events={events}
+          tags={tags}
+          eventTags={eventTags}
+          conflictIds={conflictIds}
+          showConflictHighlights={showConflictHighlights}
+          onSelectEvent={onSelectEvent}
+          onDayDoubleClick={onDayDoubleClick}
+        />
       )}
       {calendarMode === "month" && (
         <CalendarGrid
@@ -48,6 +70,8 @@ export function Calendar({
           events={events}
           tags={tags}
           eventTags={eventTags}
+          conflictIds={conflictIds}
+          showConflictHighlights={showConflictHighlights}
           onSelectEvent={onSelectEvent}
           onDayDoubleClick={onDayDoubleClick}
         />

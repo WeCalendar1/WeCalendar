@@ -1,6 +1,243 @@
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { CalendarMode, ScreenView } from "@/lib/calendar";
+import { createClient } from "@/lib/supabase/client";
+
+// ─── Radial View-Mode Picker ────────────────────────────────────────────────
+
+const MODES: { id: CalendarMode; label: string }[] = [
+  { id: "day", label: "Day" },
+  { id: "week", label: "Week" },
+  { id: "month", label: "Month" },
+  { id: "year", label: "Year" },
+];
+
+const MODE_ORDER: CalendarMode[] = ["day", "week", "month", "year"];
+
+function ViewModePicker({
+  calendarMode,
+  onCalendarModeChange,
+}: {
+  calendarMode: CalendarMode;
+  onCalendarModeChange: (mode: CalendarMode) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const currentIndex = MODE_ORDER.indexOf(calendarMode);
+  const currentLabel = MODES.find((m) => m.id === calendarMode)?.label ?? calendarMode;
+
+  // Close on outside click / Escape
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  function shiftMode(dir: 1 | -1) {
+    const next = (currentIndex + dir + MODE_ORDER.length) % MODE_ORDER.length;
+    onCalendarModeChange(MODE_ORDER[next]!);
+  }
+
+  // Radial positions for 4 items arranged in a circle (top, right, bottom, left)
+  const RADIUS = 56; // px from center
+  const angles = [-90, 0, 90, 180]; // degrees, starting at top, going clockwise
+
+  return (
+    <div ref={containerRef} className="relative flex items-center">
+      {/* ‹ Left arrow */}
+      <button
+        type="button"
+        aria-label="Previous view mode"
+        onClick={() => shiftMode(-1)}
+        className="flex h-7 w-6 cursor-pointer items-center justify-center"
+        style={{
+          borderRadius: "var(--radius-md) 0 0 var(--radius-md)",
+          border: "1.5px solid var(--border)",
+          borderRight: "none",
+          background: "var(--surface)",
+          color: "var(--text-secondary)",
+          transition: "background var(--transition-base), color var(--transition-base)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+          (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+          (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+        }}
+      >
+        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
+      </button>
+
+      {/* Center label — opens radial picker */}
+      <button
+        type="button"
+        id="view-mode-picker-trigger"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-label={`Current view: ${currentLabel}. Click to change.`}
+        onClick={() => setOpen((v) => !v)}
+        className="cursor-pointer px-3 py-1 text-sm font-semibold"
+        style={{
+          border: "1.5px solid var(--border)",
+          background: open ? "var(--accent-muted)" : "var(--surface)",
+          color: open ? "var(--accent)" : "var(--foreground)",
+          minWidth: "4rem",
+          textAlign: "center",
+          transition: "background var(--transition-base), color var(--transition-base)",
+          lineHeight: "1.5rem",
+          boxShadow: "var(--shadow-sm)",
+        }}
+        onMouseEnter={(e) => {
+          if (!open) {
+            (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+            (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!open) {
+            (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+            (e.currentTarget as HTMLElement).style.color = "var(--foreground)";
+          }
+        }}
+      >
+        {currentLabel}
+      </button>
+
+      {/* › Right arrow */}
+      <button
+        type="button"
+        aria-label="Next view mode"
+        onClick={() => shiftMode(1)}
+        className="flex h-7 w-6 cursor-pointer items-center justify-center"
+        style={{
+          borderRadius: "0 var(--radius-md) var(--radius-md) 0",
+          border: "1.5px solid var(--border)",
+          borderLeft: "none",
+          background: "var(--surface)",
+          color: "var(--text-secondary)",
+          transition: "background var(--transition-base), color var(--transition-base)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+          (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+          (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+        }}
+      >
+        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </button>
+
+      {/* Radial picker popup */}
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Select calendar view"
+          className="pointer-events-auto absolute left-1/2 top-full z-50"
+          style={{
+            transform: "translateX(-50%)",
+            marginTop: "0.5rem",
+          }}
+        >
+          {/* Invisible hit-target backdrop to measure center */}
+          <div
+            className="relative flex items-center justify-center"
+            style={{ width: RADIUS * 2 + 80, height: RADIUS * 2 + 80 }}
+          >
+            {/* Decorative ring */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: "var(--surface)",
+                border: "1.5px solid var(--border)",
+                boxShadow: "var(--shadow-md)",
+                borderRadius: "50%",
+              }}
+            />
+
+            {/* Center label (current mode) */}
+            <span
+              className="relative z-10 text-xs font-bold"
+              style={{ color: "var(--accent)", pointerEvents: "none" }}
+            >
+              {currentLabel}
+            </span>
+
+            {/* Mode buttons placed in a circle */}
+            {MODES.map((mode, i) => {
+              const angleDeg = angles[i]!;
+              const angleRad = (angleDeg * Math.PI) / 180;
+              const x = Math.cos(angleRad) * RADIUS;
+              const y = Math.sin(angleRad) * RADIUS;
+              const isActive = mode.id === calendarMode;
+
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => {
+                    onCalendarModeChange(mode.id);
+                    setOpen(false);
+                  }}
+                  aria-label={mode.label}
+                  aria-pressed={isActive}
+                  className="absolute flex cursor-pointer items-center justify-center text-xs font-bold"
+                  style={{
+                    left: "50%",
+                    top: "50%",
+                    transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(1)`,
+                    width: 48,
+                    height: 28,
+                    borderRadius: "var(--radius-full)",
+                    border: isActive ? "2px solid var(--accent)" : "1.5px solid var(--border)",
+                    background: isActive ? "var(--accent)" : "var(--surface)",
+                    color: isActive ? "#fff" : "var(--foreground)",
+                    boxShadow: isActive ? "0 0 0 3px var(--accent-muted), var(--shadow-sm)" : "var(--shadow-sm)",
+                    transition: "all 0.15s ease",
+                    animation: "radial-pop 0.18s ease both",
+                    animationDelay: `${i * 30}ms`,
+                  }}
+                >
+                  {mode.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <style>{`
+            @keyframes radial-pop {
+              from { opacity: 0; transform: translate(calc(-50% + 0px), calc(-50% + 0px)) scale(0.5); }
+              to   { opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
+    </div>
+  );
+}
 
 type NavbarProps = {
   monthLabel: string;
@@ -18,12 +255,7 @@ type NavbarProps = {
   onSearchChange: (query: string) => void;
 };
 
-const MODES: { id: CalendarMode; label: string }[] = [
-  { id: "day", label: "Day" },
-  { id: "week", label: "Week" },
-  { id: "month", label: "Month" },
-  { id: "year", label: "Year" },
-];
+
 
 const SCREENS: { id: ScreenView; label: string; icon: ReactNode }[] = [
   {
@@ -37,12 +269,12 @@ const SCREENS: { id: ScreenView; label: string; icon: ReactNode }[] = [
     ),
   },
   {
-    id: "tasks",
-    label: "Tasks",
+    id: "notes",
+    label: "Notes",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 11l3 3L22 4" />
-        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
       </svg>
     ),
   },
@@ -134,72 +366,90 @@ export function Navbar({
         </div>
       </div>
 
-      {/* Center: navigation controls */}
+      {/* Center: navigation controls (calendar only) */}
       <div className="flex flex-1 items-center justify-center gap-2 sm:justify-start sm:pl-4">
-        <button
-          type="button"
-          onClick={onToday}
-          className="btn-bounce cursor-pointer px-3 py-1.5 text-sm font-semibold"
-          style={{
-            borderRadius: "var(--radius-full)",
-            border: "1.5px solid var(--border)",
-            background: "var(--surface)",
-            color: "var(--foreground)",
-            boxShadow: "var(--shadow-sm)",
-            transition: "all var(--transition-base)",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)";
-            (e.currentTarget as HTMLElement).style.color = "var(--accent)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "var(--surface)";
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-            (e.currentTarget as HTMLElement).style.color = "var(--foreground)";
-          }}
-        >
-          Today
-        </button>
-
-        <div className="flex items-center gap-0.5">
-          {[
-            { onClick: onPrev, label: "Previous", path: "M15 6l-6 6 6 6" },
-            { onClick: onNext, label: "Next", path: "M9 6l6 6-6 6" },
-          ].map(({ onClick, label, path }) => (
+        {screenView === "calendar" ? (
+          <>
             <button
-              key={label}
               type="button"
-              onClick={onClick}
-              aria-label={label}
-              className="btn-bounce flex h-8 w-8 cursor-pointer items-center justify-center"
+              onClick={onToday}
+              className="btn-bounce cursor-pointer px-3 py-1.5 text-sm font-semibold"
               style={{
-                borderRadius: "var(--radius-md)",
-                color: "var(--text-secondary)",
-                transition: "background var(--transition-base), color var(--transition-base)",
+                borderRadius: "var(--radius-full)",
+                border: "1.5px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--foreground)",
+                boxShadow: "var(--shadow-sm)",
+                transition: "all var(--transition-base)",
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)";
                 (e.currentTarget as HTMLElement).style.color = "var(--accent)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "transparent";
-                (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+                (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+                (e.currentTarget as HTMLElement).style.color = "var(--foreground)";
               }}
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d={path} />
-              </svg>
+              Today
             </button>
-          ))}
-        </div>
 
-        <h1
-          className="truncate text-base font-semibold tracking-tight sm:text-lg"
-          style={{ color: "var(--foreground)" }}
-        >
-          {monthLabel}
-        </h1>
+            <div className="flex items-center gap-0.5">
+              {[
+                { onClick: onPrev, label: "Previous", path: "M15 6l-6 6 6 6" },
+                { onClick: onNext, label: "Next", path: "M9 6l6 6-6 6" },
+              ].map(({ onClick, label, path }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={onClick}
+                  aria-label={label}
+                  className="btn-bounce flex h-8 w-8 cursor-pointer items-center justify-center"
+                  style={{
+                    borderRadius: "var(--radius-md)",
+                    color: "var(--text-secondary)",
+                    transition: "background var(--transition-base), color var(--transition-base)",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+                    (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                    (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d={path} />
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            <h1
+              className="truncate text-base font-semibold tracking-tight sm:text-lg"
+              style={{ color: "var(--foreground)" }}
+            >
+              {monthLabel}
+            </h1>
+          </>
+        ) : screenView === "notes" ? (
+          <h1
+            className="truncate text-base font-semibold tracking-tight sm:text-lg"
+            style={{ color: "var(--foreground)" }}
+          >
+            Notes
+          </h1>
+        ) : (
+          <h1
+            className="truncate text-base font-semibold tracking-tight sm:text-lg"
+            style={{ color: "var(--foreground)" }}
+          >
+            Map
+          </h1>
+        )}
       </div>
 
       {/* Right: search + mode picker + view switcher + avatar */}
@@ -229,14 +479,14 @@ export function Navbar({
             <path d="M21 21l-4.35-4.35" />
           </svg>
           <input
-            id="calendar-search"
+            id="app-search"
             type="search"
-            placeholder="Search events…"
+            placeholder={screenView === "notes" ? "Search notes…" : "Search events…"}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-8 w-36 bg-transparent text-sm font-medium outline-none lg:w-48"
             style={{ color: "var(--foreground)" }}
-            aria-label="Search events"
+            aria-label={screenView === "notes" ? "Search notes" : "Search events"}
           />
           {searchQuery && (
             <button
@@ -253,29 +503,12 @@ export function Navbar({
           )}
         </div>
 
-        <label className="sr-only" htmlFor="calendar-mode">
-          Calendar mode
-        </label>
-        <select
-          id="calendar-mode"
-          value={calendarMode}
-          onChange={(e) => onCalendarModeChange(e.target.value as CalendarMode)}
-          className="cursor-pointer px-2.5 py-1.5 text-sm font-semibold"
-          style={{
-            borderRadius: "var(--radius-full)",
-            border: "1.5px solid var(--border)",
-            background: "var(--surface)",
-            color: "var(--foreground)",
-            boxShadow: "var(--shadow-sm)",
-            outline: "none",
-          }}
-        >
-          {MODES.map((mode) => (
-            <option key={mode.id} value={mode.id}>
-              {mode.label}
-            </option>
-          ))}
-        </select>
+        {screenView === "calendar" && (
+          <ViewModePicker
+            calendarMode={calendarMode}
+            onCalendarModeChange={onCalendarModeChange}
+          />
+        )}
 
         <div
           className="flex items-center p-1"
@@ -312,22 +545,133 @@ export function Navbar({
           })}
         </div>
 
-        <Link
-          href="/profile"
-          className="btn-bounce flex h-8 w-8 cursor-pointer items-center justify-center text-sm font-semibold"
-          aria-label="Go to profile"
-          title="Profile"
-          style={{
-            borderRadius: "var(--radius-full)",
-            background: "var(--accent-muted)",
-            color: "var(--accent-text)",
-            fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
-            transition: "all var(--transition-base)",
-          }}
-        >
-          {userInitials}
-        </Link>
+        <ProfileMenu userInitials={userInitials} />
       </div>
     </header>
+  );
+}
+
+function ProfileMenu({ userInitials }: { userInitials: string }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      setOpen(false);
+      router.replace("/login");
+      router.refresh();
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-label="Account menu"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="Account"
+        className="btn-bounce flex h-8 w-8 cursor-pointer items-center justify-center text-sm font-semibold"
+        style={{
+          borderRadius: "var(--radius-full)",
+          background: "var(--accent-muted)",
+          color: "var(--accent-text)",
+          fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+          transition: "all var(--transition-base)",
+        }}
+      >
+        {userInitials}
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          aria-label="Account"
+          className="absolute right-0 z-50 mt-2 w-44 overflow-hidden py-1"
+          style={{
+            borderRadius: "var(--radius-lg)",
+            border: "1.5px solid var(--border)",
+            background: "var(--surface)",
+            boxShadow: "var(--shadow-md)",
+          }}
+        >
+          <Link
+            href="/profile"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--surface-2)]"
+            style={{ color: "var(--foreground)" }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            Settings
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => void handleSignOut()}
+            disabled={signingOut}
+            className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-[#fff0f0] disabled:opacity-50"
+            style={{ color: "#dc2626" }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            {signingOut ? "Signing out…" : "Sign out"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

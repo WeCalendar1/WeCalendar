@@ -119,6 +119,110 @@ export function eventPosition(
   };
 }
 
+export type EventLayout = {
+  event: CalendarEvent;
+  column: number;      // 0-based column index within the overlap group
+  totalColumns: number; // total columns needed for the overlap group
+};
+
+/**
+ * Assigns each event a column slot so that overlapping events are shown
+ * side-by-side (Google Calendar style).
+ *
+ * Algorithm:
+ *  1. Sort events by start time.
+ *  2. Greedily assign each event the first column not occupied by an event
+ *     that overlaps it.
+ *  3. Make a second pass to widen events whose rightmost column in their
+ *     overlap cluster is unoccupied (so they expand to fill free space).
+ */
+export function layoutOverlappingEvents(events: CalendarEvent[]): EventLayout[] {
+  if (events.length === 0) return [];
+
+  // Sort by start time, then by end time descending (longer events first)
+  const sorted = [...events].sort((a, b) => {
+    const startDiff =
+      new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
+    if (startDiff !== 0) return startDiff;
+    // Longer events get lower columns
+    return new Date(b.ends_at).getTime() - new Date(a.ends_at).getTime();
+  });
+
+  /** Returns end-time in minutes-since-midnight (clamped to min 30min duration) */
+  function endMin(e: CalendarEvent): number {
+    const s = new Date(e.starts_at);
+    const en = new Date(e.ends_at);
+    const startM = s.getHours() * 60 + s.getMinutes();
+    const endM = en.getHours() * 60 + en.getMinutes();
+    return Math.max(endM, startM + 30);
+  }
+
+  function startMin(e: CalendarEvent): number {
+    const s = new Date(e.starts_at);
+    return s.getHours() * 60 + s.getMinutes();
+  }
+
+  function overlaps(a: CalendarEvent, b: CalendarEvent): boolean {
+    return startMin(a) < endMin(b) && startMin(b) < endMin(a);
+  }
+
+  // Assign columns greedily
+  const columns: number[] = new Array(sorted.length).fill(-1);
+  // Track the end time of events placed in each column
+  const colEnds: number[] = [];
+
+  for (let i = 0; i < sorted.length; i++) {
+    // Find overlapping events that already have a column assigned
+    const usedCols = new Set<number>();
+    for (let j = 0; j < i; j++) {
+      if (overlaps(sorted[i], sorted[j])) {
+        usedCols.add(columns[j]);
+      }
+    }
+    // Pick the lowest free column
+    let col = 0;
+    while (usedCols.has(col)) col++;
+    columns[i] = col;
+    colEnds[col] = endMin(sorted[i]);
+  }
+
+  // Compute total columns per overlap cluster
+  // Two events are in the same cluster if they directly or transitively overlap
+  const clusterOf: number[] = new Array(sorted.length).fill(-1);
+  let clusterCount = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    if (clusterOf[i] !== -1) continue;
+    // BFS
+    const queue = [i];
+    clusterOf[i] = clusterCount;
+    while (queue.length > 0) {
+      const cur = queue.shift()!;
+      for (let j = 0; j < sorted.length; j++) {
+        if (clusterOf[j] === -1 && overlaps(sorted[cur], sorted[j])) {
+          clusterOf[j] = clusterCount;
+          queue.push(j);
+        }
+      }
+    }
+    clusterCount++;
+  }
+
+  // Max column per cluster → totalColumns for that cluster
+  const clusterMaxCol: number[] = new Array(clusterCount).fill(0);
+  for (let i = 0; i < sorted.length; i++) {
+    clusterMaxCol[clusterOf[i]] = Math.max(
+      clusterMaxCol[clusterOf[i]],
+      columns[i],
+    );
+  }
+
+  return sorted.map((event, i) => ({
+    event,
+    column: columns[i],
+    totalColumns: clusterMaxCol[clusterOf[i]] + 1,
+  }));
+}
+
 export function formatEventTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-US", {
     hour: "numeric",

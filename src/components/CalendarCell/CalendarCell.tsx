@@ -1,4 +1,4 @@
-import type { CalendarDay } from "@/lib/calendar";
+﻿import type { CalendarDay } from "@/lib/calendar";
 import {
   eventsForDay,
   eventsSpanningDay,
@@ -62,11 +62,37 @@ type CalendarCellProps = {
   events: CalendarEvent[];
   tags: Tag[];
   eventTags: EventTag[];
-  /** Slot index (0, 1, …) per multi-day event id — computed by CalendarGrid. */
+  /** Slot index (0, 1, …) per multi-day event id - computed by CalendarGrid. */
   multiDaySlots: Map<string, number>;
+  conflictIds?: ReadonlySet<string>;
+  showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDoubleClick?: (date: Date) => void;
 };
+
+function conflictOutline(active: boolean): string | undefined {
+  return active ? "0 0 0 2px #dc2626" : undefined;
+}
+
+/** Continuous outline for multi-day bars - no vertical seams between columns. */
+function conflictBarShadow(active: boolean, pos: SpanPosition): string | undefined {
+  if (!active) return undefined;
+  const c = "#dc2626";
+  const top = `0 -2px 0 0 ${c}`;
+  const bottom = `0 2px 0 0 ${c}`;
+  const left = `-2px 0 0 0 ${c}`;
+  const right = `2px 0 0 0 ${c}`;
+  switch (pos) {
+    case "solo":
+      return `0 0 0 2px ${c}`;
+    case "start":
+      return `${top}, ${bottom}, ${left}`;
+    case "middle":
+      return `${top}, ${bottom}`;
+    case "end":
+      return `${top}, ${bottom}, ${right}`;
+  }
+}
 
 export function CalendarCell({
   day,
@@ -74,6 +100,8 @@ export function CalendarCell({
   tags,
   eventTags,
   multiDaySlots,
+  conflictIds,
+  showConflictHighlights = false,
   onSelectEvent,
   onDoubleClick,
 }: CalendarCellProps) {
@@ -183,6 +211,8 @@ export function CalendarCell({
         const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
         const { left, right } = barEdges(pos);
         const showLabel = pos === "solo" || pos === "start";
+        const warn =
+          showConflictHighlights && Boolean(conflictIds?.has(event.id));
 
         return (
           <button
@@ -208,6 +238,7 @@ export function CalendarCell({
               lineHeight:   1,
               zIndex:       1,
               whiteSpace:   "nowrap",
+              boxShadow:    conflictBarShadow(warn, pos),
             }}
           >
             {showLabel && (
@@ -228,6 +259,8 @@ export function CalendarCell({
       <div className="space-y-1">
         {visibleSingle.map((event) => {
           const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+          const warn =
+            showConflictHighlights && Boolean(conflictIds?.has(event.id));
           return (
             <button
               key={event.id}
@@ -242,6 +275,7 @@ export function CalendarCell({
                 borderRadius: "var(--radius-sm)",
                 background:   color,
                 color:        "#fff",
+                boxShadow:    conflictOutline(warn),
               }}
             >
               {formatEventTime(event.starts_at)} {event.title}
