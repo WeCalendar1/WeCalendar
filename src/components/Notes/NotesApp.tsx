@@ -107,6 +107,7 @@ export function NotesApp({
   const [draggingNoteId, setDraggingNoteId] = useState<string | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [notesSort, setNotesSort] = useState<NotesSort>(DEFAULT_NOTES_SORT);
+  const [listPanelOpen, setListPanelOpen] = useState(true);
 
   const effectiveSearch = localSearch || searchQuery;
 
@@ -233,6 +234,8 @@ export function NotesApp({
         searchQuery={localSearch}
         sort={notesSort}
         draggingNoteId={draggingNoteId}
+        collapsed={!listPanelOpen}
+        onToggleCollapse={() => setListPanelOpen((v) => !v)}
         onSearchChange={handleLocalSearch}
         onSortChange={setNotesSort}
         onSelectNote={(id) => onSelectNote(id)}
@@ -244,12 +247,14 @@ export function NotesApp({
         }}
         onRequestMoveNote={setMoveNoteTarget}
       />
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col" style={{ background: "var(--surface)" }}>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col" style={{ background: "var(--surface)" }}>
         {selectedNote ? (
           <>
             <NoteMetaBar
               note={selectedNote}
+              listPanelOpen={listPanelOpen}
+              onToggleListPanel={() => setListPanelOpen((v) => !v)}
               groupName={groupName}
               events={events}
               eventTags={eventTags}
@@ -268,7 +273,10 @@ export function NotesApp({
             />
           </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+          <div className="relative flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+            <div className="absolute left-4 top-4">
+              <ListPanelToggleButton open={listPanelOpen} onToggle={() => setListPanelOpen((v) => !v)} />
+            </div>
             <p className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>
               Select a note or create a new one
             </p>
@@ -318,6 +326,8 @@ export function NotesApp({
 
 function NoteMetaBar({
   note,
+  listPanelOpen,
+  onToggleListPanel,
   groupName,
   events,
   eventTags,
@@ -327,6 +337,8 @@ function NoteMetaBar({
   onDelete,
 }: {
   note: Note;
+  listPanelOpen: boolean;
+  onToggleListPanel: () => void;
   groupName: string | null;
   events: CalendarEvent[];
   eventTags: EventTag[];
@@ -354,6 +366,8 @@ function NoteMetaBar({
       className="flex flex-wrap items-center gap-2 border-b px-4 py-2"
       style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
     >
+      <ListPanelToggleButton open={listPanelOpen} onToggle={onToggleListPanel} />
+      
       <select
         value={note.visibility}
         onChange={(e) => onUpdate({ visibility: e.target.value as "shared" | "private" })}
@@ -439,5 +453,48 @@ function NoteMetaBar({
         </button>
       </div>
     </div>
+  );
+}
+
+function ListPanelToggleButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={open ? "Collapse notes list" : "Expand notes list"}
+      onClick={onToggle}
+      className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center"
+      style={{
+        borderRadius: "var(--radius-md)",
+        border: "1.5px solid var(--border)",
+        background: open ? "transparent" : "var(--accent-muted)",
+        color: open ? "var(--text-muted)" : "var(--accent)",
+        transition: "all var(--transition-base)",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+        (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.background = open ? "transparent" : "var(--accent-muted)";
+        (e.currentTarget as HTMLElement).style.color = open ? "var(--text-muted)" : "var(--accent)";
+      }}
+    >
+      <svg
+        viewBox="0 0 16 16"
+        className="h-3.5 w-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{
+          transition: "transform 0.25s ease",
+          transform: open ? "rotate(0deg)" : "rotate(180deg)",
+        }}
+        aria-hidden
+      >
+        <path d="M10 4l-4 4 4 4" />
+      </svg>
+    </button>
   );
 }

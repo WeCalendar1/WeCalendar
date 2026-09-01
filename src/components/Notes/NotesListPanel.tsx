@@ -39,6 +39,8 @@ type NotesListPanelProps = {
   searchQuery: string;
   sort: NotesSort;
   draggingNoteId: string | null;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: NotesSort) => void;
   onSelectNote: (noteId: string) => void;
@@ -56,6 +58,8 @@ export function NotesListPanel({
   searchQuery,
   sort,
   draggingNoteId,
+  collapsed,
+  onToggleCollapse,
   onSearchChange,
   onSortChange,
   onSelectNote,
@@ -69,26 +73,36 @@ export function NotesListPanel({
 
   return (
     <div
-      className="flex w-72 shrink-0 flex-col border-r sm:w-80"
-      style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+      className="flex shrink-0 flex-col overflow-hidden"
+      style={{
+        borderColor: "var(--border)",
+        background: "var(--surface)",
+        width: collapsed ? 0 : undefined,
+        minWidth: collapsed ? 0 : undefined,
+        maxWidth: collapsed ? 0 : undefined,
+        transition: "width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease",
+        ...(collapsed ? {} : { width: "20rem" }),
+      }}
     >
       <div className="border-b px-4 py-3" style={{ borderColor: "var(--border)" }}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
             {heading}
           </h2>
-          <button
-            type="button"
-            onClick={onCreateNote}
-            className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
-            style={{
-              borderRadius: "var(--radius-full)",
-              background: "var(--accent)",
-              color: "#fff",
-            }}
-          >
-            New
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onCreateNote}
+              className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+              style={{
+                borderRadius: "var(--radius-full)",
+                background: "var(--accent)",
+                color: "#fff",
+              }}
+            >
+              New
+            </button>
+          </div>
         </div>
         <div
           className="flex items-center gap-2 px-3 py-1.5"
