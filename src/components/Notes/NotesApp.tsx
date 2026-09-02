@@ -66,6 +66,9 @@ type NotesAppProps = {
     >,
   ) => Promise<void>;
   onDeleteNote: (noteId: string) => Promise<void>;
+  onRestoreNote: (noteId: string) => Promise<void>;
+  onPermanentlyDeleteNote: (noteId: string) => Promise<void>;
+  onEmptyTrash: () => Promise<void>;
   onCreateFolder: (name: string, visibility: "shared" | "private", color: string) => Promise<void>;
   onDeleteFolder: (folderId: string) => Promise<void>;
   onUpdateFolder: (folderId: string, patch: { name: string; color: string }) => Promise<void>;
@@ -93,6 +96,9 @@ export function NotesApp({
   onNoteDraftChange,
   onUpdateNote,
   onDeleteNote,
+  onRestoreNote,
+  onPermanentlyDeleteNote,
+  onEmptyTrash,
   onCreateFolder,
   onDeleteFolder,
   onUpdateFolder,
@@ -107,6 +113,7 @@ export function NotesApp({
   const [draggingNoteId, setDraggingNoteId] = useState<string | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [notesSort, setNotesSort] = useState<NotesSort>(DEFAULT_NOTES_SORT);
+  const [listPanelOpen, setListPanelOpen] = useState(true);
 
   const effectiveSearch = localSearch || searchQuery;
 
@@ -150,7 +157,11 @@ export function NotesApp({
     if (!deleteNoteTarget) return;
     setDeleteBusy(true);
     try {
-      await onDeleteNote(deleteNoteTarget.id);
+      if (filter.type === "trash") {
+        await onPermanentlyDeleteNote(deleteNoteTarget.id);
+      } else {
+        await onDeleteNote(deleteNoteTarget.id);
+      }
       onSelectNote(visibleNotes.find((n) => n.id !== deleteNoteTarget.id)?.id ?? null);
       setDeleteNoteTarget(null);
     } finally {
@@ -165,8 +176,14 @@ export function NotesApp({
       const folder = folders.find((f) => f.id === folderId);
       if (!folder || !canMoveNoteToFolder(note, folder)) return;
     }
-    if (note.folder_id === folderId) return;
-    await onUpdateNote(noteId, { folder_id: folderId });
+    if (note.folder_id === folderId && !note.deleted_at) return;
+    
+    if (note.deleted_at) {
+      await onRestoreNote(note.id);
+    }
+    if (note.folder_id !== folderId) {
+      await onUpdateNote(noteId, { folder_id: folderId });
+    }
   }
 
   async function confirmMoveNote(folderId: string | null) {
@@ -183,6 +200,13 @@ export function NotesApp({
   function handleDropNoteOnFolder(folderId: string | null) {
     if (!draggingNoteId) return;
     void handleMoveNoteToFolder(draggingNoteId, folderId);
+    setDraggingNoteId(null);
+    setDragOverTarget(null);
+  }
+
+  function handleDropNoteOnTrash() {
+    if (!draggingNoteId) return;
+    void onDeleteNote(draggingNoteId);
     setDraggingNoteId(null);
     setDragOverTarget(null);
   }
@@ -223,6 +247,7 @@ export function NotesApp({
         dragOverTarget={dragOverTarget}
         onDragOverTarget={setDragOverTarget}
         onDropNoteOnFolder={handleDropNoteOnFolder}
+        onDropNoteOnTrash={handleDropNoteOnTrash}
       />
 
       <NotesListPanel
@@ -233,10 +258,13 @@ export function NotesApp({
         searchQuery={localSearch}
         sort={notesSort}
         draggingNoteId={draggingNoteId}
+        collapsed={!listPanelOpen}
+        onToggleCollapse={() => setListPanelOpen((v) => !v)}
         onSearchChange={handleLocalSearch}
         onSortChange={setNotesSort}
         onSelectNote={(id) => onSelectNote(id)}
         onCreateNote={() => void handleCreateNote()}
+        onEmptyTrash={() => void onEmptyTrash()}
         onDragNoteStart={setDraggingNoteId}
         onDragNoteEnd={() => {
           setDraggingNoteId(null);
@@ -244,12 +272,14 @@ export function NotesApp({
         }}
         onRequestMoveNote={setMoveNoteTarget}
       />
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col" style={{ background: "var(--surface)" }}>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col" style={{ background: "var(--surface)" }}>
         {selectedNote ? (
           <>
             <NoteMetaBar
               note={selectedNote}
+              listPanelOpen={listPanelOpen}
+              onToggleListPanel={() => setListPanelOpen((v) => !v)}
               groupName={groupName}
               events={events}
               eventTags={eventTags}
@@ -257,49 +287,68 @@ export function NotesApp({
               folders={folders}
               onUpdate={(patch) => void onUpdateNote(selectedNote.id, patch)}
               onDelete={() => requestDeleteNote(selectedNote)}
+              onRestore={() => void onRestoreNote(selectedNote.id)}
             />
             <NoteEditor
               key={selectedNote.id}
               noteId={selectedNote.id}
               title={selectedNote.title}
               content={selectedNote.content}
+              readOnly={!!selectedNote.deleted_at}
               onDraftChange={(patch) => onNoteDraftChange(selectedNote.id, patch)}
               onSave={(patch) => void onUpdateNote(selectedNote.id, patch)}
             />
           </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-            <p className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>
-              Select a note or create a new one
-            </p>
-            <p className="max-w-sm text-sm" style={{ color: "var(--text-secondary)" }}>
-              Shared notes are chapters everyone in {groupName ?? "your workspace"} can read.
-              Private notes are only visible to you.
-            </p>
-            <button
-              type="button"
-              onClick={() => void handleCreateNote()}
-              className="btn-bounce cursor-pointer px-5 py-2 text-sm font-semibold"
-              style={{
-                borderRadius: "var(--radius-full)",
-                background: "var(--accent)",
-                color: "#fff",
-              }}
-            >
-              New Note
-            </button>
+          <div className="relative flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+            <div className="absolute left-4 top-4">
+              <ListPanelToggleButton open={listPanelOpen} onToggle={() => setListPanelOpen((v) => !v)} />
+            </div>
+            {filter.type !== "trash" && (
+              <>
+                <p className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>
+                  Select a note or create a new one
+                </p>
+                <p className="max-w-sm text-sm" style={{ color: "var(--text-secondary)" }}>
+                  Shared notes are chapters everyone in {groupName ?? "your workspace"} can read.
+                  Private notes are only visible to you.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleCreateNote()}
+                  className="btn-bounce cursor-pointer px-5 py-2 text-sm font-semibold"
+                  style={{
+                    borderRadius: "var(--radius-full)",
+                    background: "var(--accent)",
+                    color: "#fff",
+                  }}
+                >
+                  New Note
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
 
       <NotesDialog
         open={deleteNoteTarget !== null}
-        title={deleteNoteTarget ? `Delete "${deleteNoteTarget.title}"?` : ""}
-        description="This note will be permanently removed. This cannot be undone."
+        title={
+          deleteNoteTarget
+            ? filter.type === "trash"
+              ? `Permanently delete "${deleteNoteTarget.title}"?`
+              : `Delete "${deleteNoteTarget.title}"?`
+            : ""
+        }
+        description={
+          filter.type === "trash"
+            ? "This note will be permanently removed. This cannot be undone."
+            : "This note will be moved to the trash."
+        }
         mode="confirm"
         danger
         busy={deleteBusy}
-        confirmLabel="Delete note"
+        confirmLabel={filter.type === "trash" ? "Permanently Delete" : "Move to Trash"}
         onClose={() => setDeleteNoteTarget(null)}
         onConfirm={confirmDeleteNote}
       />
@@ -318,6 +367,8 @@ export function NotesApp({
 
 function NoteMetaBar({
   note,
+  listPanelOpen,
+  onToggleListPanel,
   groupName,
   events,
   eventTags,
@@ -325,8 +376,11 @@ function NoteMetaBar({
   folders,
   onUpdate,
   onDelete,
+  onRestore,
 }: {
   note: Note;
+  listPanelOpen: boolean;
+  onToggleListPanel: () => void;
   groupName: string | null;
   events: CalendarEvent[];
   eventTags: EventTag[];
@@ -345,6 +399,7 @@ function NoteMetaBar({
     >,
   ) => void;
   onDelete: () => void;
+  onRestore: () => void;
 }) {
   const [linkEventOpen, setLinkEventOpen] = useState(false);
   const linkedEvent = note.event_id ? events.find((e) => e.id === note.event_id) : null;
@@ -354,10 +409,13 @@ function NoteMetaBar({
       className="flex flex-wrap items-center gap-2 border-b px-4 py-2"
       style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
     >
+      <ListPanelToggleButton open={listPanelOpen} onToggle={onToggleListPanel} />
+      
       <select
         value={note.visibility}
         onChange={(e) => onUpdate({ visibility: e.target.value as "shared" | "private" })}
-        className="cursor-pointer rounded-lg border px-2 py-1 text-xs font-medium outline-none"
+        disabled={!!note.deleted_at}
+        className={`rounded-lg border px-2 py-1 text-xs font-medium outline-none ${note.deleted_at ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
         style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}
         aria-label="Note visibility"
       >
@@ -368,7 +426,8 @@ function NoteMetaBar({
       <select
         value={note.folder_id ?? ""}
         onChange={(e) => onUpdate({ folder_id: e.target.value || null })}
-        className="cursor-pointer rounded-lg border px-2 py-1 text-xs font-medium outline-none"
+        disabled={!!note.deleted_at}
+        className={`rounded-lg border px-2 py-1 text-xs font-medium outline-none ${note.deleted_at ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
         style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}
         aria-label="Move to folder"
         title="Move to folder"
@@ -385,8 +444,9 @@ function NoteMetaBar({
 
       <button
         type="button"
+        disabled={!!note.deleted_at}
         onClick={() => setLinkEventOpen(true)}
-        className="max-w-[14rem] cursor-pointer truncate rounded-lg border px-2 py-1 text-left text-xs font-medium outline-none"
+        className={`max-w-[14rem] truncate rounded-lg border px-2 py-1 text-left text-xs font-medium outline-none ${note.deleted_at ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
         style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}
         aria-label="Link to calendar event"
         title={linkedEvent ? formatLinkedEventLabel(linkedEvent) : "Choose a calendar event"}
@@ -409,35 +469,103 @@ function NoteMetaBar({
 
       <input
         type="date"
+        disabled={!!note.deleted_at}
         value={note.linked_date ?? ""}
         onChange={(e) => onUpdate({ linked_date: e.target.value || null })}
-        className="cursor-pointer rounded-lg border px-2 py-1 text-xs font-medium outline-none"
+        className={`rounded-lg border px-2 py-1 text-xs font-medium outline-none ${note.deleted_at ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
         style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}
         aria-label="Linked date"
       />
 
-      <div className="ml-auto flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => onUpdate({ is_pinned: !note.is_pinned })}
-          className="cursor-pointer rounded-lg px-2 py-1 text-xs font-semibold"
-          style={{
-            background: note.is_pinned ? "var(--accent-muted)" : "var(--surface)",
-            color: note.is_pinned ? "var(--accent)" : "var(--text-secondary)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          {note.is_pinned ? "Pinned" : "Pin"}
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="cursor-pointer rounded-lg px-2 py-1 text-xs font-semibold"
-          style={{ color: "#dc2626", border: "1px solid var(--border)", background: "var(--surface)" }}
-        >
-          Delete
-        </button>
-      </div>
+      {note.deleted_at ? (
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onRestore}
+            className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold"
+            style={{
+              background: "var(--accent)",
+              color: "#fff",
+            }}
+          >
+            Restore
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold"
+            style={{ color: "#dc2626", border: "1px solid var(--border)", background: "var(--surface)" }}
+          >
+            Delete Forever
+          </button>
+        </div>
+      ) : (
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onUpdate({ is_pinned: !note.is_pinned })}
+            className="cursor-pointer rounded-lg px-2 py-1 text-xs font-semibold"
+            style={{
+              background: note.is_pinned ? "var(--accent-muted)" : "var(--surface)",
+              color: note.is_pinned ? "var(--accent)" : "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            {note.is_pinned ? "Pinned" : "Pin"}
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="cursor-pointer rounded-lg px-2 py-1 text-xs font-semibold"
+            style={{ color: "#dc2626", border: "1px solid var(--border)", background: "var(--surface)" }}
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </div>
+  );
+}
+
+function ListPanelToggleButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={open ? "Collapse notes list" : "Expand notes list"}
+      onClick={onToggle}
+      className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center"
+      style={{
+        borderRadius: "var(--radius-md)",
+        border: "1.5px solid var(--border)",
+        background: open ? "transparent" : "var(--accent-muted)",
+        color: open ? "var(--text-muted)" : "var(--accent)",
+        transition: "all var(--transition-base)",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
+        (e.currentTarget as HTMLElement).style.color = "var(--accent)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.background = open ? "transparent" : "var(--accent-muted)";
+        (e.currentTarget as HTMLElement).style.color = open ? "var(--text-muted)" : "var(--accent)";
+      }}
+    >
+      <svg
+        viewBox="0 0 16 16"
+        className="h-3.5 w-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{
+          transition: "transform 0.25s ease",
+          transform: open ? "rotate(0deg)" : "rotate(180deg)",
+        }}
+        aria-hidden
+      >
+        <path d="M10 4l-4 4 4 4" />
+      </svg>
+    </button>
   );
 }

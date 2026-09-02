@@ -9,6 +9,10 @@ import {
   folderBadgeStyle,
   normalizeFolderColor,
   notePatchBumpsUpdatedAt,
+  filterNoOpNotePatch,
+  isEmptyNotePatch,
+  noteContentsEqual,
+  serializeNoteContent,
   noteShowsPrivateLock,
   notePreviewText,
   noteTitle,
@@ -214,5 +218,24 @@ describe("notePatchBumpsUpdatedAt", () => {
     expect(notePatchBumpsUpdatedAt({ is_pinned: true })).toBe(false);
     expect(notePatchBumpsUpdatedAt({ title: "Hi" })).toBe(true);
     expect(notePatchBumpsUpdatedAt({ content: { type: "doc", content: [] } })).toBe(true);
+  });
+});
+
+describe("filterNoOpNotePatch", () => {
+  it("drops unchanged title and content", () => {
+    const note = baseNote({
+      title: "Hello",
+      content: { type: "doc", content: [] },
+    });
+    expect(
+      isEmptyNotePatch(filterNoOpNotePatch(note, { title: "Hello", content: { type: "doc", content: [] } })),
+    ).toBe(true);
+    expect(filterNoOpNotePatch(note, { title: "Changed" })).toEqual({ title: "Changed" });
+  });
+
+  it("compares content by serialized JSON", () => {
+    const note = baseNote({ content: { type: "doc", content: [] } });
+    expect(noteContentsEqual(note.content, { type: "doc", content: [] })).toBe(true);
+    expect(serializeNoteContent(note.content)).toBe('{"type":"doc","content":[]}');
   });
 });

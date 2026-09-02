@@ -10,7 +10,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Blockquote from "@tiptap/extension-blockquote";
 import type { Json } from "@/types/database";
-import { EMPTY_TIPTAP_DOC } from "@/lib/notes";
+import { EMPTY_TIPTAP_DOC, serializeNoteContent } from "@/lib/notes";
 import { NoteToolbar } from "./NoteToolbar";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -21,6 +21,7 @@ type NoteEditorProps = {
   content: Json;
   onDraftChange: (patch: { title?: string; content?: Json }) => void;
   onSave: (patch: { title?: string; content?: Json }) => void;
+  readOnly?: boolean;
 };
 
 export function NoteEditor({
@@ -29,12 +30,16 @@ export function NoteEditor({
   content,
   onDraftChange,
   onSave,
+  readOnly = false,
 }: NoteEditorProps) {
   const [localTitle, setLocalTitle] = useState(title);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSave = useRef<{ title?: string; content?: Json }>({});
   const lastNoteId = useRef(noteId);
   const onSaveRef = useRef(onSave);
+  const syncedContentKey = useRef(serializeNoteContent(content));
+  const syncedTitle = useRef(title);
+  const acceptingContentUpdates = useRef(false);
 
   useEffect(() => {
     onSaveRef.current = onSave;
@@ -57,8 +62,23 @@ export function NoteEditor({
     saveTimer.current = setTimeout(flushSave, SAVE_DEBOUNCE_MS);
   };
 
+  const handleContentChange = (nextContent: Json) => {
+    if (!acceptingContentUpdates.current) return;
+    const nextKey = serializeNoteContent(nextContent);
+    if (nextKey === syncedContentKey.current) return;
+    syncedContentKey.current = nextKey;
+    onDraftChange({ content: nextContent });
+    queueSave({ content: nextContent });
+  };
+
+  const syncEditorBaseline = (ed: { getJSON: () => unknown }) => {
+    syncedContentKey.current = serializeNoteContent(ed.getJSON() as Json);
+    acceptingContentUpdates.current = true;
+  };
+
   const editor = useEditor({
     immediatelyRender: false,
+    editable: !readOnly,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
@@ -82,12 +102,19 @@ export function NoteEditor({
         autocapitalize: "off",
       },
     },
+    onCreate: ({ editor: ed }) => {
+      syncEditorBaseline(ed);
+    },
     onUpdate: ({ editor: ed }) => {
-      const nextContent = ed.getJSON() as Json;
-      onDraftChange({ content: nextContent });
-      queueSave({ content: nextContent });
+      handleContentChange(ed.getJSON() as Json);
     },
   });
+
+  // Establish editor baseline on first mount (onCreate can race with onUpdate).
+  useEffect(() => {
+    if (!editor || acceptingContentUpdates.current) return;
+    syncEditorBaseline(editor);
+  }, [editor]);
 
   // Reset local draft only when switching notes.
   useEffect(() => {
@@ -95,13 +122,25 @@ export function NoteEditor({
 
     flushSave();
     lastNoteId.current = noteId;
+    syncedTitle.current = title;
+    syncedContentKey.current = serializeNoteContent(content);
+    acceptingContentUpdates.current = false;
     setLocalTitle(title);
-    editor?.commands.setContent((content ?? EMPTY_TIPTAP_DOC) as object);
+    editor?.commands.setContent((content ?? EMPTY_TIPTAP_DOC) as object, {
+      emitUpdate: false,
+    });
+    if (editor) syncEditorBaseline(editor);
   }, [noteId, title, content, editor]);
+
+  useEffect(() => {
+    editor?.setEditable(!readOnly);
+  }, [readOnly, editor]);
 
   useEffect(() => () => flushSave(), []);
 
   function handleTitleChange(nextTitle: string) {
+    if (nextTitle === syncedTitle.current) return;
+    syncedTitle.current = nextTitle;
     setLocalTitle(nextTitle);
     onDraftChange({ title: nextTitle });
     queueSave({ title: nextTitle });
@@ -109,12 +148,13 @@ export function NoteEditor({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <NoteToolbar editor={editor} />
+      {!readOnly && <NoteToolbar editor={editor} />}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <input
           type="text"
           value={localTitle}
           onChange={(e) => handleTitleChange(e.target.value)}
+          readOnly={readOnly}
           placeholder="Title"
           spellCheck={false}
           autoCorrect="off"
