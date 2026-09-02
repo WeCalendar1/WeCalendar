@@ -18,7 +18,7 @@ import {
   type ScreenView,
 } from "@/lib/calendar";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
-import { EMPTY_TIPTAP_DOC, notePatchBumpsUpdatedAt, normalizeFolderColor } from "@/lib/notes";
+import { EMPTY_TIPTAP_DOC, isEmptyNotePatch, normalizeFolderColor } from "@/lib/notes";
 import type { CalendarEvent } from "@/lib/events";
 import {
   conflictFingerprint,
@@ -613,7 +613,8 @@ export function AppShell() {
     noteId: string,
     patch: { title?: string; content?: Json },
   ) {
-    applyNotePatchLocally(noteId, patch, true);
+    // Draft edits should not bump updated_at — only persisted saves reorder the list.
+    applyNotePatchLocally(noteId, patch, false);
   }
 
   async function handleUpdateNote(
@@ -631,13 +632,28 @@ export function AppShell() {
       >
     >,
   ) {
-    const bumpUpdatedAt = notePatchBumpsUpdatedAt(patch);
-    applyNotePatchLocally(noteId, patch, bumpUpdatedAt);
-    const { error } = await supabase.from("notes").update(patch).eq("id", noteId);
+    if (isEmptyNotePatch(patch)) return;
+
+    if (!notes.some((note) => note.id === noteId)) return;
+
+    // Apply draft fields immediately; updated_at comes from the DB after save.
+    applyNotePatchLocally(noteId, patch, false);
+
+    const { data, error } = await supabase
+      .from("notes")
+      .update(patch)
+      .eq("id", noteId)
+      .select("updated_at")
+      .single();
+
     if (error) {
       console.error("handleUpdateNote", error);
       if (activeGroupId) await loadNotes(activeGroupId);
       throw new Error(error.message);
+    }
+
+    if (data?.updated_at) {
+      applyNotePatchLocally(noteId, { updated_at: data.updated_at }, false);
     }
   }
 

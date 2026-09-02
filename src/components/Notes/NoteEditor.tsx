@@ -10,7 +10,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Blockquote from "@tiptap/extension-blockquote";
 import type { Json } from "@/types/database";
-import { EMPTY_TIPTAP_DOC } from "@/lib/notes";
+import { EMPTY_TIPTAP_DOC, serializeNoteContent } from "@/lib/notes";
 import { NoteToolbar } from "./NoteToolbar";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -37,6 +37,9 @@ export function NoteEditor({
   const pendingSave = useRef<{ title?: string; content?: Json }>({});
   const lastNoteId = useRef(noteId);
   const onSaveRef = useRef(onSave);
+  const syncedContentKey = useRef(serializeNoteContent(content));
+  const syncedTitle = useRef(title);
+  const acceptingContentUpdates = useRef(false);
 
   useEffect(() => {
     onSaveRef.current = onSave;
@@ -57,6 +60,20 @@ export function NoteEditor({
     pendingSave.current = { ...pendingSave.current, ...patch };
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(flushSave, SAVE_DEBOUNCE_MS);
+  };
+
+  const handleContentChange = (nextContent: Json) => {
+    if (!acceptingContentUpdates.current) return;
+    const nextKey = serializeNoteContent(nextContent);
+    if (nextKey === syncedContentKey.current) return;
+    syncedContentKey.current = nextKey;
+    onDraftChange({ content: nextContent });
+    queueSave({ content: nextContent });
+  };
+
+  const syncEditorBaseline = (ed: { getJSON: () => unknown }) => {
+    syncedContentKey.current = serializeNoteContent(ed.getJSON() as Json);
+    acceptingContentUpdates.current = true;
   };
 
   const editor = useEditor({
@@ -85,12 +102,19 @@ export function NoteEditor({
         autocapitalize: "off",
       },
     },
+    onCreate: ({ editor: ed }) => {
+      syncEditorBaseline(ed);
+    },
     onUpdate: ({ editor: ed }) => {
-      const nextContent = ed.getJSON() as Json;
-      onDraftChange({ content: nextContent });
-      queueSave({ content: nextContent });
+      handleContentChange(ed.getJSON() as Json);
     },
   });
+
+  // Establish editor baseline on first mount (onCreate can race with onUpdate).
+  useEffect(() => {
+    if (!editor || acceptingContentUpdates.current) return;
+    syncEditorBaseline(editor);
+  }, [editor]);
 
   // Reset local draft only when switching notes.
   useEffect(() => {
@@ -98,8 +122,14 @@ export function NoteEditor({
 
     flushSave();
     lastNoteId.current = noteId;
+    syncedTitle.current = title;
+    syncedContentKey.current = serializeNoteContent(content);
+    acceptingContentUpdates.current = false;
     setLocalTitle(title);
-    editor?.commands.setContent((content ?? EMPTY_TIPTAP_DOC) as object);
+    editor?.commands.setContent((content ?? EMPTY_TIPTAP_DOC) as object, {
+      emitUpdate: false,
+    });
+    if (editor) syncEditorBaseline(editor);
   }, [noteId, title, content, editor]);
 
   useEffect(() => {
@@ -109,6 +139,8 @@ export function NoteEditor({
   useEffect(() => () => flushSave(), []);
 
   function handleTitleChange(nextTitle: string) {
+    if (nextTitle === syncedTitle.current) return;
+    syncedTitle.current = nextTitle;
     setLocalTitle(nextTitle);
     onDraftChange({ title: nextTitle });
     queueSave({ title: nextTitle });

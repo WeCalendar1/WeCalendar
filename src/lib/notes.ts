@@ -97,6 +97,30 @@ export function notePatchBumpsUpdatedAt(
   return patch.title !== undefined || patch.content !== undefined;
 }
 
+export function serializeNoteContent(content: Json): string {
+  return JSON.stringify(content ?? EMPTY_TIPTAP_DOC);
+}
+
+export function noteContentsEqual(a: Json, b: Json): boolean {
+  return serializeNoteContent(a) === serializeNoteContent(b);
+}
+
+export function filterNoOpNotePatch(
+  note: Pick<Note, "title" | "content">,
+  patch: Partial<Pick<Note, "title" | "content" | "folder_id" | "event_id" | "linked_date" | "visibility" | "is_pinned">>,
+): Partial<Pick<Note, "title" | "content" | "folder_id" | "event_id" | "linked_date" | "visibility" | "is_pinned">> {
+  const next = { ...patch };
+  if (next.title !== undefined && next.title === note.title) delete next.title;
+  if (next.content !== undefined && noteContentsEqual(next.content, note.content)) delete next.content;
+  return next;
+}
+
+export function isEmptyNotePatch(
+  patch: Partial<Pick<Note, "title" | "content" | "folder_id" | "event_id" | "linked_date" | "visibility" | "is_pinned">>,
+): boolean {
+  return Object.keys(patch).length === 0;
+}
+
 export type NotesSort =
   | "updated"
   | "updated-oldest"
@@ -128,27 +152,45 @@ export function sortNotesForList(
   notes: Note[],
   sort: NotesSort = DEFAULT_NOTES_SORT,
 ): Note[] {
+  const tieBreak = (a: Note, b: Note) => a.id.localeCompare(b.id);
+
   return [...notes].sort((a, b) => {
     if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
 
     switch (sort) {
-      case "title-asc":
-        return noteTitle(a).localeCompare(noteTitle(b), undefined, { sensitivity: "base" });
-      case "title-desc":
-        return noteTitle(b).localeCompare(noteTitle(a), undefined, { sensitivity: "base" });
-      case "length-asc":
-        return noteCharacterCount(a) - noteCharacterCount(b);
-      case "length-desc":
-        return noteCharacterCount(b) - noteCharacterCount(a);
-      case "created-oldest":
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      case "created-newest":
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      case "updated-oldest":
-        return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+      case "title-asc": {
+        const cmp = noteTitle(a).localeCompare(noteTitle(b), undefined, { sensitivity: "base" });
+        return cmp !== 0 ? cmp : tieBreak(a, b);
+      }
+      case "title-desc": {
+        const cmp = noteTitle(b).localeCompare(noteTitle(a), undefined, { sensitivity: "base" });
+        return cmp !== 0 ? cmp : tieBreak(a, b);
+      }
+      case "length-asc": {
+        const cmp = noteCharacterCount(a) - noteCharacterCount(b);
+        return cmp !== 0 ? cmp : tieBreak(a, b);
+      }
+      case "length-desc": {
+        const cmp = noteCharacterCount(b) - noteCharacterCount(a);
+        return cmp !== 0 ? cmp : tieBreak(a, b);
+      }
+      case "created-oldest": {
+        const cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        return cmp !== 0 ? cmp : tieBreak(a, b);
+      }
+      case "created-newest": {
+        const cmp = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return cmp !== 0 ? cmp : tieBreak(a, b);
+      }
+      case "updated-oldest": {
+        const cmp = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+        return cmp !== 0 ? cmp : tieBreak(a, b);
+      }
       case "updated":
-      default:
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      default: {
+        const cmp = new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        return cmp !== 0 ? cmp : tieBreak(a, b);
+      }
     }
   });
 }
