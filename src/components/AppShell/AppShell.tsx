@@ -592,6 +592,7 @@ export function AppShell() {
         | "linked_date"
         | "visibility"
         | "is_pinned"
+        | "updated_at"
       >
     >,
     bumpUpdatedAt: boolean,
