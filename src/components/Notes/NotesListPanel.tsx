@@ -217,13 +217,12 @@ export function NotesListPanel({
                   className="group relative cursor-grab border-b active:cursor-grabbing"
                   style={{
                     borderColor: "var(--border)",
-                    background: isDragging
-                      ? "var(--accent-muted)"
-                      : selected
-                        ? "var(--accent-muted)"
-                        : "transparent",
-                    boxShadow: isDragging ? "inset 3px 0 0 var(--accent)" : undefined,
-                    transition: "background var(--transition-fast), box-shadow var(--transition-fast)",
+                    background:
+                      isDragging || selected ? "var(--accent-muted)" : "transparent",
+                    boxShadow: isDragging ? "inset 0 0 0 2px var(--accent)" : undefined,
+                    opacity: isDragging ? 0.65 : 1,
+                    transition:
+                      "background var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast)",
                   }}
                 >
                   <div className="flex items-stretch px-4 py-3 pr-2">

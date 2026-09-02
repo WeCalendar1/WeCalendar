@@ -108,6 +108,13 @@ const PEOPLE_ICON = (
   </svg>
 );
 
+const TRASH_ICON = (
+  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -128,6 +135,15 @@ function ChevronIcon({ open }: { open: boolean }) {
       <path d="M4 6l4 4 4-4" />
     </svg>
   );
+}
+
+function dropTargetStyle(active: boolean): React.CSSProperties {
+  return {
+    borderRadius: "var(--radius-md)",
+    border: active ? "2px dashed var(--accent)" : "2px solid transparent",
+    background: active ? "var(--accent-muted)" : "transparent",
+    transition: "background 120ms ease-out, border-color 120ms ease-out",
+  };
 }
 
 function FolderSection({
@@ -193,7 +209,7 @@ function FolderSection({
         }}
       >
         <div className="min-h-0 overflow-hidden">
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 p-0.5">
             {children}
             {count === 0 && (
               <p className="px-1 py-1 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
@@ -333,6 +349,11 @@ export function NotesFolderSidebar({
       <aside
         className="flex w-64 shrink-0 flex-col overflow-y-auto border-r py-3"
         style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+        onDragLeave={(event) => {
+          const related = event.relatedTarget as Node | null;
+          if (related && event.currentTarget.contains(related)) return;
+          onDragOverTarget(null);
+        }}
       >
         <div className="mb-3 px-2">
           <SharedWorkspace
@@ -347,13 +368,8 @@ export function NotesFolderSidebar({
         <div className="space-y-0.5 px-2">
           <div
             onDragOver={(e) => handleFolderDragOver(e, NOTE_DROP_REMOVE)}
-            onDragLeave={() => onDragOverTarget(null)}
             onDrop={(e) => handleFolderDrop(e, null)}
-            className="rounded-lg"
-            style={{
-              background: dragOverTarget === NOTE_DROP_REMOVE ? "var(--accent-muted)" : "transparent",
-              transition: "background 120ms ease-out",
-            }}
+            style={dropTargetStyle(dragOverTarget === NOTE_DROP_REMOVE)}
           >
             <NavItem
               active={isFilterActive(filter, { type: "all" })}
@@ -388,30 +404,13 @@ export function NotesFolderSidebar({
           />
           <div
             onDragOver={(e) => handleFolderDragOver(e, "__trash__")}
-            onDragLeave={() => onDragOverTarget(null)}
             onDrop={handleTrashDrop}
-            className="rounded-lg"
-            style={{
-              background: dragOverTarget === "__trash__" ? "var(--accent-muted)" : "transparent",
-              transition: "background 120ms ease-out",
-            }}
+            style={dropTargetStyle(dragOverTarget === "__trash__")}
           >
             <NavItem
               active={isFilterActive(filter, { type: "trash" })}
               label="Trash"
-              icon={
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 6h18" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                </svg>
-              }
+              icon={TRASH_ICON}
               onClick={() => onFilterChange({ type: "trash" })}
             />
           </div>
@@ -455,7 +454,6 @@ export function NotesFolderSidebar({
                 })
               }
               onDragOver={(e) => handleFolderDragOver(e, folder.id)}
-              onDragLeave={() => onDragOverTarget(null)}
               onDrop={(e) => handleFolderDrop(e, folder.id)}
             />
           ))}
@@ -497,7 +495,6 @@ export function NotesFolderSidebar({
                 })
               }
               onDragOver={(e) => handleFolderDragOver(e, folder.id)}
-              onDragLeave={() => onDragOverTarget(null)}
               onDrop={(e) => handleFolderDrop(e, folder.id)}
             />
           ))}
@@ -535,7 +532,6 @@ function FolderRow({
   onEdit,
   onDelete,
   onDragOver,
-  onDragLeave,
   onDrop,
 }: {
   folder: NoteFolder;
@@ -545,28 +541,22 @@ function FolderRow({
   onEdit: () => void;
   onDelete: () => void;
   onDragOver: (event: DragEvent) => void;
-  onDragLeave: () => void;
   onDrop: (event: DragEvent) => void;
 }) {
   return (
     <div
       className="group flex items-center"
       onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
       onDrop={onDrop}
-      style={{
-        borderRadius: "var(--radius-md)",
-        outline: dragOver ? "2px dashed var(--accent)" : "2px dashed transparent",
-        background: dragOver ? "var(--accent-muted)" : undefined,
-      }}
+      style={dropTargetStyle(dragOver)}
     >
       <button
         type="button"
         onClick={onSelect}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-sm"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 px-2 py-1.5 text-left text-sm"
         style={{
-          borderRadius: "var(--radius-md)",
-          background: active ? "var(--accent-muted)" : "transparent",
+          borderRadius: "calc(var(--radius-md) - 2px)",
+          background: active && !dragOver ? "var(--accent-muted)" : "transparent",
           color: active ? "var(--accent)" : "var(--foreground)",
         }}
       >
