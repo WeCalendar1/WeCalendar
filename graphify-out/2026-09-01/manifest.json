@@ -45,8 +45,8 @@
     "semantic_hash": "b18588140aa964b3ed6223d7af5d17d1"
   },
   "src/components/AppShell/AppShell.tsx": {
-    "mtime": 1788293499.8568077,
-    "ast_hash": "6f1014ad7868dfceeb00730db9a91ac1",
+    "mtime": 1788304071.2899108,
+    "ast_hash": "50559d23c55117dbe6a84b61b2f84d2f",
     "semantic_hash": ""
   },
   "src/components/AppShell/index.ts": {
@@ -230,8 +230,8 @@
     "semantic_hash": ""
   },
   "src/types/database.ts": {
-    "mtime": 1788291052.409183,
-    "ast_hash": "feef1c76cfaab96111aff79778f11e8b",
+    "mtime": 1788303363.131873,
+    "ast_hash": "c9e2f890a68273c43802319f666b6bcf",
     "semantic_hash": ""
   },
   "tsconfig.json": {
@@ -385,8 +385,8 @@
     "semantic_hash": ""
   },
   "src/components/Notes/NoteEditor.tsx": {
-    "mtime": 1788291052.3925426,
-    "ast_hash": "2a61a93ed2ba1f05e0986666c4806d49",
+    "mtime": 1788304462.7147725,
+    "ast_hash": "41f4b5b9e733f82fa0121db6d5537d24",
     "semantic_hash": ""
   },
   "src/components/Notes/NoteToolbar.tsx": {
@@ -395,8 +395,8 @@
     "semantic_hash": ""
   },
   "src/components/Notes/NotesApp.tsx": {
-    "mtime": 1788291388.0618365,
-    "ast_hash": "b176290ebab7d447289ce3fd1878dd13",
+    "mtime": 1788304811.3724217,
+    "ast_hash": "b02c1d53515ba538fa1f0293d5cba6e6",
     "semantic_hash": ""
   },
   "src/components/Notes/NotesDialog.tsx": {
@@ -405,13 +405,13 @@
     "semantic_hash": ""
   },
   "src/components/Notes/NotesFolderSidebar.tsx": {
-    "mtime": 1788291052.3950393,
-    "ast_hash": "ae7ceaccb6d73ee5ffd5fcbe2a9f7960",
+    "mtime": 1788303805.997544,
+    "ast_hash": "6e40f133cd2a9acfc74455f22653e6eb",
     "semantic_hash": ""
   },
   "src/components/Notes/NotesListPanel.tsx": {
-    "mtime": 1788291052.3960423,
-    "ast_hash": "7710f5295af04bff6134b3d03f8ec502",
+    "mtime": 1788304073.4994414,
+    "ast_hash": "99ffd9e2df8d209be07e9d087237e54b",
     "semantic_hash": ""
   },
   "src/components/Notes/index.ts": {
@@ -425,13 +425,13 @@
     "semantic_hash": ""
   },
   "src/lib/notes.ts": {
-    "mtime": 1788291052.4061842,
-    "ast_hash": "5f1d666ff759eb94968270ee13d036f7",
+    "mtime": 1788303393.484632,
+    "ast_hash": "90b43e7282e89cd6d0f2ebc59c4c240f",
     "semantic_hash": ""
   },
   "supabase/migrations/20260830120000_notes.sql": {
-    "mtime": 1788291052.409183,
-    "ast_hash": "1776906e1da61657b4f7d070851b1021",
+    "mtime": 1788297305.675805,
+    "ast_hash": "976a3a2129469ac9e1b9611756bcc357",
     "semantic_hash": ""
   },
   "src/components/Notes/NotesFolderDialog.tsx": {
@@ -467,6 +467,11 @@
   "supabase/migrations/20260831130000_note_folder_colors.sql": {
     "mtime": 1788291052.4112437,
     "ast_hash": "2cbfbd6be3214f68f7f34488786c24fd",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260901160000_notes_trash.sql": {
+    "mtime": 1788303333.2736084,
+    "ast_hash": "58da83f2c6060e63a706b3566aa82f44",
     "semantic_hash": ""
   }
 }
