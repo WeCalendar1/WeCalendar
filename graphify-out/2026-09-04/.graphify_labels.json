@@ -1,11 +1,11 @@
 {
   "0": "events.ts",
-  "1": "AppShell.tsx",
+  "1": "CreateEventModal.tsx",
   "2": "WeCalendar — Full Project Context",
   "3": "compilerOptions",
   "4": "notes.ts",
   "5": "WeCalendar",
-  "6": "database.ts",
+  "6": "AppShell.tsx",
   "7": "20260730120000_init_schema.sql",
   "8": "20260806140000_bootstrap_schema.sql",
   "9": "dependencies",
@@ -32,8 +32,14 @@
   "30": "calendar.ts",
   "31": "20260826120000_allow_event_overlaps.sql",
   "32": "public.events",
+  "33": "AppShell",
+  "34": "NotesApp.tsx",
+  "35": "NotesFolderSidebar.tsx",
+  "36": "NotesApp",
   "37": "20260831120000_notes_updated_at_content_only.sql",
   "38": "public.note_folders",
   "39": "20260831130000_note_folder_colors.sql",
-  "41": "NoteToolbar.tsx"
+  "40": "NotesFolderDialog.tsx",
+  "41": "NoteToolbar.tsx",
+  "42": "NotesMoveToFolderDialog.tsx"
 }
