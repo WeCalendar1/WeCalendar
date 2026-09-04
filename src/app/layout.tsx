@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Nunito_Sans, Varela_Round } from "next/font/google";
+import { Nunito_Sans, Varela_Round, Merriweather, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const nunitoSans = Nunito_Sans({
@@ -17,6 +17,29 @@ const varelaRound = Varela_Round({
   display: "swap",
 });
 
+const merriweather = Merriweather({
+  variable: "--font-merriweather",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair-display",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "WeCalendar",
   description:
@@ -31,7 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${nunitoSans.variable} ${varelaRound.variable} h-full antialiased`}
+      className={`${nunitoSans.variable} ${varelaRound.variable} ${merriweather.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>

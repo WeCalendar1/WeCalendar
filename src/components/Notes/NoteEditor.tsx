@@ -9,9 +9,15 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Blockquote from "@tiptap/extension-blockquote";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
+import FontFamily from "@tiptap/extension-font-family";
+import TextAlign from "@tiptap/extension-text-align";
+import Highlight from "@tiptap/extension-highlight";
 import type { Json } from "@/types/database";
 import { EMPTY_TIPTAP_DOC, serializeNoteContent } from "@/lib/notes";
 import { NoteToolbar } from "./NoteToolbar";
+import { LineHeight, CustomBullet } from "./NoteEditorExtensions";
 
 const SAVE_DEBOUNCE_MS = 500;
 
@@ -92,6 +98,13 @@ export function NoteEditor({
       TaskList,
       TaskItem.configure({ nested: true }),
       Blockquote,
+      TextStyle,
+      Color,
+      FontFamily,
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Highlight.configure({ multicolor: true }),
+      LineHeight,
+      CustomBullet,
     ],
     content: content as object,
     editorProps: {
