@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_FOLDER_COLOR,
   FOLDER_COLOR_PALETTE,
+  bulkMoveFolderOptions,
   canMoveNoteToFolder,
   filterNotes,
   foldersForNote,
@@ -14,12 +15,16 @@ import {
   noteContentsEqual,
   serializeNoteContent,
   noteShowsPrivateLock,
+  noteIdsForDrag,
   notePreviewText,
   noteTitle,
+  readNoteDragIds,
   searchNotes,
   sortNotesForList,
   type Note,
   type NoteFolder,
+  NOTE_DRAG_IDS_MIME,
+  NOTE_DRAG_MIME,
 } from "./notes";
 
 const baseNote = (overrides: Partial<Note> = {}): Note => ({
@@ -73,6 +78,50 @@ describe("filterNotes", () => {
 
   it("filters folder", () => {
     expect(filterNotes(notes, { type: "folder", folderId: "f1" }).map((n) => n.id)).toEqual(["c"]);
+  });
+});
+
+describe("noteIdsForDrag", () => {
+  it("drags all selected notes when dragging a selected note in selection mode", () => {
+    const selected = new Set(["a", "b"]);
+    expect(noteIdsForDrag("a", true, selected)).toEqual(["a", "b"]);
+  });
+
+  it("drags only the note when it is not selected", () => {
+    const selected = new Set(["b"]);
+    expect(noteIdsForDrag("a", true, selected)).toEqual(["a"]);
+  });
+
+  it("drags a single note outside selection mode", () => {
+    const selected = new Set(["a", "b"]);
+    expect(noteIdsForDrag("c", false, selected)).toEqual(["c"]);
+  });
+});
+
+describe("readNoteDragIds", () => {
+  it("reads bulk ids from drag data", () => {
+    const dataTransfer = {
+      getData: (type: string) =>
+        type === NOTE_DRAG_IDS_MIME ? '["a","b","a"]' : type === NOTE_DRAG_MIME ? "a" : "",
+    } as DataTransfer;
+
+    expect(readNoteDragIds(dataTransfer)).toEqual(["a", "b"]);
+  });
+
+  it("falls back to single id payload", () => {
+    const dataTransfer = {
+      getData: (type: string) => (type === NOTE_DRAG_MIME ? "note-1" : ""),
+    } as DataTransfer;
+
+    expect(readNoteDragIds(dataTransfer)).toEqual(["note-1"]);
+  });
+
+  it("uses fallback ids when drag data is empty", () => {
+    const dataTransfer = {
+      getData: () => "",
+    } as DataTransfer;
+
+    expect(readNoteDragIds(dataTransfer, ["fallback"])).toEqual(["fallback"]);
   });
 });
 
@@ -169,6 +218,34 @@ describe("canMoveNoteToFolder", () => {
       canMoveNoteToFolder(baseNote({ visibility: "private" }), baseFolder({ visibility: "private" })),
     ).toBe(true);
     expect(canMoveNoteToFolder(baseNote({ visibility: "private" }), baseFolder())).toBe(false);
+  });
+});
+
+describe("bulkMoveFolderOptions", () => {
+  const folders = [
+    baseFolder({ id: "s1", visibility: "shared" }),
+    baseFolder({ id: "p1", visibility: "private" }),
+  ];
+
+  it("returns shared folders for shared notes", () => {
+    const result = bulkMoveFolderOptions(
+      [baseNote({ visibility: "shared" }), baseNote({ id: "n2", visibility: "shared" })],
+      folders,
+    );
+    expect(result).toEqual({ ok: true, visibility: "shared", folders: [folders[0]] });
+  });
+
+  it("rejects mixed visibility", () => {
+    expect(
+      bulkMoveFolderOptions(
+        [baseNote({ visibility: "shared" }), baseNote({ id: "n2", visibility: "private" })],
+        folders,
+      ),
+    ).toEqual({ ok: false, reason: "mixed-visibility" });
+  });
+
+  it("rejects empty selection", () => {
+    expect(bulkMoveFolderOptions([], folders)).toEqual({ ok: false, reason: "empty" });
   });
 });
 

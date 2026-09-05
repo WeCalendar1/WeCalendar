@@ -3,7 +3,7 @@
 import { useState, type DragEvent } from "react";
 import { SharedWorkspace } from "@/components/SharedWorkspace";
 import type { NoteFolder, NotesFilter } from "@/lib/notes";
-import { NOTE_DRAG_MIME, NOTE_DROP_REMOVE } from "@/lib/notes";
+import { NOTE_DRAG_IDS_MIME, NOTE_DRAG_MIME, NOTE_DROP_REMOVE, readNoteDragIds } from "@/lib/notes";
 import type { Tables } from "@/types/database";
 import { NotesDialog } from "./NotesDialog";
 import { FolderColorIcon, NotesFolderDialog } from "./NotesFolderDialog";
@@ -24,11 +24,11 @@ type NotesFolderSidebarProps = {
   onCreateFolder: (name: string, visibility: "shared" | "private", color: string) => Promise<void>;
   onDeleteFolder: (folderId: string) => Promise<void>;
   onUpdateFolder: (folderId: string, patch: { name: string; color: string }) => Promise<void>;
-  draggingNoteId: string | null;
+  draggingNoteIds: readonly string[];
   dragOverTarget: string | null;
   onDragOverTarget: (target: string | null) => void;
-  onDropNoteOnFolder: (folderId: string | null) => void;
-  onDropNoteOnTrash: () => void;
+  onDropNoteOnFolder: (folderId: string | null, noteIds: string[]) => void;
+  onDropNoteOnTrash: (noteIds: string[]) => void;
 };
 
 type FolderDialogState =
@@ -243,7 +243,7 @@ export function NotesFolderSidebar({
   onCreateFolder,
   onDeleteFolder,
   onUpdateFolder,
-  draggingNoteId,
+  draggingNoteIds,
   dragOverTarget,
   onDragOverTarget,
   onDropNoteOnFolder,
@@ -253,14 +253,22 @@ export function NotesFolderSidebar({
   const [busy, setBusy] = useState(false);
   const [sharedFoldersOpen, setSharedFoldersOpen] = useState(true);
   const [privateFoldersOpen, setPrivateFoldersOpen] = useState(true);
-  const isDragging = draggingNoteId !== null;
+  const isDragging = draggingNoteIds.length > 0;
 
-  function readDraggedNoteId(event: DragEvent): string | null {
-    return event.dataTransfer.getData(NOTE_DRAG_MIME) || draggingNoteId;
+  function readDraggedNoteIds(event: DragEvent): string[] {
+    return readNoteDragIds(event.dataTransfer, draggingNoteIds);
+  }
+
+  function acceptsNoteDrag(event: DragEvent): boolean {
+    return (
+      isDragging ||
+      event.dataTransfer.types.includes(NOTE_DRAG_MIME) ||
+      event.dataTransfer.types.includes(NOTE_DRAG_IDS_MIME)
+    );
   }
 
   function handleFolderDragOver(event: DragEvent, target: string) {
-    if (!isDragging && !event.dataTransfer.types.includes(NOTE_DRAG_MIME)) return;
+    if (!acceptsNoteDrag(event)) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     onDragOverTarget(target);
@@ -268,15 +276,17 @@ export function NotesFolderSidebar({
 
   function handleFolderDrop(event: DragEvent, folderId: string | null) {
     event.preventDefault();
-    if (!readDraggedNoteId(event)) return;
-    onDropNoteOnFolder(folderId);
+    const noteIds = readDraggedNoteIds(event);
+    if (noteIds.length === 0) return;
+    onDropNoteOnFolder(folderId, noteIds);
     onDragOverTarget(null);
   }
 
   function handleTrashDrop(event: DragEvent) {
     event.preventDefault();
-    if (!readDraggedNoteId(event)) return;
-    onDropNoteOnTrash();
+    const noteIds = readDraggedNoteIds(event);
+    if (noteIds.length === 0) return;
+    onDropNoteOnTrash(noteIds);
     onDragOverTarget(null);
   }
 

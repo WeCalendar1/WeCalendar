@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
-import { foldersForNote, noteTitle, type Note, type NoteFolder } from "@/lib/notes";
+import {
+  bulkMoveFolderOptions,
+  noteTitle,
+  type Note,
+  type NoteFolder,
+} from "@/lib/notes";
 import { FolderColorIcon } from "./NotesFolderDialog";
 
 type NotesMoveToFolderDialogProps = {
   open: boolean;
-  note: Note | null;
+  notes: Note[];
   folders: NoteFolder[];
   busy?: boolean;
   onClose: () => void;
@@ -15,7 +20,7 @@ type NotesMoveToFolderDialogProps = {
 
 export function NotesMoveToFolderDialog({
   open,
-  note,
+  notes,
   folders,
   busy = false,
   onClose,
@@ -30,9 +35,12 @@ export function NotesMoveToFolderDialog({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  if (!open || !note) return null;
+  if (!open || notes.length === 0) return null;
 
-  const eligibleFolders = foldersForNote(note, folders);
+  const bulk = bulkMoveFolderOptions(notes, folders);
+  const isBulk = notes.length > 1;
+  const allInFolder = (folderId: string | null) =>
+    notes.every((note) => (note.folder_id ?? null) === folderId);
 
   return (
     <div
@@ -66,62 +74,76 @@ export function NotesMoveToFolderDialog({
           Move to folder
         </h2>
         <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-          Choose where to file &ldquo;{noteTitle(note)}&rdquo;
+          {isBulk
+            ? `Choose where to file ${notes.length} notes`
+            : `Choose where to file “${noteTitle(notes[0]!)}”`}
         </p>
 
         <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-          <ul className="space-y-1">
-            <li>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void onMove(null)}
-                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
-                style={{
-                  background: note.folder_id ? "var(--surface-2)" : "var(--accent-muted)",
-                  color: note.folder_id ? "var(--foreground)" : "var(--accent)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <span aria-hidden>📄</span>
-                No folder
-                {!note.folder_id && (
-                  <span className="ml-auto text-xs font-semibold" style={{ color: "var(--accent)" }}>
-                    Current
-                  </span>
-                )}
-              </button>
-            </li>
-            {eligibleFolders.map((folder) => {
-              const isCurrent = note.folder_id === folder.id;
-              return (
-                <li key={folder.id}>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void onMove(folder.id)}
-                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
-                    style={{
-                      background: isCurrent ? "var(--accent-muted)" : "var(--surface-2)",
-                      color: isCurrent ? "var(--accent)" : "var(--foreground)",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    <FolderColorIcon color={folder.color} />
-                    <span className="min-w-0 truncate">{folder.name}</span>
-                    {isCurrent && (
-                      <span className="ml-auto shrink-0 text-xs font-semibold" style={{ color: "var(--accent)" }}>
-                        Current
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {eligibleFolders.length === 0 && (
+          {!bulk.ok ? (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              {bulk.reason === "mixed-visibility"
+                ? "Selected notes include both shared and private notes. Move them separately, or change visibility first."
+                : "No notes selected."}
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              <li>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void onMove(null)}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
+                  style={{
+                    background: allInFolder(null) ? "var(--accent-muted)" : "var(--surface-2)",
+                    color: allInFolder(null) ? "var(--accent)" : "var(--foreground)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <span aria-hidden>📄</span>
+                  No folder
+                  {allInFolder(null) && (
+                    <span className="ml-auto text-xs font-semibold" style={{ color: "var(--accent)" }}>
+                      Current
+                    </span>
+                  )}
+                </button>
+              </li>
+              {bulk.folders.map((folder) => {
+                const isCurrent = allInFolder(folder.id);
+                return (
+                  <li key={folder.id}>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void onMove(folder.id)}
+                      className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
+                      style={{
+                        background: isCurrent ? "var(--accent-muted)" : "var(--surface-2)",
+                        color: isCurrent ? "var(--accent)" : "var(--foreground)",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      <FolderColorIcon color={folder.color} />
+                      <span className="min-w-0 truncate">{folder.name}</span>
+                      {isCurrent && (
+                        <span
+                          className="ml-auto shrink-0 text-xs font-semibold"
+                          style={{ color: "var(--accent)" }}
+                        >
+                          Current
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {bulk.ok && bulk.folders.length === 0 && (
             <p className="mt-3 text-sm" style={{ color: "var(--text-muted)" }}>
-              No {note.visibility} folders yet. Create one in the sidebar, then move this note there.
+              No {bulk.visibility} folders yet. Create one in the sidebar, then move{" "}
+              {isBulk ? "these notes" : "this note"} there.
             </p>
           )}
         </div>
