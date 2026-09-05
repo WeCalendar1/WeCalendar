@@ -1,16 +1,16 @@
 # Graph Report - WeCalendar  (2026-09-04)
 
 ## Corpus Check
-- 90 files · ~46,270 words
+- 90 files · ~47,542 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 604 nodes · 1089 edges · 37 communities (27 shown, 10 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.8)
+- 701 nodes · 1222 edges · 48 communities (37 shown, 11 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c917738e`
+- Built from commit: `cd688010`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -21,12 +21,12 @@
 - compilerOptions
 - notes.ts
 - WeCalendar
-- database.ts
+- Sidebar.tsx
 - 20260730120000_init_schema.sql
 - 20260806140000_bootstrap_schema.sql
 - dependencies
 - devDependencies
-- Navbar.tsx
+- createClient
 - WeCalendar — project context
 - 20260830120000_notes.sql
 - 20260818000000_tags.sql
@@ -41,46 +41,57 @@
 - public.notes
 - calendar.ts
 - public.events
+- AppShell
+- NotesApp.tsx
+- NotesFolderSidebar.tsx
+- CreateEventModal.tsx
 - 20260831120000_notes_updated_at_content_only.sql
 - public.note_folders
+- NotesApp
 - NoteToolbar.tsx
+- database.ts
+- Navbar.tsx
+- NotesFolderDialog.tsx
+- scheduling.ts
+- getMonthGrid
+- NotesDialogContent
 
 ## God Nodes (most connected - your core abstractions)
-1. `compilerOptions` - 16 edges
-2. `WeCalendar — Full Project Context` - 16 edges
-3. `CalendarEvent` - 15 edges
-4. `AppShell()` - 14 edges
-5. `CalendarCell()` - 13 edges
-6. `startOfDay()` - 13 edges
-7. `Tag` - 13 edges
-8. `6. Component Reference` - 13 edges
-9. `isSameDay()` - 12 edges
-10. `TimeGrid()` - 11 edges
+1. `AppShell()` - 39 edges
+2. `NotesApp()` - 23 edges
+3. `compilerOptions` - 16 edges
+4. `WeCalendar — Full Project Context` - 16 edges
+5. `CalendarEvent` - 15 edges
+6. `CalendarCell()` - 13 edges
+7. `CreateEventModal()` - 13 edges
+8. `startOfDay()` - 13 edges
+9. `Tag` - 13 edges
+10. `6. Component Reference` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `NoteMetaBar()` --calls--> `formatLinkedEventLabel()`  [EXTRACTED]
-  src/components/Notes/NotesApp.tsx → src/lib/eventPicker.ts
-- `ProfilePage()` --calls--> `createClient()`  [EXTRACTED]
-  src/app/profile/page.tsx → src/lib/supabase/client.ts
+- `handleCreateNoteFolder()` --calls--> `normalizeFolderColor()`  [EXTRACTED]
+  src/components/AppShell/AppShell.tsx → src/lib/notes.ts
+- `handleUpdateNoteFolder()` --calls--> `normalizeFolderColor()`  [EXTRACTED]
+  src/components/AppShell/AppShell.tsx → src/lib/notes.ts
+- `AppShell()` --calls--> `getInitials()`  [EXTRACTED]
+  src/components/AppShell/AppShell.tsx → src/lib/auth.ts
 - `AppShell()` --calls--> `formatViewLabel()`  [EXTRACTED]
   src/components/AppShell/AppShell.tsx → src/lib/calendar.ts
 - `AppShell()` --calls--> `shiftViewDate()`  [EXTRACTED]
-  src/components/AppShell/AppShell.tsx → src/lib/calendar.ts
-- `AppShell()` --calls--> `startOfDay()`  [EXTRACTED]
   src/components/AppShell/AppShell.tsx → src/lib/calendar.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (37 total, 10 thin omitted)
+## Communities (48 total, 11 thin omitted)
 
 ### Community 0 - "events.ts"
-Cohesion: 0.09
-Nodes (44): barEdges(), barRadius(), CalendarCell(), CalendarCellProps, conflictBarShadow(), conflictOutline(), CalendarGrid(), CalendarGridProps (+36 more)
+Cohesion: 0.07
+Nodes (56): CalendarProps, barEdges(), barRadius(), CalendarCell(), CalendarCellProps, conflictBarShadow(), conflictOutline(), CalendarGrid() (+48 more)
 
 ### Community 1 - "AppShell.tsx"
-Cohesion: 0.09
-Nodes (25): AppShell(), Group, Calendar(), ConflictToast(), ConflictToastItem, ConflictToastProps, RightPanel(), RightPanelProps (+17 more)
+Cohesion: 0.19
+Nodes (8): Group, Calendar(), ConflictToast(), ConflictToastItem, ConflictToastProps, RightPanel(), RightPanelProps, getInitials()
 
 ### Community 2 - "WeCalendar — Full Project Context"
 Cohesion: 0.04
@@ -91,16 +102,16 @@ Cohesion: 0.06
 Nodes (31): dom, dom.iterable, esnext, **/*.mts, .next/dev/types/**/*.ts, next-env.d.ts, .next/types/**/*.ts, node_modules (+23 more)
 
 ### Community 4 - "notes.ts"
-Cohesion: 0.06
-Nodes (66): NoteEditor(), NoteEditorProps, Commands, CustomBullet, LineHeight, @tiptap/core, Group, NoteDraftContext (+58 more)
+Cohesion: 0.15
+Nodes (28): Badge(), NotesListPanel(), NotesListPanelProps, BulkMoveFolderResult, filterLabel(), filterNoOpNotePatch(), FOLDER_COLOR_PALETTE, folderBadgeStyle() (+20 more)
 
 ### Community 5 - "WeCalendar"
 Cohesion: 0.07
 Nodes (25): Apply the migration, Option A — Supabase Dashboard (simplest), Option B — Supabase CLI, Out of scope (later phases), RPCs (use these from the app), Security, Smoke test (after auth exists), Tables (+17 more)
 
-### Community 6 - "database.ts"
+### Community 6 - "Sidebar.tsx"
 Cohesion: 0.11
-Nodes (17): GET(), Group, SharedWorkspace(), SharedWorkspaceProps, MiniCalendar(), MiniCalendarProps, WEEKDAYS, Group (+9 more)
+Nodes (12): Group, SharedWorkspace(), SharedWorkspaceProps, MiniCalendar(), MiniCalendarProps, WEEKDAYS, Group, Sidebar() (+4 more)
 
 ### Community 7 - "20260730120000_init_schema.sql"
 Cohesion: 0.14
@@ -118,9 +129,9 @@ Nodes (41): next, dependencies, next, react, react-dom, @supabase/ssr, @supabase
 Cohesion: 0.06
 Nodes (32): eslint, eslint-config-next, devDependencies, eslint, eslint-config-next, tailwindcss, @tailwindcss/postcss, @types/node (+24 more)
 
-### Community 11 - "Navbar.tsx"
-Cohesion: 0.10
-Nodes (13): ProfilePage(), formatAuthError(), LoginForm(), Mode, MODE_ORDER, MODES, Navbar(), NavbarProps (+5 more)
+### Community 11 - "createClient"
+Cohesion: 0.08
+Nodes (12): GET(), LeaveGroupRow(), ProfilePage(), formatAuthError(), LoginForm(), handleSubmit(), Mode, ProfileMenu() (+4 more)
 
 ### Community 12 - "WeCalendar — project context"
 Cohesion: 0.13
@@ -143,32 +154,72 @@ Cohesion: 0.25
 Nodes (6): jetbrainsMono, merriweather, metadata, nunitoSans, playfairDisplay, varelaRound
 
 ### Community 30 - "calendar.ts"
-Cohesion: 0.11
-Nodes (31): CalendarProps, CreateEventModal(), CreateEventModalProps, DayPicker(), DayPickerProps, EventDraft, groupConsecutiveDates(), PICKER_DAYS (+23 more)
+Cohesion: 0.30
+Nodes (14): addDays(), addMonths(), addYears(), DAY_HOURS, formatDayLabel(), formatHourLabel(), formatViewLabel(), formatWeekLabel() (+6 more)
+
+### Community 33 - "AppShell"
+Cohesion: 0.08
+Nodes (12): AppShell(), applyNotePatchLocally(), closeEventModal(), handleCreateMultipleEvents(), handleCreateNote(), handleCreateNoteFolder(), handleCreateNoteForEvent(), handleNoteDraftChange() (+4 more)
+
+### Community 34 - "NotesApp.tsx"
+Cohesion: 0.13
+Nodes (16): Group, NoteDraftContext, NotesAppProps, NotesDialog(), NotesDialogContentProps, NotesDialogProps, NotesLinkEventDialog(), NotesMoveToFolderDialog() (+8 more)
+
+### Community 35 - "NotesFolderSidebar.tsx"
+Cohesion: 0.13
+Nodes (15): dropTargetStyle(), FolderDialogState, FolderRow(), Group, isFilterActive(), NotesFolderSidebar(), acceptsNoteDrag(), handleFolderDragOver() (+7 more)
+
+### Community 36 - "CreateEventModal.tsx"
+Cohesion: 0.15
+Nodes (12): CreateEventModal(), buildDraft(), handleSubmit(), CreateEventModalProps, DayPicker(), DayPickerProps, EventDraft, groupConsecutiveDates() (+4 more)
+
+### Community 40 - "NotesApp"
+Cohesion: 0.16
+Nodes (8): NotesApp(), confirmBulkDelete(), confirmMoveNote(), exitSelectionMode(), finishDrag(), handleDropNoteOnFolder(), handleDropNoteOnTrash(), handleMoveNoteToFolder()
 
 ### Community 41 - "NoteToolbar.tsx"
-Cohesion: 0.13
-Nodes (9): BULLET_PRESETS, COLORS, FONT_OPTIONS, HIGHLIGHT_COLORS, LINE_SPACING_OPTIONS, normalizeHref(), NoteToolbar(), NoteToolbarProps (+1 more)
+Cohesion: 0.11
+Nodes (12): BULLET_PRESETS, BulletPicker(), COLORS, FONT_OPTIONS, HIGHLIGHT_COLORS, LINE_SPACING_OPTIONS, normalizeHref(), NoteToolbar() (+4 more)
+
+### Community 42 - "database.ts"
+Cohesion: 0.16
+Nodes (12): NoteEditor(), NoteEditorProps, Commands, CustomBullet, LineHeight, @tiptap/core, EMPTY_TIPTAP_DOC, serializeNoteContent() (+4 more)
+
+### Community 43 - "Navbar.tsx"
+Cohesion: 0.17
+Nodes (8): MODE_ORDER, MODES, Navbar(), NavbarProps, SCREENS, ViewModePicker(), CalendarMode, ScreenView
+
+### Community 44 - "NotesFolderDialog.tsx"
+Cohesion: 0.22
+Nodes (8): FolderColorIcon(), NotesFolderDialog(), NotesFolderDialogForm(), NotesFolderDialogFormProps, NotesFolderDialogProps, DEFAULT_FOLDER_COLOR, FolderColor, normalizeFolderColor()
+
+### Community 45 - "scheduling.ts"
+Cohesion: 0.38
+Nodes (7): conflictFingerprint(), ConflictGroup, conflictingEventGroups(), conflictingEventIds(), draftOverlapsExisting(), rangesOverlap(), SCHEDULING_CONFLICT_MESSAGE
+
+### Community 46 - "getMonthGrid"
+Cohesion: 0.39
+Nodes (6): MiniMonth(), WEEKDAYS, YearView(), YearViewProps, getMonthGrid(), startOfMonth()
 
 ## Knowledge Gaps
-- **207 isolated node(s):** `eslintConfig`, `nextConfig`, `name`, `version`, `private` (+202 more)
+- **208 isolated node(s):** `eslintConfig`, `nextConfig`, `name`, `version`, `private` (+203 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createClient()` connect `Navbar.tsx` to `AppShell.tsx`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `devDependencies`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
-- **Why does `CalendarEvent` connect `events.ts` to `AppShell.tsx`, `notes.ts`, `calendar.ts`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
+- **Why does `AppShell()` connect `AppShell` to `events.ts`, `AppShell.tsx`, `createClient`, `scheduling.ts`, `calendar.ts`?**
+  _High betweenness centrality (0.043) - this node is a cross-community bridge._
+- **Why does `createClient()` connect `createClient` to `AppShell.tsx`, `Navbar.tsx`, `AppShell`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
+- **Why does `NotesApp()` connect `NotesApp` to `AppShell.tsx`, `NotesApp.tsx`, `notes.ts`?**
+  _High betweenness centrality (0.027) - this node is a cross-community bridge._
 - **What connects `eslintConfig`, `nextConfig`, `name` to the rest of the system?**
-  _207 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _208 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `events.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.08766803039158387 - nodes in this community are weakly interconnected._
-- **Should `AppShell.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.09230769230769231 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07298245614035087 - nodes in this community are weakly interconnected._
 - **Should `WeCalendar — Full Project Context` be split into smaller, more focused modules?**
   _Cohesion score 0.0425531914893617 - nodes in this community are weakly interconnected._
+- **Should `compilerOptions` be split into smaller, more focused modules?**
+  _Cohesion score 0.0625 - nodes in this community are weakly interconnected._
