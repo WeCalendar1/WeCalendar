@@ -7,7 +7,6 @@ import {
   formatNoteDate,
   noteShowsPrivateLock,
   filterLabel,
-  NOTE_DRAG_IDS_MIME,
   NOTES_SORT_OPTIONS,
   noteIdsForDrag,
   notePreviewText,
@@ -44,7 +43,6 @@ type NotesListPanelProps = {
   collapsed: boolean;
   selectionMode: boolean;
   selectedNoteIds: ReadonlySet<string>;
-  onToggleCollapse: () => void;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: NotesSort) => void;
   onSelectNote: (noteId: string) => void;
@@ -72,7 +70,6 @@ export function NotesListPanel({
   collapsed,
   selectionMode,
   selectedNoteIds,
-  onToggleCollapse,
   onSearchChange,
   onSortChange,
   onSelectNote,

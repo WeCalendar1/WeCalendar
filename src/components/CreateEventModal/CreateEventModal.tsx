@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CalendarEvent } from "@/lib/events";
 import { TagCreatorInline } from "@/components/TagCreatorInline";
@@ -234,8 +234,16 @@ function DayPicker({ selectedDates, onToggle }: DayPickerProps) {
 
 // ─── Main modal ───────────────────────────────────────────────────────────────
 
-export function CreateEventModal({
-  open,
+export function CreateEventModal(props: CreateEventModalProps) {
+  const formKey = props.event?.id ?? `new-${toDateInput(props.defaultDate)}`;
+  return (
+    <AnimatePresence>
+      {props.open ? <CreateEventModalContent key={formKey} {...props} /> : null}
+    </AnimatePresence>
+  );
+}
+
+function CreateEventModalContent({
   defaultDate,
   event = null,
   seriesEvents = [],
@@ -258,9 +266,22 @@ export function CreateEventModal({
 
   const [title, setTitle] = useState(event?.title ?? "");
   const [description, setDescription] = useState(event?.description ?? "");
-  const [selectedDates, setSelectedDates] = useState<Set<string>>(() => new Set([toDateInput(defaultDate)]));
-  const [startTime, setStartTime] = useState(() => toTimeInput(defaultDate));
-  const [endTime, setEndTime] = useState(() => toTimeInput(new Date(defaultDate.getTime() + 60 * 60 * 1000)));
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(() => {
+    if (seriesEvents.length > 0) {
+      const dates = new Set<string>();
+      for (const e of seriesEvents) dates.add(toDateInput(new Date(e.starts_at)));
+      return dates;
+    }
+    if (event) return new Set([toDateInput(new Date(event.starts_at))]);
+    return new Set([toDateInput(defaultDate)]);
+  });
+  const [startTime, setStartTime] = useState(() =>
+    event ? toTimeInput(new Date(event.starts_at)) : toTimeInput(defaultDate),
+  );
+  const [endTime, setEndTime] = useState(() => {
+    if (event) return toTimeInput(new Date(event.ends_at));
+    return toTimeInput(new Date(defaultDate.getTime() + 60 * 60 * 1000));
+  });
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTagIds);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -269,34 +290,6 @@ export function CreateEventModal({
   const [repeats, setRepeats] = useState(false);
   const [repeatFreq, setRepeatFreq] = useState<"daily" | "weekly" | "monthly">("weekly");
   const [repeatCount, setRepeatCount] = useState(4);
-
-  // Sync state when opening or when active event / defaultDate changes
-  useEffect(() => {
-    if (!open) return;
-    setTitle(event?.title ?? "");
-    setDescription(event?.description ?? "");
-    const start = event ? new Date(event.starts_at) : defaultDate;
-    const end = event ? new Date(event.ends_at) : null;
-    setStartTime(event ? toTimeInput(start) : toTimeInput(defaultDate));
-    setEndTime(() => {
-      if (end) return toTimeInput(end);
-      return toTimeInput(new Date(defaultDate.getTime() + 60 * 60 * 1000));
-    });
-    setSelectedTagIds(initialTagIds);
-    setConfirmDelete(false);
-    setError(null);
-    setRepeats(false);
-
-    if (seriesEvents.length > 0) {
-      const dates = new Set<string>();
-      for (const e of seriesEvents) dates.add(toDateInput(new Date(e.starts_at)));
-      setSelectedDates(dates);
-    } else if (event) {
-      setSelectedDates(new Set([toDateInput(new Date(event.starts_at))]));
-    } else {
-      setSelectedDates(new Set([toDateInput(defaultDate)]));
-    }
-  }, [open, event, defaultDate, initialTagIds, seriesEvents]);
 
   const softOverlap = useMemo(() => {
     const excludeIds = new Set(seriesEvents.map((e) => e.id));
@@ -498,9 +491,7 @@ export function CreateEventModal({
   }
 
   return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           {/* Translucent dimming scrim */}
           <motion.div
             className="fixed inset-0"
@@ -927,8 +918,6 @@ export function CreateEventModal({
               </form>
             </div>
           </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+    </div>
   );
 }

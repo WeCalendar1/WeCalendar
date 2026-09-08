@@ -47,17 +47,13 @@ export function applyTheme(mode: ThemeMode, accent: string) {
 }
 
 export function useTheme() {
-  const [mode, setMode] = useState<ThemeMode>("light");
-  const [accent, setAccent] = useState<string>(DEFAULT_ACCENT);
+  const [mode, setMode] = useState<ThemeMode>(loadTheme);
+  const [accent, setAccent] = useState(loadAccent);
 
-  // Initialise from localStorage on mount
+  // Keep the document in sync with React state (boot script already set initial DOM).
   useEffect(() => {
-    const savedMode = loadTheme();
-    const savedAccent = loadAccent();
-    setMode(savedMode);
-    setAccent(savedAccent);
-    applyTheme(savedMode, savedAccent);
-  }, []);
+    applyTheme(mode, accent);
+  }, [mode, accent]);
 
   const toggleMode = useCallback(() => {
     setMode((prev) => {
@@ -68,11 +64,14 @@ export function useTheme() {
     });
   }, [accent]);
 
-  const setAccentColor = useCallback((color: string) => {
-    setAccent(color);
-    localStorage.setItem(ACCENT_KEY, color);
-    applyTheme(mode, color);
-  }, [mode]);
+  const setAccentColor = useCallback(
+    (color: string) => {
+      setAccent(color);
+      localStorage.setItem(ACCENT_KEY, color);
+      applyTheme(mode, color);
+    },
+    [mode],
+  );
 
   return { mode, accent, toggleMode, setAccentColor };
 }

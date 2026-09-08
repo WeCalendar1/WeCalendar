@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { CalendarEvent } from "@/lib/events";
 import { formatLinkedEventLabel } from "@/lib/eventPicker";
 import type { Note, NoteFolder, NotesFilter, NotesSort } from "@/lib/notes";
@@ -128,18 +128,30 @@ export function NotesApp({
 
   const selectedNote = notes.find((n) => n.id === selectedNoteId) ?? null;
 
-  useEffect(() => {
+  const filterKey =
+    filter.type === "folder"
+      ? `folder:${filter.folderId}`
+      : filter.type === "event"
+        ? `event:${filter.eventId}`
+        : filter.type === "date"
+          ? `date:${filter.date}`
+          : filter.type;
+
+  const [selectionFilterKey, setSelectionFilterKey] = useState(filterKey);
+  if (filterKey !== selectionFilterKey) {
+    setSelectionFilterKey(filterKey);
     setSelectionMode(false);
     setSelectedNoteIds(new Set());
-  }, [filter]);
+  }
 
-  useEffect(() => {
-    setSelectedNoteIds((prev) => {
-      const visibleIds = new Set(visibleNotes.map((note) => note.id));
-      const next = new Set([...prev].filter((id) => visibleIds.has(id)));
-      return next.size === prev.size ? prev : next;
-    });
-  }, [visibleNotes]);
+  const visibleSelectedNoteIds = useMemo(() => {
+    const visibleIds = new Set(visibleNotes.map((note) => note.id));
+    const next = new Set<string>();
+    for (const id of selectedNoteIds) {
+      if (visibleIds.has(id)) next.add(id);
+    }
+    return next;
+  }, [selectedNoteIds, visibleNotes]);
 
   const sharedFolders = folders.filter((f) => f.visibility === "shared");
   const privateFolders = folders.filter((f) => f.visibility === "private");
@@ -246,19 +258,19 @@ export function NotesApp({
   }
 
   function requestBulkMove() {
-    const targets = visibleNotes.filter((note) => selectedNoteIds.has(note.id));
+    const targets = visibleNotes.filter((note) => visibleSelectedNoteIds.has(note.id));
     if (targets.length === 0) return;
     setMoveNoteTargets(targets);
   }
 
   function requestBulkDelete() {
-    if (selectedNoteIds.size === 0) return;
-    setBulkDeleteCount(selectedNoteIds.size);
+    if (visibleSelectedNoteIds.size === 0) return;
+    setBulkDeleteCount(visibleSelectedNoteIds.size);
   }
 
   async function confirmBulkDelete() {
     if (bulkDeleteCount === 0) return;
-    const ids = [...selectedNoteIds];
+    const ids = [...visibleSelectedNoteIds];
     setDeleteBusy(true);
     try {
       for (const id of ids) {
@@ -350,8 +362,7 @@ export function NotesApp({
         draggingNoteIds={draggingNoteIds}
         collapsed={!listPanelOpen}
         selectionMode={selectionMode}
-        selectedNoteIds={selectedNoteIds}
-        onToggleCollapse={() => setListPanelOpen((v) => !v)}
+        selectedNoteIds={visibleSelectedNoteIds}
         onSearchChange={handleLocalSearch}
         onSortChange={setNotesSort}
         onSelectNote={(id) => onSelectNote(id)}
