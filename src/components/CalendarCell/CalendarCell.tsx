@@ -1,4 +1,4 @@
-﻿import type { CalendarDay } from "@/lib/calendar";
+import type { CalendarDay } from "@/lib/calendar";
 import {
   eventsForDay,
   eventsSpanningDay,
@@ -144,35 +144,18 @@ export function CalendarCell({
 
   return (
     <div
-      className="group min-h-24 p-2 sm:min-h-28"
+      className={`group relative min-h-24 p-2 sm:min-h-28 cursor-pointer transition-colors duration-150 overflow-visible ${
+        day.isToday
+          ? "bg-[var(--accent-muted)]"
+          : day.inCurrentMonth
+            ? "bg-[var(--surface)] hover:bg-[var(--accent-muted)]"
+            : "bg-[var(--surface-2)] hover:bg-[var(--accent-muted)]"
+      }`}
       style={{
         borderBottom: "1px solid var(--border)",
         borderRight:  "1px solid var(--border)",
-        background: day.isToday
-          ? "var(--accent-muted)"
-          : day.inCurrentMonth
-            ? "var(--surface)"
-            : "var(--surface-2)",
-        transition: "background var(--transition-fast)",
-        cursor: "pointer",
-        position: "relative",
-        /* overflow must stay visible so multi-day bars can bleed 1 px into
-           adjacent cell borders for a seamless connected appearance. */
-        overflow: "visible",
       }}
       onDoubleClick={() => onDoubleClick?.(day.date)}
-      onMouseEnter={(e) => {
-        if (!day.isToday) {
-          (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.background = day.isToday
-          ? "var(--accent-muted)"
-          : day.inCurrentMonth
-            ? "var(--surface)"
-            : "var(--surface-2)";
-      }}
     >
       {/* Today accent bar */}
       {day.isToday && (

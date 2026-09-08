@@ -54,8 +54,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${nunitoSans.variable} ${varelaRound.variable} ${merriweather.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var m=localStorage.getItem('wecalendar.theme')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(m==='dark')document.documentElement.classList.add('dark');var a=localStorage.getItem('wecalendar.accent');if(a){document.documentElement.style.setProperty('--theme-primary',a);document.documentElement.style.setProperty('--theme-primary-hover',a);document.documentElement.style.setProperty('--theme-primary-muted','color-mix(in srgb, '+a+' 15%, transparent)');document.documentElement.style.setProperty('--theme-primary-text',a);}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );

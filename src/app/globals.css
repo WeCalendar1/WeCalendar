@@ -1,183 +1,365 @@
 @import "tailwindcss";
 
-/* ─────────────────────────────────────────
-   DESIGN TOKENS - override to retheme
-   The user can provide a hex code for
-   --theme-primary and the rest cascades.
-   ───────────────────────────────────────── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   DESIGN TOKENS â€” Light mode defaults
+   User accent is set via JS (useTheme hook) on :root
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 :root {
-  /* User-controlled primary (default: indigo) */
-  --theme-primary: #6366f1;
-  --theme-primary-hover: #4f46e5;
-  --theme-primary-muted: #eef2ff;
-  --theme-primary-text: #3730a3;
+  /* â”€â”€ User-controlled accent (default: Apple system blue) â”€â”€ */
+  --theme-primary: #007AFF;
+  --theme-primary-hover: #0066CC;
+  --theme-primary-muted: rgba(0, 122, 255, 0.12);
+  --theme-primary-text: #0055BB;
 
-  /* Surface + background */
-  --background: #f5f4ff;
-  --foreground: #1e1b4b;
-  --surface: #ffffff;
-  --surface-2: #f0f0ff;
-
-  /* Borders */
-  --border: #e0e0f5;
-  --border-focus: var(--theme-primary);
-
-  /* Accent mapped to primary */
+  /* â”€â”€ Semantic accent aliases â”€â”€ */
   --accent: var(--theme-primary);
   --accent-hover: var(--theme-primary-hover);
   --accent-muted: var(--theme-primary-muted);
   --accent-text: var(--theme-primary-text);
 
-  /* Text hierarchy */
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
+  /* â”€â”€ Surfaces (light) â”€â”€ */
+  --background:   #f2f2f7;   /* Apple systemGroupedBackground */
+  --foreground:   #1c1c1e;   /* Apple label */
+  --surface:      #ffffff;
+  --surface-2:    #f2f2f7;
+  --surface-3:    #e5e5ea;
 
-  /* Semantic colors */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+  /* â”€â”€ Text hierarchy â”€â”€ */
+  --text-secondary: #3c3c43cc;   /* Apple secondaryLabel */
+  --text-muted:     #3c3c4399;   /* Apple tertiaryLabel */
+  --text-placeholder: #3c3c4360;
 
-  /* Spacing & shape - bubbly feel */
-  --radius-sm: 0.5rem;    /* 8px  */
-  --radius-md: 0.875rem;  /* 14px */
-  --radius-lg: 1.25rem;   /* 20px */
-  --radius-xl: 1.75rem;   /* 28px */
+  /* â”€â”€ Borders â”€â”€ */
+  --border:       rgba(60, 60, 67, 0.18);
+  --border-focus: var(--theme-primary);
+  --separator:    rgba(60, 60, 67, 0.12);
+
+  /* â”€â”€ Glass material â”€â”€ */
+  --glass-bg:        rgba(255, 255, 255, 0.72);
+  --glass-bg-heavy:  rgba(255, 255, 255, 0.88);
+  --glass-blur:      saturate(180%) blur(20px);
+  --glass-border:    rgba(255, 255, 255, 0.5);
+  --glass-shadow:    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+                     0 8px 32px rgba(0, 0, 0, 0.08);
+
+  /* â”€â”€ Semantic colors â”€â”€ */
+  --color-success: #34c759;   /* Apple systemGreen */
+  --color-warning: #ff9f0a;   /* Apple systemOrange */
+  --color-danger:  #ff3b30;   /* Apple systemRed */
+
+  /* â”€â”€ Shape â”€â”€ */
+  --radius-xs:   0.375rem;   /*  6px */
+  --radius-sm:   0.625rem;   /* 10px */
+  --radius-md:   0.875rem;   /* 14px */
+  --radius-lg:   1.25rem;    /* 20px */
+  --radius-xl:   1.75rem;    /* 28px */
   --radius-full: 9999px;
 
-  /* Shadows - soft and lifted */
-  --shadow-sm: 0 1px 3px 0 rgb(99 102 241 / 0.08), 0 1px 2px -1px rgb(99 102 241 / 0.06);
-  --shadow-md: 0 4px 12px 0 rgb(99 102 241 / 0.10), 0 2px 6px -2px rgb(99 102 241 / 0.08);
-  --shadow-lg: 0 8px 24px 0 rgb(99 102 241 / 0.12), 0 4px 10px -4px rgb(99 102 241 / 0.10);
+  /* â”€â”€ Shadows â”€â”€ */
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:    0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
+  --shadow-lg:    0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-menu:  0 4px 24px rgba(0,0,0,0.12), 0 1px 6px rgba(0,0,0,0.06),
+                  0 0 0 0.5px rgba(0,0,0,0.08);
 
-  /* Transitions */
-  --transition-fast: 100ms ease;
-  --transition-base: 180ms ease;
-  --transition-slow: 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* â”€â”€ Motion â”€â”€ */
+  --spring-default: cubic-bezier(0.25, 0.46, 0.45, 0.94);  /* Critically damped */
+  --spring-snappy:  cubic-bezier(0.34, 1.56, 0.64, 1);     /* Under-damped / slight bounce */
+  --duration-instant: 80ms;
+  --duration-fast:    140ms;
+  --duration-base:    240ms;
+  --duration-slow:    380ms;
+
+  /* Legacy aliases (consumed by existing components) */
+  --transition-fast: var(--duration-instant) ease;
+  --transition-base: var(--duration-fast) ease;
+  --transition-slow: var(--duration-slow) var(--spring-default);
+
+  /* â”€â”€ Sidebar â”€â”€ */
+  --sidebar-width: 16rem;   /* 256px */
 }
 
-/* ─────────────────────────────────────────
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   DARK MODE â€” applied via .dark class on <html>
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.dark {
+  --background:   #000000;
+  --foreground:   #ffffff;
+  --surface:      #1c1c1e;
+  --surface-2:    #2c2c2e;
+  --surface-3:    #3a3a3c;
+
+  --text-secondary: rgba(235, 235, 245, 0.6);
+  --text-muted:     rgba(235, 235, 245, 0.3);
+  --text-placeholder: rgba(235, 235, 245, 0.18);
+
+  --border:       rgba(255, 255, 255, 0.10);
+  --separator:    rgba(255, 255, 255, 0.06);
+
+  --glass-bg:        rgba(28, 28, 30, 0.80);
+  --glass-bg-heavy:  rgba(28, 28, 30, 0.92);
+  --glass-border:    rgba(255, 255, 255, 0.10);
+  --glass-shadow:    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+                     0 8px 32px rgba(0, 0, 0, 0.40);
+
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.30), 0 1px 2px rgba(0,0,0,0.20);
+  --shadow-md:    0 4px 16px rgba(0,0,0,0.36), 0 2px 6px rgba(0,0,0,0.20);
+  --shadow-lg:    0 12px 40px rgba(0,0,0,0.44), 0 4px 12px rgba(0,0,0,0.24);
+  --shadow-menu:  0 4px 24px rgba(0,0,0,0.48), 0 1px 6px rgba(0,0,0,0.24),
+                  0 0 0 0.5px rgba(255,255,255,0.08);
+
+  --color-success: #30d158;
+  --color-warning: #ff9f0a;
+  --color-danger:  #ff453a;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    TAILWIND THEME BRIDGE
-   ───────────────────────────────────────── */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-accent: var(--accent);
+  --color-background:   var(--background);
+  --color-foreground:   var(--foreground);
+  --color-surface:      var(--surface);
+  --color-surface-2:    var(--surface-2);
+  --color-accent:       var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-muted: var(--accent-muted);
-  --color-accent-text: var(--accent-text);
-  --color-border: var(--border);
+  --color-accent-text:  var(--accent-text);
+  --color-border:       var(--border);
   --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-  --font-sans: "Nunito Sans", system-ui, sans-serif;
-  --font-display: "Varela Round", system-ui, sans-serif;
+  --color-text-muted:   var(--text-muted);
+  --font-sans:    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* ─────────────────────────────────────────
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    BASE STYLES
-   ───────────────────────────────────────── */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+*, *::before, *::after { box-sizing: border-box; }
 
 html {
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Nunito Sans", system-ui, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.9375rem;   /* 15px â€” Apple default body size */
+  line-height: 1.5;
+  letter-spacing: 0em;    /* Body: neutral tracking */
+  font-feature-settings: "kern" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* â”€â”€ Typography utilities â€” size-specific tracking (Apple rule) â”€â”€ */
+.text-display {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;   /* Very tight on display */
+  font-optical-sizing: auto;
+}
+
+.text-title-lg {
+  font-size: 1.5rem;
+  line-height: 1.15;
+  letter-spacing: -0.018em;
+}
+
+.text-title {
+  font-size: 1.125rem;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+}
+
+.text-headline {
   font-size: 0.9375rem;
-  line-height: 1.6;
+  line-height: 1.35;
+  letter-spacing: -0.004em;
+  font-weight: 600;
 }
 
-/* ─────────────────────────────────────────
-   MICRO-INTERACTION UTILITIES
-   ───────────────────────────────────────── */
+.text-body {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  letter-spacing: 0em;
+}
 
-/* Bubbly press effect */
+.text-callout {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  letter-spacing: 0em;
+}
+
+.text-caption {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  letter-spacing: 0.005em;   /* Slight positive on small text */
+}
+
+.text-label {
+  font-size: 0.6875rem;  /* 11px */
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   GLASS MATERIAL
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-heavy {
+  background: var(--glass-bg-heavy);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   INTERACTION UTILITIES
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Instant press â€” responds on pointerdown via CSS :active */
+.pressable {
+  cursor: pointer;
+  transition: transform var(--duration-instant) ease,
+              opacity var(--duration-instant) ease;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+.pressable:active {
+  transform: scale(0.96);
+  opacity: 0.8;
+}
+
+/* Legacy alias kept for existing components */
 .btn-bounce {
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-}
-.btn-bounce:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: transform var(--duration-instant) ease,
+              opacity var(--duration-instant) ease;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn-bounce:active {
-  transform: translateY(0) scale(0.97);
-  box-shadow: var(--shadow-sm);
+  transform: scale(0.96);
 }
 
-/* Subtle fade-in for panels */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ANIMATION KEYFRAMES
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Panel/popover entrance â€” scale from 0.96 + fade */
+@keyframes materialize {
+  from { opacity: 0; transform: scale(0.96); filter: blur(4px); }
+  to   { opacity: 1; transform: scale(1);    filter: blur(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Keep for compatibility */
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in {
-  animation: fadeSlideIn 220ms ease both;
-}
 
-/* Today badge pulse */
+.animate-fade-in     { animation: fadeIn var(--duration-base) var(--spring-default) both; }
+.animate-slide-up    { animation: slideUp var(--duration-base) var(--spring-default) both; }
+.animate-materialize { animation: materialize var(--duration-base) var(--spring-default) both; }
+
+/* Today badge â€” subtle, calm pulse */
 @keyframes todayPulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent); }
-  50%       { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 0%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 30%, transparent); }
+  50%       { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 0%, transparent); }
 }
-.today-badge {
-  animation: todayPulse 2.4s ease-in-out infinite;
-}
+.today-badge { animation: todayPulse 3s ease-in-out infinite; }
 
-/* Respect prefers-reduced-motion */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   REDUCED MOTION â€” Apple principle Â§14
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-/* ─────────────────────────────────────────
-   SCROLLBAR - thin & themed
-   ───────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   REDUCED TRANSPARENCY
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg:       var(--surface);
+    --glass-bg-heavy: var(--surface);
+    --glass-blur:     none;
+    --glass-border:   var(--border);
+    --glass-shadow:   var(--shadow-md);
+  }
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SCROLLBAR
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+::-webkit-scrollbar          { width: 5px; height: 5px; }
+::-webkit-scrollbar-track    { background: transparent; }
+::-webkit-scrollbar-thumb    {
   background: var(--border);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-/* ─────────────────────────────────────────
-   FOCUS STYLES - accessible & on-brand
-   ───────────────────────────────────────── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   FOCUS
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 
-/* ─────────────────────────────────────────
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    SUPPRESS NATIVE BROWSER PASSWORD ICONS
-   Edge/IE ship a built-in eye button; hide
-   it so it doesn't clash with our custom one.
-   ───────────────────────────────────────── */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 input[type="password"]::-ms-reveal,
-input[type="password"]::-ms-clear {
-  display: none;
-}
+input[type="password"]::-ms-clear { display: none; }
 
-/* ─────────────────────────────────────────
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    NOTES EDITOR (TipTap / ProseMirror)
-   ───────────────────────────────────────── */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .note-editor-content {
   color: var(--foreground);
   font-size: 1rem;
   line-height: 1.75;
+  letter-spacing: 0em;
 }
 
 .note-editor-content p.is-editor-empty:first-child::before {
-  color: var(--text-muted);
+  color: var(--text-placeholder);
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -187,57 +369,49 @@ input[type="password"]::-ms-clear {
 .note-editor-content h1 {
   font-size: 1.5rem;
   font-weight: 700;
-  margin: 1.25rem 0 0.5rem;
-  font-family: var(--font-varela-round, "Varela Round", sans-serif);
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+  margin: 1.5rem 0 0.5rem;
 }
 
 .note-editor-content h2 {
   font-size: 1.25rem;
   font-weight: 700;
-  margin: 1rem 0 0.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+  margin: 1.25rem 0 0.5rem;
 }
 
 .note-editor-content h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin: 0.75rem 0 0.35rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.006em;
+  margin: 1rem 0 0.4rem;
 }
 
-.note-editor-content p {
-  margin: 0.35rem 0;
-}
+.note-editor-content p { margin: 0.4rem 0; }
 
-/* Bullet + numbered lists (Tailwind preflight removes list markers) */
 .note-editor-content ul:not([data-type="taskList"]) {
   margin: 0.5rem 0;
-  padding-left: 1.75rem;
+  padding-left: 1.5rem;
   list-style-type: disc;
 }
 
 .note-editor-content ol {
   margin: 0.5rem 0;
-  padding-left: 1.75rem;
+  padding-left: 1.5rem;
   list-style-type: decimal;
 }
 
 .note-editor-content ul:not([data-type="taskList"]) > li,
-.note-editor-content ol > li {
-  display: list-item;
-}
+.note-editor-content ol > li { display: list-item; }
 
-.note-editor-content li > p {
-  margin: 0.15rem 0;
-}
+.note-editor-content li > p { margin: 0.15rem 0; }
 
-.note-editor-content ul:not([data-type="taskList"]) ul {
-  list-style-type: circle;
-}
+.note-editor-content ul:not([data-type="taskList"]) ul { list-style-type: circle; }
+.note-editor-content ul:not([data-type="taskList"]) ul ul { list-style-type: square; }
 
-.note-editor-content ul:not([data-type="taskList"]) ul ul {
-  list-style-type: square;
-}
-
-/* Checklists (TipTap uses label + div inside plain li) */
 .note-editor-content ul[data-type="taskList"] {
   list-style: none;
   margin: 0.5rem 0;
@@ -273,30 +447,30 @@ input[type="password"]::-ms-clear {
   min-width: 0;
 }
 
-.note-editor-content ul[data-type="taskList"] > li > div > p {
-  margin: 0.15rem 0;
-}
+.note-editor-content ul[data-type="taskList"] > li > div > p { margin: 0.15rem 0; }
 
 .note-editor-content blockquote {
-  border-left: 3px solid var(--accent);
+  border-left: 2.5px solid var(--accent);
   margin: 0.75rem 0;
   padding: 0.25rem 0 0.25rem 1rem;
   color: var(--text-secondary);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
 }
 
-.note-editor-content a {
-  color: var(--accent);
-  text-decoration: underline;
+.note-editor-content a { color: var(--accent); text-decoration: underline; }
+.note-editor-content strong { font-weight: 700; }
+.note-editor-content em { font-style: italic; }
+.note-editor-content u { text-decoration: underline; }
+
+.note-editor-content code {
+  font-family: "SF Mono", ui-monospace, "Cascadia Code", "JetBrains Mono", monospace;
+  font-size: 0.875em;
+  background: var(--surface-3);
+  border-radius: var(--radius-xs);
+  padding: 0.1em 0.35em;
 }
 
-.note-editor-content strong {
-  font-weight: 700;
-}
-
-.note-editor-content em {
-  font-style: italic;
-}
-
-.note-editor-content u {
-  text-decoration: underline;
+.note-editor-content mark {
+  border-radius: var(--radius-xs);
+  padding: 0 0.1em;
 }

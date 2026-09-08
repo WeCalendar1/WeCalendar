@@ -117,7 +117,7 @@ export function NotesListPanel({
               <button
                 type="button"
                 onClick={onToggleSelectionMode}
-                className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
                 style={{
                   borderRadius: "var(--radius-full)",
                   background: "transparent",
@@ -131,12 +131,12 @@ export function NotesListPanel({
               <button
                 type="button"
                 onClick={onEmptyTrash}
-                className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
                 style={{
                   borderRadius: "var(--radius-full)",
                   background: "transparent",
                   border: "1px solid var(--border)",
-                  color: "#dc2626",
+                  color: "var(--color-danger)",
                 }}
               >
                 Empty Trash
@@ -147,7 +147,7 @@ export function NotesListPanel({
                   type="button"
                   onClick={onToggleSelectionMode}
                   disabled={notes.length === 0}
-                  className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
                     borderRadius: "var(--radius-full)",
                     background: "transparent",
@@ -160,7 +160,7 @@ export function NotesListPanel({
                 <button
                   type="button"
                   onClick={onCreateNote}
-                  className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                  className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
                   style={{
                     borderRadius: "var(--radius-full)",
                     background: "var(--accent)",
@@ -175,7 +175,7 @@ export function NotesListPanel({
               <button
                 type="button"
                 onClick={onToggleSelectionMode}
-                className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
                 style={{
                   borderRadius: "var(--radius-full)",
                   background: "transparent",
@@ -308,14 +308,13 @@ export function NotesListPanel({
                     if (selectionMode) onToggleNoteSelection(note.id);
                     else onSelectNote(note.id);
                   }}
-                  className="group relative cursor-grab border-b active:cursor-grabbing"
+                  className={`group relative cursor-grab border-b active:cursor-grabbing transition-colors duration-150 ${
+                    rowHighlighted ? "bg-[var(--accent-muted)]" : "hover:bg-[var(--surface-2)]"
+                  }`}
                   style={{
                     borderColor: "var(--border)",
-                    background: rowHighlighted ? "var(--accent-muted)" : "transparent",
                     boxShadow: isDragging ? "inset 0 0 0 2px var(--accent)" : undefined,
                     opacity: isDragging ? 0.65 : 1,
-                    transition:
-                      "background var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast)",
                   }}
                 >
                   <div className="flex items-stretch px-4 py-3 pr-2">

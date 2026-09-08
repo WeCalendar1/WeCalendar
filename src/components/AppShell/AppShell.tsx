@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTheme } from "@/lib/theme";
 import type { User } from "@supabase/supabase-js";
 import { Calendar } from "@/components/Calendar";
 import { ConflictToast } from "@/components/ConflictToast";
@@ -33,6 +34,7 @@ type Group = Tables<"groups">;
 const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
 
 export function AppShell() {
+  const { mode: themeMode, accent, toggleMode: toggleTheme, setAccentColor } = useTheme();
   const [viewDate, setViewDate] = useState(() => startOfDay(new Date()));
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [screenView, setScreenView] = useState<ScreenView>("calendar");
@@ -799,6 +801,8 @@ export function AppShell() {
         sidebarOpen={sidebarOpen}
         searchQuery={screenView === "notes" ? notesSearchQuery : searchQuery}
         userInitials={userInitials}
+        isDark={themeMode === "dark"}
+        accent={accent}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onToday={() => setViewDate(startOfDay(new Date()))}
         onPrev={() => setViewDate((d) => shiftViewDate(d, calendarMode, -1))}
@@ -806,9 +810,18 @@ export function AppShell() {
         onCalendarModeChange={setCalendarMode}
         onScreenViewChange={setScreenView}
         onSearchChange={screenView === "notes" ? setNotesSearchQuery : setSearchQuery}
+        onToggleTheme={toggleTheme}
+        onSelectAccent={setAccentColor}
       />
 
-      <div className="flex min-h-0 flex-1">
+      <div
+        className="flex min-h-0 flex-1 transition-all duration-300 ease-out"
+        style={{
+          transform: modalOpen ? "scale(0.988) translateY(4px)" : "none",
+          transformOrigin: "center 30%",
+          filter: modalOpen ? "brightness(0.96)" : "none",
+        }}
+      >
         {screenView === "calendar" && (
           <Sidebar
             open={sidebarOpen}
@@ -920,13 +933,7 @@ export function AppShell() {
       />
 
       <CreateEventModal
-        key={
-          selectedEvent
-            ? selectedEvent.id
-            : modalOpen
-              ? `create-${modalDefaultDate.toISOString()}`
-              : "closed"
-        }
+        key="create-event-modal"
         open={modalOpen}
         defaultDate={modalDefaultDate}
         event={selectedEvent}

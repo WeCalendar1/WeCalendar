@@ -111,15 +111,15 @@ export function CalendarGrid({
     <div
       className="flex h-full min-h-0 flex-col overflow-hidden"
       style={{
-        borderRadius: "var(--radius-xl)",
-        border: "1.5px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        border: "1px solid var(--border)",
         background: "var(--surface)",
-        boxShadow: "var(--shadow-md)",
+        boxShadow: "var(--shadow-sm)",
       }}
     >
       <div
         className="grid grid-cols-7"
-        style={{ borderBottom: "1.5px solid var(--border)", background: "var(--surface-2)" }}
+        style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}
       >
         {WEEKDAYS.map((day) => (
           <div
