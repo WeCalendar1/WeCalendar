@@ -1,14 +1,6 @@
 import type { Metadata } from "next";
-import { Nunito_Sans, Varela_Round, Merriweather, JetBrains_Mono, Playfair_Display } from "next/font/google";
+import { Varela_Round, Merriweather, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
-
-const nunitoSans = Nunito_Sans({
-  variable: "--font-nunito-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
 
 const varelaRound = Varela_Round({
   variable: "--font-varela-round",
@@ -55,7 +47,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${nunitoSans.variable} ${varelaRound.variable} ${merriweather.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable} h-full antialiased`}
+      className={`${varelaRound.variable} ${merriweather.variable} ${jetbrainsMono.variable} ${playfairDisplay.variable} h-full antialiased`}
     >
       <head>
         <script

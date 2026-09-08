@@ -112,20 +112,22 @@ export function CalendarGrid({
       className="flex h-full min-h-0 flex-col overflow-hidden"
       style={{
         borderRadius: "var(--radius-lg)",
-        border: "1px solid var(--border)",
         background: "var(--surface)",
-        boxShadow: "var(--shadow-sm)",
+        boxShadow: "inset 0 0 0 0.5px var(--hairline), var(--shadow-sm)",
       }}
     >
       <div
         className="grid grid-cols-7"
-        style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}
+        style={{
+          boxShadow: "inset 0 -0.5px 0 var(--separator)",
+          background: "var(--surface-2)",
+        }}
       >
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wide"
-            style={{ color: "var(--text-muted)" }}
+            className="px-2 py-2.5 text-center text-xs font-semibold uppercase"
+            style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
           >
             <span className="sm:hidden">{day.slice(0, 1)}</span>
             <span className="hidden sm:inline">{day}</span>

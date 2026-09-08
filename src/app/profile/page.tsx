@@ -31,9 +31,10 @@ function SectionCard({
       className="overflow-hidden"
       style={{
         borderRadius: "var(--radius-xl)",
-        border: danger ? "1.5px solid #fca5a5" : "1.5px solid var(--border)",
         background: danger ? "#fff5f5" : "var(--surface)",
-        boxShadow: "var(--shadow-md)",
+        boxShadow: danger
+          ? "inset 0 0 0 0.5px #fca5a5, var(--shadow-sm)"
+          : "inset 0 0 0 0.5px var(--hairline), var(--shadow-sm)",
         transition: "box-shadow var(--transition-base)",
       }}
     >
@@ -41,16 +42,16 @@ function SectionCard({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full cursor-pointer items-center gap-3 px-6 py-4 text-left"
+        className="pressable flex w-full cursor-pointer items-center gap-3 px-6 py-4 text-left"
         aria-expanded={open}
         style={{
           background: danger ? "#fff0f0" : "var(--surface-2)",
-          borderBottom: open
+          boxShadow: open
             ? danger
-              ? "1.5px solid #fca5a5"
-              : "1.5px solid var(--border)"
+              ? "inset 0 -0.5px 0 #fca5a5"
+              : "inset 0 -0.5px 0 var(--separator)"
             : "none",
-          transition: "background var(--transition-base), border-color var(--transition-base)",
+          transition: "background var(--duration-fast) var(--ease-out)",
         }}
         onMouseEnter={(e) => {
           (e.currentTarget as HTMLElement).style.background = danger
@@ -69,7 +70,7 @@ function SectionCard({
           style={{
             borderRadius: "var(--radius-md)",
             background: danger ? "#fee2e2" : "var(--accent-muted)",
-            color: danger ? "#dc2626" : "var(--accent)",
+            color: danger ? "var(--color-danger)" : "var(--accent)",
           }}
         >
           {icon}
@@ -81,7 +82,7 @@ function SectionCard({
             className="font-semibold"
             style={{
               color: danger ? "#991b1b" : "var(--foreground)",
-              fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+              letterSpacing: "-0.012em",
             }}
           >
             {title}
@@ -551,11 +552,10 @@ export default function ProfilePage() {
     >
       {/* Top nav bar */}
       <header
-        className="flex h-14 items-center gap-3 px-4 sm:px-8"
+        className="glass flex h-14 items-center gap-3 px-4 sm:px-8"
         style={{
-          background: "var(--surface)",
-          borderBottom: "1.5px solid var(--border)",
-          boxShadow: "var(--shadow-sm)",
+          borderRadius: 0,
+          boxShadow: "inset 0 -0.5px 0 var(--separator)",
         }}
       >
         <Link
@@ -578,7 +578,7 @@ export default function ProfilePage() {
           className="text-sm font-semibold"
           style={{
             color: "var(--foreground)",
-            fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+            letterSpacing: "-0.012em",
           }}
         >
           Profile &amp; Settings
@@ -626,7 +626,7 @@ export default function ProfilePage() {
                     className="text-2xl font-bold"
                     style={{
                       color: "var(--accent-text)",
-                      fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+                      letterSpacing: "-0.02em",
                     }}
                   >
                     {initials}

@@ -98,18 +98,22 @@ export function NotesListPanel({
     <div
       className="flex shrink-0 flex-col overflow-hidden"
       style={{
-        borderColor: "var(--border)",
         background: "var(--surface)",
+        boxShadow: "inset -0.5px 0 0 var(--separator)",
         width: collapsed ? 0 : undefined,
         minWidth: collapsed ? 0 : undefined,
         maxWidth: collapsed ? 0 : undefined,
-        transition: "width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease",
+        transition:
+          "width var(--duration-base) var(--ease-out), min-width var(--duration-base) var(--ease-out), max-width var(--duration-base) var(--ease-out)",
         ...(collapsed ? {} : { width: "20rem" }),
       }}
     >
-      <div className="border-b px-4 py-3" style={{ borderColor: "var(--border)" }}>
+      <div className="px-4 py-3" style={{ boxShadow: "inset 0 -0.5px 0 var(--separator)" }}>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--foreground)", letterSpacing: "-0.012em" }}
+          >
             {heading}
           </h2>
           <div className="flex items-center gap-1">
@@ -120,8 +124,8 @@ export function NotesListPanel({
                 className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
                 style={{
                   borderRadius: "var(--radius-full)",
-                  background: "transparent",
-                  border: "1px solid var(--border)",
+                  background: "var(--surface-2)",
+                  boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                   color: "var(--foreground)",
                 }}
               >
@@ -134,8 +138,8 @@ export function NotesListPanel({
                 className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
                 style={{
                   borderRadius: "var(--radius-full)",
-                  background: "transparent",
-                  border: "1px solid var(--border)",
+                  background: "var(--surface-2)",
+                  boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                   color: "var(--color-danger)",
                 }}
               >
@@ -150,8 +154,8 @@ export function NotesListPanel({
                   className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
                     borderRadius: "var(--radius-full)",
-                    background: "transparent",
-                    border: "1px solid var(--border)",
+                    background: "var(--surface-2)",
+                    boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                     color: "var(--foreground)",
                   }}
                 >
@@ -178,8 +182,8 @@ export function NotesListPanel({
                 className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
                 style={{
                   borderRadius: "var(--radius-full)",
-                  background: "transparent",
-                  border: "1px solid var(--border)",
+                  background: "var(--surface-2)",
+                  boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                   color: "var(--foreground)",
                 }}
               >
@@ -192,8 +196,8 @@ export function NotesListPanel({
           className="flex items-center gap-2 px-3 py-1.5"
           style={{
             borderRadius: "var(--radius-full)",
-            border: "1.5px solid var(--border)",
             background: "var(--surface-2)",
+            boxShadow: "inset 0 0 0 0.5px var(--hairline)",
           }}
         >
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
@@ -401,9 +405,10 @@ export function NotesListPanel({
                             className="absolute right-0 top-8 z-20 min-w-[10rem] py-1"
                             style={{
                               borderRadius: "var(--radius-md)",
-                              border: "1px solid var(--border)",
-                              background: "var(--surface)",
-                              boxShadow: "var(--shadow-md)",
+                              background: "var(--glass-bg-heavy)",
+                              backdropFilter: "var(--glass-blur)",
+                              WebkitBackdropFilter: "var(--glass-blur)",
+                              boxShadow: "var(--shadow-menu)",
                             }}
                           >
                             <button
@@ -431,11 +436,10 @@ export function NotesListPanel({
 
         {selectionMode && selectedCount > 0 && (
           <div
-            className="sticky bottom-0 flex items-center gap-2 border-t px-4 py-3"
+            className="glass sticky bottom-0 flex items-center gap-2 px-4 py-3"
             style={{
-              borderColor: "var(--border)",
-              background: "var(--surface)",
-              boxShadow: "0 -4px 12px rgb(15 23 42 / 0.08)",
+              borderRadius: "var(--radius-lg) var(--radius-lg) 0 0",
+              boxShadow: "var(--shadow-menu)",
             }}
           >
             <span className="min-w-0 flex-1 truncate text-xs font-semibold" style={{ color: "var(--foreground)" }}>
@@ -444,11 +448,11 @@ export function NotesListPanel({
             <button
               type="button"
               onClick={onBulkMove}
-              className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+              className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
               style={{
                 borderRadius: "var(--radius-full)",
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                 color: "var(--foreground)",
               }}
             >
@@ -457,12 +461,12 @@ export function NotesListPanel({
             <button
               type="button"
               onClick={onBulkDelete}
-              className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+              className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
               style={{
                 borderRadius: "var(--radius-full)",
-                background: "transparent",
-                border: "1px solid var(--border)",
-                color: "#dc2626",
+                background: "var(--surface)",
+                boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                color: "var(--color-danger)",
               }}
             >
               {filter.type === "trash" ? "Delete Forever" : "Delete"}

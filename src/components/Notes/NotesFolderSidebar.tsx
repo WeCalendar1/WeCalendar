@@ -357,8 +357,13 @@ export function NotesFolderSidebar({
   return (
     <>
       <aside
-        className="flex w-64 shrink-0 flex-col overflow-y-auto border-r py-3"
-        style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+        className="flex w-64 shrink-0 flex-col overflow-y-auto py-3"
+        style={{
+          background: "var(--glass-bg)",
+          backdropFilter: "var(--glass-blur)",
+          WebkitBackdropFilter: "var(--glass-blur)",
+          boxShadow: "inset -0.5px 0 0 var(--separator)",
+        }}
         onDragLeave={(event) => {
           const related = event.relatedTarget as Node | null;
           if (related && event.currentTarget.contains(related)) return;

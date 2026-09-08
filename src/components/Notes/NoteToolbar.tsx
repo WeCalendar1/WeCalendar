@@ -6,7 +6,7 @@ import { NotesDialog } from "./NotesDialog";
 
 // ─── Constants ──────────────────────────────────────────
 const FONT_OPTIONS = [
-  { label: "Default (Inter)", value: "Inter, sans-serif" },
+  { label: "Default (System)", value: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
   { label: "Varela Round", value: "var(--font-varela-round, 'Varela Round', sans-serif)" },
   { label: "Merriweather", value: "var(--font-merriweather, 'Merriweather', serif)" },
   { label: "Playfair Display", value: "var(--font-playfair-display, 'Playfair Display', serif)" },

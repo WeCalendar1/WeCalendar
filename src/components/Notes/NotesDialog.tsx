@@ -76,14 +76,14 @@ function NotesDialogContent({
       <motion.div
         className="fixed inset-0"
         style={{
-          background: "rgba(0, 0, 0, 0.4)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          background: "var(--scrim)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       />
       <motion.div
         role="dialog"
@@ -92,14 +92,15 @@ function NotesDialogContent({
         className="relative z-10 w-full max-w-sm overflow-hidden p-5"
         style={{
           borderRadius: "var(--radius-xl)",
-          background: "var(--surface)",
+          background: "var(--glass-bg-heavy)",
+          backdropFilter: "var(--glass-blur-heavy)",
+          WebkitBackdropFilter: "var(--glass-blur-heavy)",
           boxShadow: "var(--shadow-lg)",
-          border: "1px solid var(--border)",
         }}
-        initial={{ opacity: 0, scale: 0.94, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.94, y: 12 }}
-        transition={{ type: "spring", bounce: 0, duration: 0.28 }}
+        initial={{ opacity: 0, scale: 0.96, y: 10, filter: "blur(4px)" }}
+        animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, scale: 0.96, y: 10, filter: "blur(4px)" }}
+        transition={{ type: "spring", bounce: 0, duration: 0.32 }}
         onClick={(e) => e.stopPropagation()}
       >
         <h2

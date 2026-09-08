@@ -64,10 +64,11 @@ export function Sidebar({
           className="shrink-0 overflow-hidden"
           aria-hidden={!open}
           style={{
-            borderRight: "1px solid var(--separator)",
+            borderRight: "none",
             background: "var(--glass-bg)",
             backdropFilter: "var(--glass-blur)",
             WebkitBackdropFilter: "var(--glass-blur)",
+            boxShadow: "inset -0.5px 0 0 var(--separator)",
           }}
         >
           <div className="flex h-full w-[var(--sidebar-width)] flex-col gap-3 overflow-y-auto p-3">
@@ -109,8 +110,8 @@ export function Sidebar({
               className="flex flex-col gap-0"
               style={{
                 borderRadius: "var(--radius-xl)",
-                border: "1px solid var(--border)",
                 background: "var(--surface)",
+                boxShadow: "inset 0 0 0 0.5px var(--hairline), var(--shadow-sm)",
               }}
             >
               <button

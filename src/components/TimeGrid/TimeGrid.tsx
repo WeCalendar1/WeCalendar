@@ -109,8 +109,7 @@ export function TimeGrid({
                 <div
                   key={`${day.date.toISOString()}-${hour}`}
                   style={{
-                    borderTop: "1px solid var(--border)",
-                    borderLeft: "1px solid var(--border)",
+                    boxShadow: "inset 0 0.5px 0 var(--separator), inset 0.5px 0 0 var(--separator)",
                     background: day.isToday
                       ? "color-mix(in srgb, var(--accent-muted) 55%, var(--surface))"
                       : "var(--surface)",

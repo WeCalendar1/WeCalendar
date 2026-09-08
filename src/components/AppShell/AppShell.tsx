@@ -815,11 +815,13 @@ export function AppShell() {
       />
 
       <div
-        className="flex min-h-0 flex-1 transition-all duration-300 ease-out"
+        className="flex min-h-0 flex-1"
         style={{
-          transform: modalOpen ? "scale(0.988) translateY(4px)" : "none",
-          transformOrigin: "center 30%",
-          filter: modalOpen ? "brightness(0.96)" : "none",
+          transition:
+            "transform var(--duration-base) var(--ease-out), filter var(--duration-base) var(--ease-out)",
+          transform: modalOpen ? "scale(0.985) translateY(6px)" : "none",
+          transformOrigin: "center 28%",
+          filter: modalOpen ? "brightness(0.94) saturate(0.92)" : "none",
         }}
       >
         {screenView === "calendar" && (
@@ -879,7 +881,8 @@ export function AppShell() {
                   style={{
                     background: "var(--accent-muted)",
                     color: "var(--accent-text)",
-                    border: "1px solid var(--border)",
+                    boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                    letterSpacing: "-0.004em",
                   }}
                 >
                   Create a shared workspace or join with an invite code to sync calendars

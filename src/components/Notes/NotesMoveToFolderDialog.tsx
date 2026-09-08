@@ -45,7 +45,7 @@ export function NotesMoveToFolderDialog({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgb(15 23 42 / 0.35)" }}
+      style={{ background: "var(--scrim)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
       onClick={onClose}
       role="presentation"
     >
@@ -53,12 +53,13 @@ export function NotesMoveToFolderDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="move-note-dialog-title"
-        className="flex w-full max-w-sm flex-col p-5"
+        className="flex w-full max-w-sm flex-col p-5 animate-materialize"
         style={{
           borderRadius: "var(--radius-xl)",
-          background: "var(--surface)",
+          background: "var(--glass-bg-heavy)",
+          backdropFilter: "var(--glass-blur-heavy)",
+          WebkitBackdropFilter: "var(--glass-blur-heavy)",
           boxShadow: "var(--shadow-lg)",
-          border: "1.5px solid var(--border)",
           maxHeight: "min(70vh, 28rem)",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -68,7 +69,7 @@ export function NotesMoveToFolderDialog({
           className="text-lg font-semibold"
           style={{
             color: "var(--foreground)",
-            fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+            letterSpacing: "-0.018em",
           }}
         >
           Move to folder
@@ -93,11 +94,11 @@ export function NotesMoveToFolderDialog({
                   type="button"
                   disabled={busy}
                   onClick={() => void onMove(null)}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
+                  className="pressable flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
                   style={{
                     background: allInFolder(null) ? "var(--accent-muted)" : "var(--surface-2)",
                     color: allInFolder(null) ? "var(--accent)" : "var(--foreground)",
-                    border: "1px solid var(--border)",
+                    boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                   }}
                 >
                   <span aria-hidden>📄</span>
@@ -117,11 +118,11 @@ export function NotesMoveToFolderDialog({
                       type="button"
                       disabled={busy}
                       onClick={() => void onMove(folder.id)}
-                      className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
+                      className="pressable flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
                       style={{
                         background: isCurrent ? "var(--accent-muted)" : "var(--surface-2)",
                         color: isCurrent ? "var(--accent)" : "var(--foreground)",
-                        border: "1px solid var(--border)",
+                        boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                       }}
                     >
                       <FolderColorIcon color={folder.color} />

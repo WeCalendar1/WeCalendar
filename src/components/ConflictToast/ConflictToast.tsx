@@ -76,13 +76,12 @@ export function ConflictToast({
               className="glass-heavy fixed top-16 right-3 z-50 w-[min(100%-1.5rem,22rem)] overflow-hidden p-3.5 sm:right-4"
               style={{
                 borderRadius: "var(--radius-lg)",
-                border: "1px solid var(--border)",
-                boxShadow: "var(--shadow-lg)",
+                boxShadow: "var(--shadow-menu)",
               }}
-              initial={{ opacity: 0, scale: 0.94, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: -10 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+              initial={{ opacity: 0, scale: 0.96, y: -8, filter: "blur(4px)" }}
+              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 0.96, y: -8, filter: "blur(4px)" }}
+              transition={{ type: "spring", bounce: 0, duration: 0.32 }}
             >
               {/* Header row with title + minimize button */}
               <div className="flex items-center justify-between gap-2">

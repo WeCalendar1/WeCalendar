@@ -15,7 +15,6 @@ const MODES: { id: CalendarMode; label: string }[] = [
   { id: "month", label: "Month" },
   { id: "year",  label: "Year"  },
 ];
-const MODE_ORDER: CalendarMode[] = ["day", "week", "month", "year"];
 
 function ViewModePicker({
   calendarMode,
@@ -24,161 +23,20 @@ function ViewModePicker({
   calendarMode: CalendarMode;
   onCalendarModeChange: (mode: CalendarMode) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const currentLabel = MODES.find((m) => m.id === calendarMode)?.label ?? calendarMode;
-  const currentIndex = MODE_ORDER.indexOf(calendarMode);
-
-  function shiftMode(dir: 1 | -1) {
-    const next = (currentIndex + dir + MODE_ORDER.length) % MODE_ORDER.length;
-    onCalendarModeChange(MODE_ORDER[next]!);
-  }
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  const RADIUS = 52;
-  const angles = [-90, 0, 90, 180];
-
   return (
-    <div ref={containerRef} className="relative flex items-center">
-      {/* ‹ Prev */}
-      <button
-        type="button"
-        aria-label="Previous view mode"
-        onClick={() => shiftMode(-1)}
-        className="pressable flex h-7 w-6 items-center justify-center"
-        style={{
-          borderRadius: "var(--radius-md) 0 0 var(--radius-md)",
-          border: "1px solid var(--border)",
-          borderRight: "none",
-          background: "var(--surface)",
-          color: "var(--text-secondary)",
-        }}
-      >
-        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 6l-6 6 6 6" />
-        </svg>
-      </button>
-
-      {/* Label / trigger */}
-      <button
-        type="button"
-        id="view-mode-picker-trigger"
-        aria-haspopup="true"
-        aria-expanded={open}
-        aria-label={`Current view: ${currentLabel}. Click to change.`}
-        onClick={() => setOpen((v) => !v)}
-        className="pressable px-3 py-1 text-sm font-semibold"
-        style={{
-          border: "1px solid var(--border)",
-          borderLeft: "none",
-          borderRight: "none",
-          background: open ? "var(--accent-muted)" : "var(--surface)",
-          color: open ? "var(--accent)" : "var(--foreground)",
-          minWidth: "4rem",
-          textAlign: "center",
-          lineHeight: "1.5rem",
-          letterSpacing: "-0.004em",
-        }}
-      >
-        {currentLabel}
-      </button>
-
-      {/* › Next */}
-      <button
-        type="button"
-        aria-label="Next view mode"
-        onClick={() => shiftMode(1)}
-        className="pressable flex h-7 w-6 items-center justify-center"
-        style={{
-          borderRadius: "0 var(--radius-md) var(--radius-md) 0",
-          border: "1px solid var(--border)",
-          borderLeft: "none",
-          background: "var(--surface)",
-          color: "var(--text-secondary)",
-        }}
-      >
-        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 6l6 6-6 6" />
-        </svg>
-      </button>
-
-      {/* Radial picker */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            role="dialog"
-            aria-label="Select calendar view"
-            className="pointer-events-auto absolute left-1/2 top-full z-50"
-            style={{ transform: "translateX(-50%)", marginTop: "0.5rem" }}
-            initial={{ opacity: 0, scale: 0.88 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.88 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.28 }}
-          >
-            <div
-              className="relative flex items-center justify-center"
-              style={{ width: RADIUS * 2 + 80, height: RADIUS * 2 + 80 }}
-            >
-              <div
-                className="absolute inset-0 glass"
-                style={{ borderRadius: "50%" }}
-              />
-              <span className="relative z-10 text-xs font-semibold" style={{ color: "var(--accent)", letterSpacing: "-0.002em" }}>
-                {currentLabel}
-              </span>
-              {MODES.map((mode, i) => {
-                const angleDeg = angles[i]!;
-                const angleRad = (angleDeg * Math.PI) / 180;
-                const x = Math.cos(angleRad) * RADIUS;
-                const y = Math.sin(angleRad) * RADIUS;
-                const isActive = mode.id === calendarMode;
-                return (
-                  <motion.button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => { onCalendarModeChange(mode.id); setOpen(false); }}
-                    aria-label={mode.label}
-                    aria-pressed={isActive}
-                    className="absolute flex items-center justify-center text-xs font-semibold"
-                    style={{
-                      left: "50%",
-                      top: "50%",
-                      transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
-                      width: 48,
-                      height: 28,
-                      borderRadius: "var(--radius-full)",
-                      border: isActive ? "none" : "1px solid var(--border)",
-                      background: isActive ? "var(--accent)" : "var(--surface)",
-                      color: isActive ? "#fff" : "var(--foreground)",
-                      letterSpacing: "-0.004em",
-                      cursor: "pointer",
-                    }}
-                    initial={{ opacity: 0, scale: 0.6 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.32, delay: i * 0.04 }}
-                    whileTap={{ scale: 0.92 }}
-                  >
-                    {mode.label}
-                  </motion.button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="segmented" role="group" aria-label="Calendar view">
+      {MODES.map((mode) => (
+        <button
+          key={mode.id}
+          type="button"
+          className="segmented-item pressable"
+          data-active={calendarMode === mode.id}
+          aria-pressed={calendarMode === mode.id}
+          onClick={() => onCalendarModeChange(mode.id)}
+        >
+          {mode.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -229,11 +87,11 @@ function ScreenSwitcher({
     <div
       role="group"
       aria-label="Screen view"
-      className="relative flex items-center p-1 gap-0.5"
+      className="relative flex items-center gap-0.5 p-0.5"
       style={{
         borderRadius: "var(--radius-lg)",
-        border: "1px solid var(--border)",
-        background: "var(--surface-2)",
+        background: "var(--surface-3)",
+        boxShadow: "inset 0 0 0 0.5px var(--hairline)",
       }}
     >
       {SCREENS.map((screen) => {
@@ -254,10 +112,9 @@ function ScreenSwitcher({
               background: "transparent",
               border: "none",
               zIndex: 1,
-              transition: "color 120ms ease",
+              transition: "color var(--duration-fast) var(--ease-out)",
             }}
           >
-            {/* Framer Motion sliding pill indicator */}
             {active && (
               <motion.div
                 layoutId="screen-tab-indicator"
@@ -268,7 +125,7 @@ function ScreenSwitcher({
                   boxShadow: "var(--shadow-sm)",
                   zIndex: -1,
                 }}
-                transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.32 }}
               />
             )}
             {screen.icon}
@@ -291,8 +148,8 @@ function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => vo
       className="pressable flex h-8 w-8 items-center justify-center"
       style={{
         borderRadius: "var(--radius-md)",
-        border: "1px solid var(--border)",
-        background: "var(--surface)",
+        background: "var(--surface-2)",
+        boxShadow: "inset 0 0 0 0.5px var(--hairline)",
         color: "var(--text-secondary)",
       }}
     >
@@ -421,11 +278,12 @@ function ProfileMenu({
             style={{
               borderRadius: "var(--radius-lg)",
               boxShadow: "var(--shadow-menu)",
+              transformOrigin: "top right",
             }}
-            initial={{ opacity: 0, scale: 0.94, y: -6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: -6 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.22 }}
+            initial={{ opacity: 0, scale: 0.96, y: -4, filter: "blur(4px)" }}
+            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.96, y: -4, filter: "blur(4px)" }}
+            transition={{ type: "spring", bounce: 0, duration: 0.28 }}
           >
             {/* Glass backdrop */}
             <div className="glass-heavy absolute inset-0" style={{ borderRadius: "var(--radius-lg)" }} />
@@ -555,9 +413,9 @@ export function Navbar({
     <header
       className="glass relative z-30 flex h-14 shrink-0 items-center gap-3 px-3 sm:px-4"
       style={{
-        borderBottom: "1px solid var(--separator)",
+        borderBottom: "none",
         borderRadius: 0,
-        boxShadow: "none",
+        boxShadow: "inset 0 -0.5px 0 var(--separator)",
       }}
     >
       {/* Left: hamburger + logo */}
@@ -605,8 +463,8 @@ export function Navbar({
               className="pressable px-3 py-1.5 text-sm font-medium"
               style={{
                 borderRadius: "var(--radius-full)",
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
+                background: "var(--surface-2)",
+                boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                 color: "var(--foreground)",
                 letterSpacing: "-0.004em",
               }}
@@ -658,17 +516,16 @@ export function Navbar({
           className="hidden items-center gap-2 sm:flex"
           style={{
             borderRadius: "var(--radius-full)",
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
+            background: "var(--surface-2)",
+            boxShadow: "inset 0 0 0 0.5px var(--hairline)",
             padding: "0 12px",
           }}
           onFocusCapture={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)";
-            (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px var(--accent-muted)";
+            (e.currentTarget as HTMLElement).style.boxShadow =
+              "inset 0 0 0 0.5px var(--accent), 0 0 0 3px var(--accent-muted)";
           }}
           onBlurCapture={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-            (e.currentTarget as HTMLElement).style.boxShadow = "none";
+            (e.currentTarget as HTMLElement).style.boxShadow = "inset 0 0 0 0.5px var(--hairline)";
           }}
         >
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-muted)" }}>

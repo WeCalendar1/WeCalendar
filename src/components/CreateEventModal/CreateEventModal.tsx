@@ -505,14 +505,14 @@ export function CreateEventModal({
           <motion.div
             className="fixed inset-0"
             style={{
-              background: "rgba(0, 0, 0, 0.4)",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
+              background: "var(--scrim)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             onClick={onClose}
           />
 
@@ -521,21 +521,22 @@ export function CreateEventModal({
             className="relative z-10 flex w-full max-w-md flex-col overflow-hidden"
             style={{
               borderRadius: "var(--radius-xl)",
-              background: "var(--surface)",
+              background: "var(--glass-bg-heavy)",
+              backdropFilter: "var(--glass-blur-heavy)",
+              WebkitBackdropFilter: "var(--glass-blur-heavy)",
               boxShadow: "var(--shadow-lg)",
-              border: "1px solid var(--border)",
               maxHeight: "90vh",
             }}
-            initial={{ opacity: 0, scale: 0.94, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 16 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.32 }}
+            initial={{ opacity: 0, scale: 0.96, y: 14, filter: "blur(4px)" }}
+            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.96, y: 14, filter: "blur(4px)" }}
+            transition={{ type: "spring", bounce: 0, duration: 0.34 }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header with Apple-style close circle */}
             <div
-              className="flex items-center justify-between border-b px-5 py-4"
-              style={{ borderColor: "var(--separator)" }}
+              className="flex items-center justify-between px-5 py-4"
+              style={{ boxShadow: "inset 0 -0.5px 0 var(--separator)" }}
             >
               <div>
                 <h2

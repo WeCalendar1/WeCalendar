@@ -144,16 +144,16 @@ export function CalendarCell({
 
   return (
     <div
-      className={`group relative min-h-24 p-2 sm:min-h-28 cursor-pointer transition-colors duration-150 overflow-visible ${
+      className={`group relative min-h-24 p-2 sm:min-h-28 cursor-pointer overflow-visible ${
         day.isToday
           ? "bg-[var(--accent-muted)]"
           : day.inCurrentMonth
-            ? "bg-[var(--surface)] hover:bg-[var(--accent-muted)]"
-            : "bg-[var(--surface-2)] hover:bg-[var(--accent-muted)]"
+            ? "bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
+            : "bg-[var(--surface-2)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
       }`}
       style={{
-        borderBottom: "1px solid var(--border)",
-        borderRight:  "1px solid var(--border)",
+        boxShadow: "inset -0.5px 0 0 var(--separator), inset 0 -0.5px 0 var(--separator)",
+        transition: "background var(--duration-fast) var(--ease-out)",
       }}
       onDoubleClick={() => onDoubleClick?.(day.date)}
     >
@@ -180,7 +180,9 @@ export function CalendarCell({
                 ? "var(--foreground)"
                 : "var(--text-muted)",
             fontSize: day.isToday ? "0.8125rem" : undefined,
-            transition: "all var(--transition-fast)",
+            letterSpacing: "-0.01em",
+            transition:
+              "background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out)",
           }}
         >
           {day.date.getDate()}
@@ -259,6 +261,8 @@ export function CalendarCell({
                 background:   color,
                 color:        "#fff",
                 boxShadow:    conflictOutline(warn),
+                letterSpacing: "-0.01em",
+                opacity: 0.92,
               }}
             >
               {formatEventTime(event.starts_at)} {event.title}

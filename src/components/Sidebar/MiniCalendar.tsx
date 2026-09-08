@@ -27,16 +27,15 @@ export function MiniCalendar({ viewDate }: MiniCalendarProps) {
       className="p-3"
       style={{
         borderRadius: "var(--radius-xl)",
-        border: "1.5px solid var(--border)",
         background: "var(--surface)",
-        boxShadow: "var(--shadow-sm)",
+        boxShadow: "inset 0 0 0 0.5px var(--hairline), var(--shadow-sm)",
       }}
     >
       <p
         className="mb-2 text-sm font-semibold"
         style={{
           color: "var(--foreground)",
-          fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+          letterSpacing: "-0.012em",
         }}
       >
         {label}
