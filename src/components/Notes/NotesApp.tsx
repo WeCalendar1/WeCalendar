@@ -107,13 +107,16 @@ export function NotesApp({
   const [deleteNoteTarget, setDeleteNoteTarget] = useState<{ id: string; title: string } | null>(
     null,
   );
+  const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
   const [deleteBusy, setDeleteBusy] = useState(false);
-  const [moveNoteTarget, setMoveNoteTarget] = useState<Note | null>(null);
+  const [moveNoteTargets, setMoveNoteTargets] = useState<Note[]>([]);
   const [moveBusy, setMoveBusy] = useState(false);
-  const [draggingNoteId, setDraggingNoteId] = useState<string | null>(null);
+  const [draggingNoteIds, setDraggingNoteIds] = useState<string[]>([]);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [notesSort, setNotesSort] = useState<NotesSort>(DEFAULT_NOTES_SORT);
   const [listPanelOpen, setListPanelOpen] = useState(true);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(() => new Set());
 
   const effectiveSearch = localSearch || searchQuery;
 
@@ -124,6 +127,31 @@ export function NotesApp({
   }, [notes, filter, effectiveSearch, notesSort]);
 
   const selectedNote = notes.find((n) => n.id === selectedNoteId) ?? null;
+
+  const filterKey =
+    filter.type === "folder"
+      ? `folder:${filter.folderId}`
+      : filter.type === "event"
+        ? `event:${filter.eventId}`
+        : filter.type === "date"
+          ? `date:${filter.date}`
+          : filter.type;
+
+  const [selectionFilterKey, setSelectionFilterKey] = useState(filterKey);
+  if (filterKey !== selectionFilterKey) {
+    setSelectionFilterKey(filterKey);
+    setSelectionMode(false);
+    setSelectedNoteIds(new Set());
+  }
+
+  const visibleSelectedNoteIds = useMemo(() => {
+    const visibleIds = new Set(visibleNotes.map((note) => note.id));
+    const next = new Set<string>();
+    for (const id of selectedNoteIds) {
+      if (visibleIds.has(id)) next.add(id);
+    }
+    return next;
+  }, [selectedNoteIds, visibleNotes]);
 
   const sharedFolders = folders.filter((f) => f.visibility === "shared");
   const privateFolders = folders.filter((f) => f.visibility === "private");
@@ -187,28 +215,102 @@ export function NotesApp({
   }
 
   async function confirmMoveNote(folderId: string | null) {
-    if (!moveNoteTarget) return;
+    if (moveNoteTargets.length === 0) return;
     setMoveBusy(true);
     try {
-      await handleMoveNoteToFolder(moveNoteTarget.id, folderId);
-      setMoveNoteTarget(null);
+      for (const note of moveNoteTargets) {
+        await handleMoveNoteToFolder(note.id, folderId);
+      }
+      setMoveNoteTargets([]);
+      exitSelectionMode();
     } finally {
       setMoveBusy(false);
     }
   }
 
-  function handleDropNoteOnFolder(folderId: string | null) {
-    if (!draggingNoteId) return;
-    void handleMoveNoteToFolder(draggingNoteId, folderId);
-    setDraggingNoteId(null);
+  function exitSelectionMode() {
+    setSelectionMode(false);
+    setSelectedNoteIds(new Set());
+  }
+
+  function toggleSelectionMode() {
+    setSelectionMode((active) => {
+      if (active) setSelectedNoteIds(new Set());
+      return !active;
+    });
+  }
+
+  function toggleNoteSelection(noteId: string) {
+    setSelectedNoteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(noteId)) next.delete(noteId);
+      else next.add(noteId);
+      return next;
+    });
+  }
+
+  function selectAllVisibleNotes() {
+    setSelectedNoteIds(new Set(visibleNotes.map((note) => note.id)));
+  }
+
+  function clearNoteSelection() {
+    setSelectedNoteIds(new Set());
+  }
+
+  function requestBulkMove() {
+    const targets = visibleNotes.filter((note) => visibleSelectedNoteIds.has(note.id));
+    if (targets.length === 0) return;
+    setMoveNoteTargets(targets);
+  }
+
+  function requestBulkDelete() {
+    if (visibleSelectedNoteIds.size === 0) return;
+    setBulkDeleteCount(visibleSelectedNoteIds.size);
+  }
+
+  async function confirmBulkDelete() {
+    if (bulkDeleteCount === 0) return;
+    const ids = [...visibleSelectedNoteIds];
+    setDeleteBusy(true);
+    try {
+      for (const id of ids) {
+        if (filter.type === "trash") await onPermanentlyDeleteNote(id);
+        else await onDeleteNote(id);
+      }
+      if (selectedNoteId && ids.includes(selectedNoteId)) {
+        onSelectNote(visibleNotes.find((note) => !ids.includes(note.id))?.id ?? null);
+      }
+      setBulkDeleteCount(0);
+      exitSelectionMode();
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
+  function finishDrag() {
+    setDraggingNoteIds([]);
     setDragOverTarget(null);
   }
 
-  function handleDropNoteOnTrash() {
-    if (!draggingNoteId) return;
-    void onDeleteNote(draggingNoteId);
-    setDraggingNoteId(null);
-    setDragOverTarget(null);
+  async function handleDropNoteOnFolder(folderId: string | null, noteIds: string[]) {
+    if (noteIds.length === 0) return;
+    for (const noteId of noteIds) {
+      await handleMoveNoteToFolder(noteId, folderId);
+    }
+    finishDrag();
+    if (noteIds.length > 1) exitSelectionMode();
+  }
+
+  async function handleDropNoteOnTrash(noteIds: string[]) {
+    if (noteIds.length === 0) return;
+    for (const noteId of noteIds) {
+      await onDeleteNote(noteId);
+    }
+    if (selectedNoteId && noteIds.includes(selectedNoteId)) {
+      onSelectNote(visibleNotes.find((note) => !noteIds.includes(note.id))?.id ?? null);
+    }
+    finishDrag();
+    if (noteIds.length > 1) exitSelectionMode();
   }
 
   if (!groupId) {
@@ -243,7 +345,7 @@ export function NotesApp({
         onCreateFolder={onCreateFolder}
         onDeleteFolder={onDeleteFolder}
         onUpdateFolder={onUpdateFolder}
-        draggingNoteId={draggingNoteId}
+        draggingNoteIds={draggingNoteIds}
         dragOverTarget={dragOverTarget}
         onDragOverTarget={setDragOverTarget}
         onDropNoteOnFolder={handleDropNoteOnFolder}
@@ -257,20 +359,24 @@ export function NotesApp({
         selectedNoteId={selectedNoteId}
         searchQuery={localSearch}
         sort={notesSort}
-        draggingNoteId={draggingNoteId}
+        draggingNoteIds={draggingNoteIds}
         collapsed={!listPanelOpen}
-        onToggleCollapse={() => setListPanelOpen((v) => !v)}
+        selectionMode={selectionMode}
+        selectedNoteIds={visibleSelectedNoteIds}
         onSearchChange={handleLocalSearch}
         onSortChange={setNotesSort}
         onSelectNote={(id) => onSelectNote(id)}
         onCreateNote={() => void handleCreateNote()}
         onEmptyTrash={() => void onEmptyTrash()}
-        onDragNoteStart={setDraggingNoteId}
-        onDragNoteEnd={() => {
-          setDraggingNoteId(null);
-          setDragOverTarget(null);
-        }}
-        onRequestMoveNote={setMoveNoteTarget}
+        onDragNoteStart={setDraggingNoteIds}
+        onDragNoteEnd={finishDrag}
+        onRequestMoveNote={(note) => setMoveNoteTargets([note])}
+        onToggleSelectionMode={toggleSelectionMode}
+        onToggleNoteSelection={toggleNoteSelection}
+        onSelectAllNotes={selectAllVisibleNotes}
+        onClearNoteSelection={clearNoteSelection}
+        onBulkMove={requestBulkMove}
+        onBulkDelete={requestBulkDelete}
       />
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col" style={{ background: "var(--surface)" }}>
 
@@ -353,12 +459,32 @@ export function NotesApp({
         onConfirm={confirmDeleteNote}
       />
 
+      <NotesDialog
+        open={bulkDeleteCount > 0}
+        title={
+          filter.type === "trash"
+            ? `Permanently delete ${bulkDeleteCount} notes?`
+            : `Delete ${bulkDeleteCount} notes?`
+        }
+        description={
+          filter.type === "trash"
+            ? "These notes will be permanently removed. This cannot be undone."
+            : "These notes will be moved to the trash."
+        }
+        mode="confirm"
+        danger
+        busy={deleteBusy}
+        confirmLabel={filter.type === "trash" ? "Permanently Delete" : "Move to Trash"}
+        onClose={() => setBulkDeleteCount(0)}
+        onConfirm={confirmBulkDelete}
+      />
+
       <NotesMoveToFolderDialog
-        open={moveNoteTarget !== null}
-        note={moveNoteTarget}
+        open={moveNoteTargets.length > 0}
+        notes={moveNoteTargets}
         folders={folders}
         busy={moveBusy}
-        onClose={() => setMoveNoteTarget(null)}
+        onClose={() => setMoveNoteTargets([])}
         onMove={confirmMoveNote}
       />
     </div>

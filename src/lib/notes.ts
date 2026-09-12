@@ -239,7 +239,48 @@ export function searchNotes(notes: Note[], query: string): Note[] {
 }
 
 export const NOTE_DRAG_MIME = "application/x-wecalendar-note-id";
+export const NOTE_DRAG_IDS_MIME = "application/x-wecalendar-note-ids";
 export const NOTE_DROP_REMOVE = "__remove__";
+
+export function noteIdsForDrag(
+  noteId: string,
+  selectionMode: boolean,
+  selectedNoteIds: ReadonlySet<string>,
+): string[] {
+  if (selectionMode && selectedNoteIds.has(noteId) && selectedNoteIds.size > 0) {
+    return [...selectedNoteIds];
+  }
+  return [noteId];
+}
+
+export function writeNoteDragData(dataTransfer: DataTransfer, noteIds: string[]): void {
+  const uniqueIds = [...new Set(noteIds)];
+  if (uniqueIds.length === 0) return;
+  dataTransfer.setData(NOTE_DRAG_MIME, uniqueIds[0]!);
+  dataTransfer.setData(NOTE_DRAG_IDS_MIME, JSON.stringify(uniqueIds));
+  dataTransfer.effectAllowed = "move";
+}
+
+export function readNoteDragIds(
+  dataTransfer: DataTransfer,
+  fallbackIds: readonly string[] = [],
+): string[] {
+  const bulk = dataTransfer.getData(NOTE_DRAG_IDS_MIME);
+  if (bulk) {
+    try {
+      const parsed: unknown = JSON.parse(bulk);
+      if (Array.isArray(parsed) && parsed.every((id) => typeof id === "string")) {
+        return [...new Set(parsed)];
+      }
+    } catch {
+      // fall through to single-id payload
+    }
+  }
+
+  const single = dataTransfer.getData(NOTE_DRAG_MIME);
+  if (single) return [single];
+  return [...new Set(fallbackIds)];
+}
 
 export function foldersForNote(
   note: Pick<Note, "visibility">,
@@ -289,6 +330,21 @@ export function canMoveNoteToFolder(
   folder: NoteFolder,
 ): boolean {
   return note.visibility === folder.visibility;
+}
+
+export type BulkMoveFolderResult =
+  | { ok: true; visibility: Note["visibility"]; folders: NoteFolder[] }
+  | { ok: false; reason: "empty" | "mixed-visibility" };
+
+export function bulkMoveFolderOptions(
+  notes: Pick<Note, "visibility">[],
+  folders: NoteFolder[],
+): BulkMoveFolderResult {
+  if (notes.length === 0) return { ok: false, reason: "empty" };
+  const visibilities = new Set(notes.map((note) => note.visibility));
+  if (visibilities.size > 1) return { ok: false, reason: "mixed-visibility" };
+  const visibility = notes[0]!.visibility;
+  return { ok: true, visibility, folders: foldersForNote({ visibility }, folders) };
 }
 
 export function filterLabel(filter: NotesFilter, folders: NoteFolder[]): string {

@@ -7,10 +7,11 @@ import {
   formatNoteDate,
   noteShowsPrivateLock,
   filterLabel,
-  NOTE_DRAG_MIME,
   NOTES_SORT_OPTIONS,
+  noteIdsForDrag,
   notePreviewText,
   noteTitle,
+  writeNoteDragData,
   type Note,
   type NoteFolder,
   type NotesFilter,
@@ -38,17 +39,24 @@ type NotesListPanelProps = {
   selectedNoteId: string | null;
   searchQuery: string;
   sort: NotesSort;
-  draggingNoteId: string | null;
+  draggingNoteIds: readonly string[];
   collapsed: boolean;
-  onToggleCollapse: () => void;
+  selectionMode: boolean;
+  selectedNoteIds: ReadonlySet<string>;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: NotesSort) => void;
   onSelectNote: (noteId: string) => void;
   onCreateNote: () => void;
   onEmptyTrash: () => void;
-  onDragNoteStart: (noteId: string) => void;
+  onDragNoteStart: (noteIds: string[]) => void;
   onDragNoteEnd: () => void;
   onRequestMoveNote: (note: Note) => void;
+  onToggleSelectionMode: () => void;
+  onToggleNoteSelection: (noteId: string) => void;
+  onSelectAllNotes: () => void;
+  onClearNoteSelection: () => void;
+  onBulkMove: () => void;
+  onBulkDelete: () => void;
 };
 
 export function NotesListPanel({
@@ -58,9 +66,10 @@ export function NotesListPanel({
   selectedNoteId,
   searchQuery,
   sort,
-  draggingNoteId,
+  draggingNoteIds,
   collapsed,
-  onToggleCollapse,
+  selectionMode,
+  selectedNoteIds,
   onSearchChange,
   onSortChange,
   onSelectNote,
@@ -69,55 +78,113 @@ export function NotesListPanel({
   onDragNoteStart,
   onDragNoteEnd,
   onRequestMoveNote,
+  onToggleSelectionMode,
+  onToggleNoteSelection,
+  onSelectAllNotes,
+  onClearNoteSelection,
+  onBulkMove,
+  onBulkDelete,
 }: NotesListPanelProps) {
   const [menuNoteId, setMenuNoteId] = useState<string | null>(null);
   const heading = filterLabel(filter, folders);
+  const selectedCount = selectedNoteIds.size;
+  const allVisibleSelected = notes.length > 0 && notes.every((note) => selectedNoteIds.has(note.id));
+  const someVisibleSelected = notes.some((note) => selectedNoteIds.has(note.id));
 
   return (
     <div
       className="flex shrink-0 flex-col overflow-hidden"
       style={{
-        borderColor: "var(--border)",
         background: "var(--surface)",
+        boxShadow: "inset -0.5px 0 0 var(--separator)",
         width: collapsed ? 0 : undefined,
         minWidth: collapsed ? 0 : undefined,
         maxWidth: collapsed ? 0 : undefined,
-        transition: "width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease",
+        transition:
+          "width var(--duration-base) var(--ease-out), min-width var(--duration-base) var(--ease-out), max-width var(--duration-base) var(--ease-out)",
         ...(collapsed ? {} : { width: "20rem" }),
       }}
     >
-      <div className="border-b px-4 py-3" style={{ borderColor: "var(--border)" }}>
+      <div className="px-4 py-3" style={{ boxShadow: "inset 0 -0.5px 0 var(--separator)" }}>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--foreground)", letterSpacing: "-0.012em" }}
+          >
             {heading}
           </h2>
           <div className="flex items-center gap-1">
-            {filter.type === "trash" ? (
+            {selectionMode ? (
+              <button
+                type="button"
+                onClick={onToggleSelectionMode}
+                className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                style={{
+                  borderRadius: "var(--radius-full)",
+                  background: "var(--surface-2)",
+                  boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                  color: "var(--foreground)",
+                }}
+              >
+                Cancel
+              </button>
+            ) : filter.type === "trash" ? (
               <button
                 type="button"
                 onClick={onEmptyTrash}
-                className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
                 style={{
                   borderRadius: "var(--radius-full)",
-                  background: "transparent",
-                  border: "1px solid var(--border)",
-                  color: "#dc2626",
+                  background: "var(--surface-2)",
+                  boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                  color: "var(--color-danger)",
                 }}
               >
                 Empty Trash
               </button>
             ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={onToggleSelectionMode}
+                  disabled={notes.length === 0}
+                  className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    borderRadius: "var(--radius-full)",
+                    background: "var(--surface-2)",
+                    boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                    color: "var(--foreground)",
+                  }}
+                >
+                  Select
+                </button>
+                <button
+                  type="button"
+                  onClick={onCreateNote}
+                  className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                  style={{
+                    borderRadius: "var(--radius-full)",
+                    background: "var(--accent)",
+                    color: "#fff",
+                  }}
+                >
+                  New
+                </button>
+              </>
+            )}
+            {!selectionMode && filter.type === "trash" && notes.length > 0 && (
               <button
                 type="button"
-                onClick={onCreateNote}
-                className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold"
+                onClick={onToggleSelectionMode}
+                className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
                 style={{
                   borderRadius: "var(--radius-full)",
-                  background: "var(--accent)",
-                  color: "#fff",
+                  background: "var(--surface-2)",
+                  boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                  color: "var(--foreground)",
                 }}
               >
-                New
+                Select
               </button>
             )}
           </div>
@@ -126,8 +193,8 @@ export function NotesListPanel({
           className="flex items-center gap-2 px-3 py-1.5"
           style={{
             borderRadius: "var(--radius-full)",
-            border: "1.5px solid var(--border)",
             background: "var(--surface-2)",
+            boxShadow: "inset 0 0 0 0.5px var(--hairline)",
           }}
         >
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
@@ -165,14 +232,36 @@ export function NotesListPanel({
             ))}
           </select>
         </label>
-        {draggingNoteId && (
+        {selectionMode && notes.length > 0 && (
+          <label className="mt-2 flex cursor-pointer items-center gap-2 px-1">
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              ref={(input) => {
+                if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected;
+              }}
+              onChange={() => {
+                if (allVisibleSelected) onClearNoteSelection();
+                else onSelectAllNotes();
+              }}
+              className="h-4 w-4 shrink-0 cursor-pointer accent-[var(--accent)]"
+              aria-label="Select all notes"
+            />
+            <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+              {selectedCount > 0 ? `${selectedCount} selected` : "Select all"}
+            </span>
+          </label>
+        )}
+        {draggingNoteIds.length > 0 && (
           <p className="mt-2 text-xs" style={{ color: "var(--accent)" }}>
-            Drop a note onto a folder in the sidebar to move it.
+            {draggingNoteIds.length > 1
+              ? `Drop ${draggingNoteIds.length} notes onto a folder in the sidebar to move them.`
+              : "Drop a note onto a folder in the sidebar to move it."}
           </p>
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
         {notes.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
             <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
@@ -193,44 +282,62 @@ export function NotesListPanel({
           <ul>
             {notes.map((note) => {
               const selected = note.id === selectedNoteId;
+              const checked = selectedNoteIds.has(note.id);
               const preview = notePreviewText(note.content);
               const folder = folderForNote(note, folders);
               const showPrivateLock = noteShowsPrivateLock(note, folders);
-              const isDragging = draggingNoteId === note.id;
+              const isDragging = draggingNoteIds.includes(note.id);
               const menuOpen = menuNoteId === note.id;
+              const rowHighlighted =
+                selectionMode ? checked || isDragging : selected || isDragging;
 
               return (
                 <li
                   key={note.id}
                   draggable
                   onDragStart={(e) => {
-                    if ((e.target as HTMLElement).closest("[data-note-action]")) {
+                    if ((e.target as HTMLElement).closest("[data-note-no-drag]")) {
                       e.preventDefault();
                       return;
                     }
-                    e.dataTransfer.setData(NOTE_DRAG_MIME, note.id);
-                    e.dataTransfer.effectAllowed = "move";
-                    onDragNoteStart(note.id);
+                    const dragIds = noteIdsForDrag(note.id, selectionMode, selectedNoteIds);
+                    writeNoteDragData(e.dataTransfer, dragIds);
+                    onDragNoteStart(dragIds);
                   }}
                   onDragEnd={onDragNoteEnd}
-                  onClick={() => onSelectNote(note.id)}
-                  className="group relative cursor-grab border-b active:cursor-grabbing"
+                  onClick={() => {
+                    if (selectionMode) onToggleNoteSelection(note.id);
+                    else onSelectNote(note.id);
+                  }}
+                  className={`group relative cursor-grab border-b active:cursor-grabbing transition-colors duration-150 ${
+                    rowHighlighted ? "bg-[var(--accent-muted)]" : "hover:bg-[var(--surface-2)]"
+                  }`}
                   style={{
                     borderColor: "var(--border)",
-                    background:
-                      isDragging || selected ? "var(--accent-muted)" : "transparent",
                     boxShadow: isDragging ? "inset 0 0 0 2px var(--accent)" : undefined,
                     opacity: isDragging ? 0.65 : 1,
-                    transition:
-                      "background var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast)",
                   }}
                 >
                   <div className="flex items-stretch px-4 py-3 pr-2">
+                    {selectionMode && (
+                      <div className="mr-3 flex shrink-0 items-start pt-0.5" data-note-no-drag>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => onToggleNoteSelection(note.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                          aria-label={`Select ${noteTitle(note)}`}
+                        />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1 text-left">
                       <div className="mb-1 flex items-start justify-between gap-2">
                         <span
                           className="flex min-w-0 items-center gap-1 truncate text-sm font-semibold"
-                          style={{ color: selected || isDragging ? "var(--accent-text)" : "var(--foreground)" }}
+                          style={{
+                            color: rowHighlighted ? "var(--accent-text)" : "var(--foreground)",
+                          }}
                         >
                           {note.is_pinned && (
                             <span className="shrink-0" aria-label="Pinned">
@@ -265,7 +372,8 @@ export function NotesListPanel({
                       </div>
                     </div>
 
-                    <div className="relative flex shrink-0 items-start" data-note-action>
+                    {!selectionMode && (
+                      <div className="relative flex shrink-0 items-start" data-note-action>
                       <button
                         type="button"
                         draggable={false}
@@ -294,9 +402,10 @@ export function NotesListPanel({
                             className="absolute right-0 top-8 z-20 min-w-[10rem] py-1"
                             style={{
                               borderRadius: "var(--radius-md)",
-                              border: "1px solid var(--border)",
-                              background: "var(--surface)",
-                              boxShadow: "var(--shadow-md)",
+                              background: "var(--glass-bg-heavy)",
+                              backdropFilter: "var(--glass-blur)",
+                              WebkitBackdropFilter: "var(--glass-blur)",
+                              boxShadow: "var(--shadow-menu)",
                             }}
                           >
                             <button
@@ -314,11 +423,52 @@ export function NotesListPanel({
                         </>
                       )}
                     </div>
+                    )}
                   </div>
                 </li>
               );
             })}
           </ul>
+        )}
+
+        {selectionMode && selectedCount > 0 && (
+          <div
+            className="glass sticky bottom-0 flex items-center gap-2 px-4 py-3"
+            style={{
+              borderRadius: "var(--radius-lg) var(--radius-lg) 0 0",
+              boxShadow: "var(--shadow-menu)",
+            }}
+          >
+            <span className="min-w-0 flex-1 truncate text-xs font-semibold" style={{ color: "var(--foreground)" }}>
+              {selectedCount} selected
+            </span>
+            <button
+              type="button"
+              onClick={onBulkMove}
+              className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
+              style={{
+                borderRadius: "var(--radius-full)",
+                background: "var(--surface)",
+                boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                color: "var(--foreground)",
+              }}
+            >
+              Move
+            </button>
+            <button
+              type="button"
+              onClick={onBulkDelete}
+              className="pressable cursor-pointer px-2.5 py-1 text-xs font-semibold"
+              style={{
+                borderRadius: "var(--radius-full)",
+                background: "var(--surface)",
+                boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                color: "var(--color-danger)",
+              }}
+            >
+              {filter.type === "trash" ? "Delete Forever" : "Delete"}
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-﻿import type { CalendarDay } from "@/lib/calendar";
+import type { CalendarDay } from "@/lib/calendar";
 import {
   eventsForDay,
   eventsSpanningDay,
@@ -144,35 +144,18 @@ export function CalendarCell({
 
   return (
     <div
-      className="group min-h-24 p-2 sm:min-h-28"
-      style={{
-        borderBottom: "1px solid var(--border)",
-        borderRight:  "1px solid var(--border)",
-        background: day.isToday
-          ? "var(--accent-muted)"
+      className={`group relative min-h-24 p-2 sm:min-h-28 cursor-pointer overflow-visible ${
+        day.isToday
+          ? "bg-[var(--accent-muted)]"
           : day.inCurrentMonth
-            ? "var(--surface)"
-            : "var(--surface-2)",
-        transition: "background var(--transition-fast)",
-        cursor: "pointer",
-        position: "relative",
-        /* overflow must stay visible so multi-day bars can bleed 1 px into
-           adjacent cell borders for a seamless connected appearance. */
-        overflow: "visible",
+            ? "bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
+            : "bg-[var(--surface-2)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
+      }`}
+      style={{
+        boxShadow: "inset -0.5px 0 0 var(--separator), inset 0 -0.5px 0 var(--separator)",
+        transition: "background var(--duration-fast) var(--ease-out)",
       }}
       onDoubleClick={() => onDoubleClick?.(day.date)}
-      onMouseEnter={(e) => {
-        if (!day.isToday) {
-          (e.currentTarget as HTMLElement).style.background = "var(--accent-muted)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.background = day.isToday
-          ? "var(--accent-muted)"
-          : day.inCurrentMonth
-            ? "var(--surface)"
-            : "var(--surface-2)";
-      }}
     >
       {/* Today accent bar */}
       {day.isToday && (
@@ -197,7 +180,9 @@ export function CalendarCell({
                 ? "var(--foreground)"
                 : "var(--text-muted)",
             fontSize: day.isToday ? "0.8125rem" : undefined,
-            transition: "all var(--transition-fast)",
+            letterSpacing: "-0.01em",
+            transition:
+              "background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out)",
           }}
         >
           {day.date.getDate()}
@@ -276,6 +261,8 @@ export function CalendarCell({
                 background:   color,
                 color:        "#fff",
                 boxShadow:    conflictOutline(warn),
+                letterSpacing: "-0.01em",
+                opacity: 0.92,
               }}
             >
               {formatEventTime(event.starts_at)} {event.title}

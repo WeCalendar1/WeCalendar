@@ -12,9 +12,10 @@ export default function LoginPage() {
         className="w-full max-w-sm space-y-6 p-8"
         style={{
           borderRadius: "var(--radius-xl)",
-          border: "1.5px solid var(--border)",
-          background: "var(--surface)",
-          boxShadow: "var(--shadow-md)",
+          background: "var(--glass-bg-heavy)",
+          backdropFilter: "var(--glass-blur-heavy)",
+          WebkitBackdropFilter: "var(--glass-blur-heavy)",
+          boxShadow: "var(--shadow-lg)",
         }}
       >
         <div className="space-y-2 text-center">
@@ -22,8 +23,8 @@ export default function LoginPage() {
             href="/"
             className="text-xl font-semibold tracking-tight"
             style={{
-              fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
               color: "var(--foreground)",
+              letterSpacing: "-0.02em",
             }}
           >
             WeCalendar

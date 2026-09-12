@@ -36,9 +36,8 @@ function MiniMonth({
       className="flex flex-col p-3"
       style={{
         borderRadius: "var(--radius-lg)",
-        border: "1.5px solid var(--border)",
         background: "var(--surface)",
-        boxShadow: "var(--shadow-sm)",
+        boxShadow: "inset 0 0 0 0.5px var(--hairline), var(--shadow-sm)",
       }}
     >
       <button
@@ -47,10 +46,10 @@ function MiniMonth({
           onSelectMonth(startOfMonth(monthDate));
           onModeChange("month");
         }}
-        className="mb-2 cursor-pointer self-start px-1 text-sm font-semibold transition hover:underline"
+        className="mb-2 cursor-pointer self-start px-1 text-sm font-semibold"
         style={{
           color: "var(--accent)",
-          fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+          letterSpacing: "-0.01em",
         }}
       >
         {label}
@@ -107,9 +106,8 @@ export function YearView({
       className="h-full min-h-0 overflow-auto p-1 sm:p-2"
       style={{
         borderRadius: "var(--radius-xl)",
-        border: "1.5px solid var(--border)",
         background: "var(--surface-2)",
-        boxShadow: "var(--shadow-md)",
+        boxShadow: "inset 0 0 0 0.5px var(--hairline), var(--shadow-sm)",
       }}
     >
       <div className="grid grid-cols-1 gap-3 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

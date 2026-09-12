@@ -117,7 +117,10 @@ export function LoginForm() {
 
   return (
     <div className="w-full max-w-sm space-y-6">
-      <div className="flex rounded-xl p-1" style={{ background: "var(--surface-2)" }}>
+      <div
+        className="segmented w-full"
+        style={{ borderRadius: "var(--radius-xl)", display: "flex", width: "100%" }}
+      >
         {(
           [
             { id: "signup", label: "Create account" },
@@ -134,12 +137,9 @@ export function LoginForm() {
                 setError(null);
                 setMessage(null);
               }}
-              className="flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition"
-              style={{
-                background: active ? "var(--surface)" : "transparent",
-                color: active ? "var(--foreground)" : "var(--text-secondary)",
-                boxShadow: active ? "var(--shadow-sm)" : "none",
-              }}
+              className="segmented-item pressable flex-1"
+              data-active={active}
+              style={{ padding: "0.5rem 0.75rem" }}
             >
               {tab.label}
             </button>
@@ -164,8 +164,8 @@ export function LoginForm() {
               className="w-full px-3.5 py-2.5 text-sm outline-none"
               style={{
                 borderRadius: "var(--radius-lg)",
-                border: "1.5px solid var(--border)",
-                background: "var(--surface)",
+                background: "var(--surface-2)",
+                boxShadow: "inset 0 0 0 0.5px var(--hairline)",
               }}
             />
           </div>
@@ -186,8 +186,8 @@ export function LoginForm() {
             className="w-full px-3.5 py-2.5 text-sm outline-none"
             style={{
               borderRadius: "var(--radius-lg)",
-              border: "1.5px solid var(--border)",
-              background: "var(--surface)",
+              background: "var(--surface-2)",
+              boxShadow: "inset 0 0 0 0.5px var(--hairline)",
             }}
           />
         </div>
@@ -209,15 +209,13 @@ export function LoginForm() {
               className="w-full py-2.5 pr-11 pl-3.5 text-sm outline-none"
               style={{
                 borderRadius: "var(--radius-lg)",
-                border: `1.5px solid ${
-                  mode === "signup" && password.length > 0
-                    ? pwAllValid
-                      ? "#10b981"
-                      : "var(--border)"
-                    : "var(--border)"
+                background: "var(--surface-2)",
+                boxShadow: `inset 0 0 0 0.5px ${
+                  mode === "signup" && password.length > 0 && pwAllValid
+                    ? "var(--color-success)"
+                    : "var(--hairline)"
                 }`,
-                background: "var(--surface)",
-                transition: "border-color 0.15s",
+                transition: "box-shadow var(--duration-fast) var(--ease-out)",
               }}
             />
             <button
@@ -301,11 +299,12 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading || (mode === "signup" && !pwAllValid)}
-          className="btn-bounce w-full px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+          className="pressable w-full px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
           style={{
             borderRadius: "var(--radius-lg)",
             background: "var(--accent)",
-            boxShadow: "var(--shadow-md)",
+            boxShadow: "0 2px 12px var(--accent-muted), var(--shadow-sm)",
+            letterSpacing: "-0.01em",
           }}
         >
           {loading

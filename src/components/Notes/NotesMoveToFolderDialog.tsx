@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
-import { foldersForNote, noteTitle, type Note, type NoteFolder } from "@/lib/notes";
+import {
+  bulkMoveFolderOptions,
+  noteTitle,
+  type Note,
+  type NoteFolder,
+} from "@/lib/notes";
 import { FolderColorIcon } from "./NotesFolderDialog";
 
 type NotesMoveToFolderDialogProps = {
   open: boolean;
-  note: Note | null;
+  notes: Note[];
   folders: NoteFolder[];
   busy?: boolean;
   onClose: () => void;
@@ -15,7 +20,7 @@ type NotesMoveToFolderDialogProps = {
 
 export function NotesMoveToFolderDialog({
   open,
-  note,
+  notes,
   folders,
   busy = false,
   onClose,
@@ -30,14 +35,17 @@ export function NotesMoveToFolderDialog({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  if (!open || !note) return null;
+  if (!open || notes.length === 0) return null;
 
-  const eligibleFolders = foldersForNote(note, folders);
+  const bulk = bulkMoveFolderOptions(notes, folders);
+  const isBulk = notes.length > 1;
+  const allInFolder = (folderId: string | null) =>
+    notes.every((note) => (note.folder_id ?? null) === folderId);
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgb(15 23 42 / 0.35)" }}
+      style={{ background: "var(--scrim)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
       onClick={onClose}
       role="presentation"
     >
@@ -45,12 +53,13 @@ export function NotesMoveToFolderDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="move-note-dialog-title"
-        className="flex w-full max-w-sm flex-col p-5"
+        className="flex w-full max-w-sm flex-col p-5 animate-materialize"
         style={{
           borderRadius: "var(--radius-xl)",
-          background: "var(--surface)",
+          background: "var(--glass-bg-heavy)",
+          backdropFilter: "var(--glass-blur-heavy)",
+          WebkitBackdropFilter: "var(--glass-blur-heavy)",
           boxShadow: "var(--shadow-lg)",
-          border: "1.5px solid var(--border)",
           maxHeight: "min(70vh, 28rem)",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -60,68 +69,82 @@ export function NotesMoveToFolderDialog({
           className="text-lg font-semibold"
           style={{
             color: "var(--foreground)",
-            fontFamily: "var(--font-varela-round, 'Varela Round', sans-serif)",
+            letterSpacing: "-0.018em",
           }}
         >
           Move to folder
         </h2>
         <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-          Choose where to file &ldquo;{noteTitle(note)}&rdquo;
+          {isBulk
+            ? `Choose where to file ${notes.length} notes`
+            : `Choose where to file “${noteTitle(notes[0]!)}”`}
         </p>
 
         <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-          <ul className="space-y-1">
-            <li>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void onMove(null)}
-                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
-                style={{
-                  background: note.folder_id ? "var(--surface-2)" : "var(--accent-muted)",
-                  color: note.folder_id ? "var(--foreground)" : "var(--accent)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <span aria-hidden>📄</span>
-                No folder
-                {!note.folder_id && (
-                  <span className="ml-auto text-xs font-semibold" style={{ color: "var(--accent)" }}>
-                    Current
-                  </span>
-                )}
-              </button>
-            </li>
-            {eligibleFolders.map((folder) => {
-              const isCurrent = note.folder_id === folder.id;
-              return (
-                <li key={folder.id}>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void onMove(folder.id)}
-                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
-                    style={{
-                      background: isCurrent ? "var(--accent-muted)" : "var(--surface-2)",
-                      color: isCurrent ? "var(--accent)" : "var(--foreground)",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    <FolderColorIcon color={folder.color} />
-                    <span className="min-w-0 truncate">{folder.name}</span>
-                    {isCurrent && (
-                      <span className="ml-auto shrink-0 text-xs font-semibold" style={{ color: "var(--accent)" }}>
-                        Current
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {eligibleFolders.length === 0 && (
+          {!bulk.ok ? (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              {bulk.reason === "mixed-visibility"
+                ? "Selected notes include both shared and private notes. Move them separately, or change visibility first."
+                : "No notes selected."}
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              <li>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void onMove(null)}
+                  className="pressable flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
+                  style={{
+                    background: allInFolder(null) ? "var(--accent-muted)" : "var(--surface-2)",
+                    color: allInFolder(null) ? "var(--accent)" : "var(--foreground)",
+                    boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                  }}
+                >
+                  <span aria-hidden>📄</span>
+                  No folder
+                  {allInFolder(null) && (
+                    <span className="ml-auto text-xs font-semibold" style={{ color: "var(--accent)" }}>
+                      Current
+                    </span>
+                  )}
+                </button>
+              </li>
+              {bulk.folders.map((folder) => {
+                const isCurrent = allInFolder(folder.id);
+                return (
+                  <li key={folder.id}>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void onMove(folder.id)}
+                      className="pressable flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
+                      style={{
+                        background: isCurrent ? "var(--accent-muted)" : "var(--surface-2)",
+                        color: isCurrent ? "var(--accent)" : "var(--foreground)",
+                        boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+                      }}
+                    >
+                      <FolderColorIcon color={folder.color} />
+                      <span className="min-w-0 truncate">{folder.name}</span>
+                      {isCurrent && (
+                        <span
+                          className="ml-auto shrink-0 text-xs font-semibold"
+                          style={{ color: "var(--accent)" }}
+                        >
+                          Current
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {bulk.ok && bulk.folders.length === 0 && (
             <p className="mt-3 text-sm" style={{ color: "var(--text-muted)" }}>
-              No {note.visibility} folders yet. Create one in the sidebar, then move this note there.
+              No {bulk.visibility} folders yet. Create one in the sidebar, then move{" "}
+              {isBulk ? "these notes" : "this note"} there.
             </p>
           )}
         </div>
