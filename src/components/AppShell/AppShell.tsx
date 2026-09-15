@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { Calendar } from "@/components/Calendar";
 import { ConflictToast } from "@/components/ConflictToast";
 import { CreateEventModal, type EventDraft } from "@/components/CreateEventModal";
+import { EventViewerPanel } from "@/components/EventViewerPanel";
 import { Navbar } from "@/components/Navbar";
 import { NotesApp, type NoteDraftContext } from "@/components/Notes";
 import { RightPanel } from "@/components/RightPanel";
@@ -39,6 +40,7 @@ export function AppShell() {
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [screenView, setScreenView] = useState<ScreenView>("calendar");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [eventViewerOpen, setEventViewerOpen] = useState(false);
   const [activeTagIds, setActiveTagIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<User | null>(null);
@@ -812,6 +814,8 @@ export function AppShell() {
         onSearchChange={screenView === "notes" ? setNotesSearchQuery : setSearchQuery}
         onToggleTheme={toggleTheme}
         onSelectAccent={setAccentColor}
+        eventViewerOpen={eventViewerOpen}
+        onToggleEventViewer={() => setEventViewerOpen((v) => !v)}
       />
 
       <div
@@ -904,6 +908,15 @@ export function AppShell() {
                 onDayDoubleClick={openCreateModal}
               />
             </main>
+
+            <EventViewerPanel
+              visible={eventViewerOpen}
+              events={filteredEvents}
+              tags={tags}
+              eventTags={eventTags}
+              searchQuery={searchQuery}
+              onSelectEvent={openEventDetails}
+            />
 
             <RightPanel visible={showRightPanel} />
           </>
