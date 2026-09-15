@@ -573,8 +573,8 @@ export function Navbar({
             placeholder={screenView === "notes" ? "Search notes…" : "Search events…"}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-8 w-36 bg-transparent text-sm outline-none lg:w-48"
-            style={{ color: "var(--foreground)", letterSpacing: "-0.004em" }}
+            className="h-8 w-36 bg-transparent text-sm outline-none focus:outline-none focus:ring-0 lg:w-48"
+            style={{ color: "var(--foreground)", letterSpacing: "-0.004em", outline: "none", boxShadow: "none" }}
             aria-label={screenView === "notes" ? "Search notes" : "Search events"}
           />
           {searchQuery && (
