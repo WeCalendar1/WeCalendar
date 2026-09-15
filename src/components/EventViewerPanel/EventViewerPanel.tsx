@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CalendarEvent } from "@/lib/events";
 import { formatEventTime } from "@/lib/events";
@@ -314,6 +314,7 @@ export type EventViewerPanelProps = {
   tags: Tag[];
   eventTags: EventTag[];
   searchQuery: string;
+  todayJumpKey?: number;
   onSelectEvent: (event: CalendarEvent) => void;
 };
 
@@ -322,8 +323,17 @@ export function EventViewerPanel({
   events,
   tags,
   eventTags,
+  todayJumpKey,
   onSelectEvent,
 }: EventViewerPanelProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (todayJumpKey && todayJumpKey > 0 && scrollRef.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [todayJumpKey]);
+
   const buckets = useMemo(() => bucketEvents(events), [events]);
 
   const hasAnyEvents = events.length > 0;
@@ -344,6 +354,7 @@ export function EventViewerPanel({
           }}
         >
           <div
+            ref={scrollRef}
             className="flex h-full w-[380px] flex-col overflow-y-auto"
             style={{ background: "var(--background)" }}
           >

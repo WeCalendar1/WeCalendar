@@ -1,3 +1,4 @@
+import React from "react";
 import type { CalendarDay } from "@/lib/calendar";
 import {
   eventsForDay,
@@ -68,6 +69,7 @@ type CalendarCellProps = {
   showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDoubleClick?: (date: Date) => void;
+  todayJumpKey?: number;
 };
 
 function conflictOutline(active: boolean): string | undefined {
@@ -102,6 +104,7 @@ export function CalendarCell({
   multiDaySlots,
   conflictIds,
   showConflictHighlights = false,
+  todayJumpKey,
   onSelectEvent,
   onDoubleClick,
 }: CalendarCellProps) {
@@ -142,18 +145,29 @@ export function CalendarCell({
   const extraSingle   = Math.max(singleDay.length - 3, 0);
   const totalExtra    = extraSingle + hiddenBars.length;
 
+  const [isFlashing, setIsFlashing] = React.useState(false);
+  React.useEffect(() => {
+    if (todayJumpKey && todayJumpKey > 0 && day.isToday) {
+      setIsFlashing(true);
+      const t = setTimeout(() => setIsFlashing(false), 800);
+      return () => clearTimeout(t);
+    }
+  }, [todayJumpKey, day.isToday]);
+
   return (
     <div
-      className={`group relative min-h-24 p-2 sm:min-h-28 cursor-pointer overflow-visible ${
-        day.isToday
-          ? "bg-[var(--accent-muted)]"
-          : day.inCurrentMonth
-            ? "bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
-            : "bg-[var(--surface-2)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
+      className={`group relative min-h-24 p-2 sm:min-h-28 cursor-pointer overflow-visible transition-colors ${
+        isFlashing
+          ? "bg-[color-mix(in_srgb,var(--accent)_15%,var(--background))]"
+          : day.isToday
+            ? "bg-[var(--accent-muted)]"
+            : day.inCurrentMonth
+              ? "bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
+              : "bg-[var(--surface-2)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
       }`}
       style={{
         boxShadow: "inset -0.5px 0 0 var(--separator), inset 0 -0.5px 0 var(--separator)",
-        transition: "background var(--duration-fast) var(--ease-out)",
+        transition: "background 0.3s ease-out",
       }}
       onDoubleClick={() => onDoubleClick?.(day.date)}
     >
@@ -168,9 +182,9 @@ export function CalendarCell({
       {/* Day number */}
       <div className="flex justify-end">
         <span
-          className={`flex h-7 w-7 items-center justify-center text-sm font-bold ${
+          className={`relative z-10 flex h-7 w-7 items-center justify-center text-sm font-bold ${
             day.isToday ? "today-badge text-white" : ""
-          }`}
+          } ${isFlashing ? "animate-pop-bounce" : ""}`}
           style={{
             borderRadius: "var(--radius-full)",
             background: day.isToday ? "var(--accent)" : "transparent",

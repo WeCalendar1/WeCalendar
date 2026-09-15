@@ -11,6 +11,7 @@ type DayViewProps = {
   showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
+  todayJumpKey?: number;
 };
 
 export function DayView({
@@ -20,6 +21,7 @@ export function DayView({
   eventTags,
   conflictIds,
   showConflictHighlights,
+  todayJumpKey,
   onSelectEvent,
   onDayDoubleClick,
 }: DayViewProps) {
@@ -40,6 +42,7 @@ export function DayView({
         eventTags={eventTags}
         conflictIds={conflictIds}
         showConflictHighlights={showConflictHighlights}
+        todayJumpKey={todayJumpKey}
         onSelectEvent={onSelectEvent}
         onDayDoubleClick={onDayDoubleClick}
       />

@@ -12,6 +12,7 @@ type WeekViewProps = {
   showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
+  todayJumpKey?: number;
 };
 
 export function WeekView({
@@ -21,6 +22,7 @@ export function WeekView({
   eventTags,
   conflictIds,
   showConflictHighlights,
+  todayJumpKey,
   onSelectEvent,
   onDayDoubleClick,
 }: WeekViewProps) {
@@ -43,6 +45,7 @@ export function WeekView({
         eventTags={eventTags}
         conflictIds={conflictIds}
         showConflictHighlights={showConflictHighlights}
+        todayJumpKey={todayJumpKey}
         onSelectEvent={onSelectEvent}
         onDayDoubleClick={onDayDoubleClick}
       />

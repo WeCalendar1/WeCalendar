@@ -14,6 +14,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { getInitials } from "@/lib/auth";
 import {
   formatViewLabel,
+  isDateInView,
   shiftViewDate,
   startOfDay,
   type CalendarMode,
@@ -44,6 +45,7 @@ export function AppShell() {
   const [activeTagIds, setActiveTagIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<User | null>(null);
+  const [todayJumpKey, setTodayJumpKey] = useState(0);
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -805,8 +807,12 @@ export function AppShell() {
         userInitials={userInitials}
         isDark={themeMode === "dark"}
         accent={accent}
+        isTodayDisabled={isDateInView(startOfDay(new Date()), viewDate, calendarMode)}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
-        onToday={() => setViewDate(startOfDay(new Date()))}
+        onToday={() => {
+          setViewDate(startOfDay(new Date()));
+          setTodayJumpKey((k) => k + 1);
+        }}
         onPrev={() => setViewDate((d) => shiftViewDate(d, calendarMode, -1))}
         onNext={() => setViewDate((d) => shiftViewDate(d, calendarMode, 1))}
         onCalendarModeChange={setCalendarMode}
@@ -902,6 +908,7 @@ export function AppShell() {
                 eventTags={eventTags}
                 conflictIds={highlightConflictIds}
                 showConflictHighlights={showConflictHighlights}
+                todayJumpKey={todayJumpKey}
                 onViewDateChange={setViewDate}
                 onCalendarModeChange={setCalendarMode}
                 onSelectEvent={openEventDetails}
@@ -915,6 +922,7 @@ export function AppShell() {
               tags={tags}
               eventTags={eventTags}
               searchQuery={searchQuery}
+              todayJumpKey={todayJumpKey}
               onSelectEvent={openEventDetails}
             />
 

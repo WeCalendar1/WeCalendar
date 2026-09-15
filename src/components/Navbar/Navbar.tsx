@@ -412,6 +412,7 @@ export type NavbarProps = {
   isDark: boolean;
   accent?: string;
   eventViewerOpen?: boolean;
+  isTodayDisabled?: boolean;
   onToggleSidebar: () => void;
   onToday: () => void;
   onPrev: () => void;
@@ -434,6 +435,7 @@ export function Navbar({
   isDark,
   accent,
   eventViewerOpen,
+  isTodayDisabled,
   onToggleSidebar,
   onToday,
   onPrev,
@@ -496,6 +498,7 @@ export function Navbar({
             <button
               type="button"
               onClick={onToday}
+              disabled={isTodayDisabled}
               className="pressable px-3 py-1.5 text-sm font-medium"
               style={{
                 borderRadius: "var(--radius-full)",
@@ -503,6 +506,8 @@ export function Navbar({
                 boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                 color: "var(--foreground)",
                 letterSpacing: "-0.004em",
+                opacity: isTodayDisabled ? 0.4 : 1,
+                cursor: isTodayDisabled ? "default" : "pointer",
               }}
             >
               Today

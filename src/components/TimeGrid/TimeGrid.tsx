@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 import {
   DAY_HOURS,
   formatHourLabel,
@@ -28,6 +30,7 @@ type TimeGridProps = {
   showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
+  todayJumpKey?: number;
 };
 
 export function TimeGrid({
@@ -39,10 +42,20 @@ export function TimeGrid({
   showConflictHighlights = false,
   onSelectEvent,
   onDayDoubleClick,
+  todayJumpKey,
 }: TimeGridProps) {
   const now = new Date();
   const showNowLine = days.some((d) => d.isToday);
   const nowTop = (getMinutesSinceMidnight(now) / 60) * HOUR_HEIGHT_PX;
+
+  const [isFlashing, setIsFlashing] = useState(false);
+  useEffect(() => {
+    if (todayJumpKey && todayJumpKey > 0 && showNowLine) {
+      setIsFlashing(true);
+      const t = setTimeout(() => setIsFlashing(false), 800);
+      return () => clearTimeout(t);
+    }
+  }, [todayJumpKey, showNowLine]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -61,6 +74,10 @@ export function TimeGrid({
             <div
               key={day.date.toISOString()}
               className="flex flex-col items-center gap-1 px-1 py-2"
+              style={{
+                background: (isFlashing && day.isToday) ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "transparent",
+                transition: "background 0.3s ease-out",
+              }}
             >
               <span
                 className="text-[11px] font-semibold uppercase tracking-wide"
@@ -69,9 +86,9 @@ export function TimeGrid({
                 {weekday}
               </span>
               <span
-                className={`flex h-8 w-8 items-center justify-center text-sm font-bold ${
+                className={`relative z-10 flex h-8 w-8 items-center justify-center text-sm font-bold ${
                   day.isToday ? "today-badge text-white" : ""
-                }`}
+                } ${isFlashing && day.isToday ? "animate-pop-bounce" : ""}`}
                 style={{
                   borderRadius: "var(--radius-full)",
                   background: day.isToday ? "var(--accent)" : "transparent",

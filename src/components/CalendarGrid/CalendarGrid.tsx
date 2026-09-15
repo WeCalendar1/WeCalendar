@@ -15,6 +15,7 @@ type CalendarGridProps = {
   showConflictHighlights?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
+  todayJumpKey?: number;
 };
 
 function computeMultiDaySlots(events: CalendarEvent[]): Map<string, number> {
@@ -101,6 +102,7 @@ export function CalendarGrid({
   eventTags,
   conflictIds,
   showConflictHighlights,
+  todayJumpKey,
   onSelectEvent,
   onDayDoubleClick,
 }: CalendarGridProps) {
@@ -146,6 +148,7 @@ export function CalendarGrid({
             multiDaySlots={multiDaySlots}
             conflictIds={conflictIds}
             showConflictHighlights={showConflictHighlights}
+            todayJumpKey={todayJumpKey}
             onSelectEvent={onSelectEvent}
             onDoubleClick={onDayDoubleClick}
           />
