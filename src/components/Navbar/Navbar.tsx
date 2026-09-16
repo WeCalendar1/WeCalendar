@@ -463,10 +463,15 @@ export function Navbar({
           onClick={onToggleSidebar}
           aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           aria-expanded={sidebarOpen}
-          className="pressable flex h-9 w-9 items-center justify-center"
-          style={{ borderRadius: "var(--radius-md)", color: "var(--text-secondary)" }}
+          className="pressable flex h-8 w-8 items-center justify-center"
+          style={{
+            borderRadius: "var(--radius-md)",
+            background: "var(--surface-2)",
+            boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+            color: "var(--foreground)",
+          }}
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
             <path d="M4 7h16M4 12h16M4 17h16" />
           </svg>
         </button>
