@@ -13,7 +13,6 @@ type Group = Tables<"groups">;
 type SidebarProps = {
   open: boolean;
   viewDate: Date;
-  onCreateEvent: () => void;
   activeTagIds: string[];
   onTagToggle: (id: string) => void;
   tags: Tag[];
@@ -23,13 +22,11 @@ type SidebarProps = {
   onSelectGroup: (groupId: string) => void;
   onCreateGroup: (name: string) => Promise<void>;
   onJoinGroup: (inviteCode: string) => Promise<void>;
-  canCreateEvent: boolean;
 };
 
 export function Sidebar({
   open,
   viewDate,
-  onCreateEvent,
   activeTagIds,
   onTagToggle,
   tags,
@@ -39,7 +36,6 @@ export function Sidebar({
   onSelectGroup,
   onCreateGroup,
   onJoinGroup,
-  canCreateEvent,
 }: SidebarProps) {
   const allOn = tags.length > 0 && activeTagIds.length === tags.length;
   const [filtersOpen, setFiltersOpen] = useState(true);
@@ -72,26 +68,6 @@ export function Sidebar({
           }}
         >
           <div className="flex h-full w-[var(--sidebar-width)] flex-col gap-3 overflow-y-auto p-3">
-
-            {/* Create Event button */}
-            <button
-              type="button"
-              onClick={onCreateEvent}
-              disabled={!canCreateEvent}
-              title={canCreateEvent ? "Create event" : "Join or create a calendar first"}
-              className="pressable flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
-              style={{
-                borderRadius: "var(--radius-xl)",
-                background: "var(--accent)",
-                boxShadow: "0 2px 12px var(--accent-muted), var(--shadow-sm)",
-                letterSpacing: "-0.004em",
-              }}
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              Create Event
-            </button>
 
             {/* Shared workspace */}
             <SharedWorkspace

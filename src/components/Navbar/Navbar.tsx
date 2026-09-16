@@ -423,6 +423,8 @@ export type NavbarProps = {
   onToggleTheme: () => void;
   onSelectAccent?: (color: string) => void;
   onToggleEventViewer?: () => void;
+  onCreateEvent?: () => void;
+  canCreateEvent?: boolean;
 };
 
 export function Navbar({
@@ -446,6 +448,8 @@ export function Navbar({
   onToggleTheme,
   onSelectAccent,
   onToggleEventViewer,
+  onCreateEvent,
+  canCreateEvent = false,
 }: NavbarProps) {
   return (
     <header
@@ -555,8 +559,28 @@ export function Navbar({
         )}
       </div>
 
-      {/* Right: search + mode picker + view switcher + theme toggle + avatar */}
+      {/* Right: create + search + mode picker + view switcher + theme toggle + avatar */}
       <div className="flex items-center gap-2">
+        {onCreateEvent && (
+          <button
+            type="button"
+            onClick={onCreateEvent}
+            disabled={!canCreateEvent}
+            aria-label="Create event"
+            title={canCreateEvent ? "Create event" : "Join or create a calendar first"}
+            className="pressable flex h-8 w-8 items-center justify-center text-white disabled:cursor-not-allowed disabled:opacity-40"
+            style={{
+              borderRadius: "var(--radius-md)",
+              background: "var(--accent)",
+              boxShadow: "0 2px 8px var(--accent-muted)",
+            }}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        )}
+
         {/* Search */}
         <div
           className="hidden items-center gap-2 sm:flex"

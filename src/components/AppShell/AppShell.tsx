@@ -822,6 +822,8 @@ export function AppShell() {
         onSelectAccent={setAccentColor}
         eventViewerOpen={eventViewerOpen}
         onToggleEventViewer={() => setEventViewerOpen((v) => !v)}
+        onCreateEvent={() => openCreateModal()}
+        canCreateEvent={Boolean(activeGroupId)}
       />
 
       <div
@@ -839,7 +841,6 @@ export function AppShell() {
             open={sidebarOpen}
             viewDate={viewDate}
             activeTagIds={activeTagIds}
-            onCreateEvent={() => openCreateModal()}
             onTagToggle={handleTagToggle}
             tags={tags}
             onCreateTag={handleCreateTag}
@@ -848,7 +849,6 @@ export function AppShell() {
             onSelectGroup={setActiveGroupId}
             onCreateGroup={handleCreateGroup}
             onJoinGroup={handleJoinGroup}
-            canCreateEvent={Boolean(activeGroupId)}
           />
         )}
 
