@@ -40,6 +40,7 @@ function MiniMonth({
 
   useEffect(() => {
     if (todayJumpKey && todayJumpKey > 0 && isCurrentMonth) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsFlashing(true);
       const t = setTimeout(() => setIsFlashing(false), 800);
       return () => clearTimeout(t);

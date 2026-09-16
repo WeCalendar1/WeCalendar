@@ -148,6 +148,7 @@ export function CalendarCell({
   const [isFlashing, setIsFlashing] = React.useState(false);
   React.useEffect(() => {
     if (todayJumpKey && todayJumpKey > 0 && day.isToday) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsFlashing(true);
       const t = setTimeout(() => setIsFlashing(false), 800);
       return () => clearTimeout(t);
