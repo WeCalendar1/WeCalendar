@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { Calendar } from "@/components/Calendar";
 import { ConflictToast } from "@/components/ConflictToast";
 import { CreateEventModal, type EventDraft } from "@/components/CreateEventModal";
+import { EventViewerPanel } from "@/components/EventViewerPanel";
 import { Navbar } from "@/components/Navbar";
 import { NotesApp, type NoteDraftContext } from "@/components/Notes";
 import { RightPanel } from "@/components/RightPanel";
@@ -13,6 +14,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { getInitials } from "@/lib/auth";
 import {
   formatViewLabel,
+  isDateInView,
   shiftViewDate,
   startOfDay,
   type CalendarMode,
@@ -39,9 +41,11 @@ export function AppShell() {
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [screenView, setScreenView] = useState<ScreenView>("calendar");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [eventViewerOpen, setEventViewerOpen] = useState(false);
   const [activeTagIds, setActiveTagIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<User | null>(null);
+  const [todayJumpKey, setTodayJumpKey] = useState(0);
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -803,8 +807,12 @@ export function AppShell() {
         userInitials={userInitials}
         isDark={themeMode === "dark"}
         accent={accent}
+        isTodayDisabled={isDateInView(startOfDay(new Date()), viewDate, calendarMode)}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
-        onToday={() => setViewDate(startOfDay(new Date()))}
+        onToday={() => {
+          setViewDate(startOfDay(new Date()));
+          setTodayJumpKey((k) => k + 1);
+        }}
         onPrev={() => setViewDate((d) => shiftViewDate(d, calendarMode, -1))}
         onNext={() => setViewDate((d) => shiftViewDate(d, calendarMode, 1))}
         onCalendarModeChange={setCalendarMode}
@@ -812,6 +820,8 @@ export function AppShell() {
         onSearchChange={screenView === "notes" ? setNotesSearchQuery : setSearchQuery}
         onToggleTheme={toggleTheme}
         onSelectAccent={setAccentColor}
+        eventViewerOpen={eventViewerOpen}
+        onToggleEventViewer={() => setEventViewerOpen((v) => !v)}
       />
 
       <div
@@ -898,12 +908,23 @@ export function AppShell() {
                 eventTags={eventTags}
                 conflictIds={highlightConflictIds}
                 showConflictHighlights={showConflictHighlights}
+                todayJumpKey={todayJumpKey}
                 onViewDateChange={setViewDate}
                 onCalendarModeChange={setCalendarMode}
                 onSelectEvent={openEventDetails}
                 onDayDoubleClick={openCreateModal}
               />
             </main>
+
+            <EventViewerPanel
+              visible={eventViewerOpen}
+              events={filteredEvents}
+              tags={tags}
+              eventTags={eventTags}
+              searchQuery={searchQuery}
+              todayJumpKey={todayJumpKey}
+              onSelectEvent={openEventDetails}
+            />
 
             <RightPanel visible={showRightPanel} />
           </>

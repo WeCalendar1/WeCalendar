@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   getMonthGrid,
   isSameDay,
@@ -14,6 +15,7 @@ type YearViewProps = {
   onSelectMonth: (date: Date) => void;
   onSelectDay: (date: Date) => void;
   onModeChange: (mode: CalendarMode) => void;
+  todayJumpKey?: number;
 };
 
 function MiniMonth({
@@ -21,15 +23,29 @@ function MiniMonth({
   onSelectMonth,
   onSelectDay,
   onModeChange,
+  todayJumpKey,
 }: {
   monthDate: Date;
   onSelectMonth: (date: Date) => void;
   onSelectDay: (date: Date) => void;
   onModeChange: (mode: CalendarMode) => void;
+  todayJumpKey?: number;
 }) {
   const days = getMonthGrid(monthDate);
   const today = new Date();
   const label = monthDate.toLocaleDateString("en-US", { month: "long" });
+
+  const [isFlashing, setIsFlashing] = useState(false);
+  const isCurrentMonth = monthDate.getMonth() === today.getMonth() && monthDate.getFullYear() === today.getFullYear();
+
+  useEffect(() => {
+    if (todayJumpKey && todayJumpKey > 0 && isCurrentMonth) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsFlashing(true);
+      const t = setTimeout(() => setIsFlashing(false), 800);
+      return () => clearTimeout(t);
+    }
+  }, [todayJumpKey, isCurrentMonth]);
 
   return (
     <div
@@ -72,15 +88,20 @@ function MiniMonth({
                 onSelectDay(day.date);
                 onModeChange("day");
               }}
-              className="mx-auto flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-medium disabled:cursor-default"
+              className={`relative z-10 mx-auto flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-medium disabled:cursor-default ${isFlashing && isToday ? "animate-pop-bounce" : ""}`}
               style={{
-                background: isToday ? "var(--accent)" : "transparent",
+                background: (isFlashing && isToday) 
+                  ? "color-mix(in srgb, var(--accent) 70%, var(--background))" 
+                  : isToday 
+                    ? "var(--accent)" 
+                    : "transparent",
                 color: isToday
                   ? "#fff"
                   : day.inCurrentMonth
                     ? "var(--foreground)"
                     : "transparent",
                 cursor: day.inCurrentMonth ? "pointer" : "default",
+                transition: "background 0.3s ease-out",
               }}
             >
               {day.inCurrentMonth ? day.date.getDate() : ""}
@@ -97,6 +118,7 @@ export function YearView({
   onSelectMonth,
   onSelectDay,
   onModeChange,
+  todayJumpKey,
 }: YearViewProps) {
   const year = viewDate.getFullYear();
   const months = Array.from({ length: 12 }, (_, month) => new Date(year, month, 1));
@@ -118,6 +140,7 @@ export function YearView({
             onSelectMonth={onSelectMonth}
             onSelectDay={onSelectDay}
             onModeChange={onModeChange}
+            todayJumpKey={todayJumpKey}
           />
         ))}
       </div>

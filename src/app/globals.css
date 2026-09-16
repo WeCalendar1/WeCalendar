@@ -540,3 +540,28 @@ input[type="password"]::-ms-clear { display: none; }
   border-radius: var(--radius-xs);
   padding: 0 0.1em;
 }
+
+/* ─── Custom Animations ──────────────────────────────────────────────────────── */
+
+@keyframes pop-bounce {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  60% {
+    transform: scale(0.9);
+  }
+  80% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-pop-bounce {
+  animation: pop-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+}

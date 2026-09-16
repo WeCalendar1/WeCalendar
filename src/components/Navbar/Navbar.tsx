@@ -79,9 +79,13 @@ const SCREENS: { id: ScreenView; label: string; icon: ReactNode }[] = [
 function ScreenSwitcher({
   screenView,
   onScreenViewChange,
+  eventViewerOpen,
+  onToggleEventViewer,
 }: {
   screenView: ScreenView;
   onScreenViewChange: (v: ScreenView) => void;
+  eventViewerOpen?: boolean;
+  onToggleEventViewer?: () => void;
 }) {
   return (
     <div
@@ -95,15 +99,43 @@ function ScreenSwitcher({
       }}
     >
       {SCREENS.map((screen) => {
-        const active = screenView === screen.id;
+        // The calendar icon is only "active" if the event viewer is open.
+        // For other screens, it's active if it matches the current screenView.
+        const active =
+          screen.id === "calendar"
+            ? screenView === "calendar" && Boolean(eventViewerOpen)
+            : screenView === screen.id;
+
         return (
           <button
             key={screen.id}
             type="button"
-            onClick={() => onScreenViewChange(screen.id)}
-            aria-label={screen.label}
+            onClick={() => {
+              if (screen.id === "calendar") {
+                if (screenView === "calendar") {
+                  onToggleEventViewer?.();
+                } else {
+                  onScreenViewChange("calendar");
+                }
+              } else {
+                onScreenViewChange(screen.id);
+              }
+            }}
+            aria-label={
+              screen.id === "calendar"
+                ? eventViewerOpen
+                  ? "Hide event viewer"
+                  : "Show event viewer"
+                : screen.label
+            }
             aria-pressed={active}
-            title={screen.label}
+            title={
+              screen.id === "calendar"
+                ? eventViewerOpen
+                  ? "Hide event list"
+                  : "Show event list"
+                : screen.label
+            }
             className="relative flex h-8 w-8 items-center justify-center"
             style={{
               borderRadius: "var(--radius-md)",
@@ -379,6 +411,8 @@ export type NavbarProps = {
   userInitials: string;
   isDark: boolean;
   accent?: string;
+  eventViewerOpen?: boolean;
+  isTodayDisabled?: boolean;
   onToggleSidebar: () => void;
   onToday: () => void;
   onPrev: () => void;
@@ -388,6 +422,7 @@ export type NavbarProps = {
   onSearchChange: (query: string) => void;
   onToggleTheme: () => void;
   onSelectAccent?: (color: string) => void;
+  onToggleEventViewer?: () => void;
 };
 
 export function Navbar({
@@ -399,6 +434,8 @@ export function Navbar({
   userInitials,
   isDark,
   accent,
+  eventViewerOpen,
+  isTodayDisabled,
   onToggleSidebar,
   onToday,
   onPrev,
@@ -408,6 +445,7 @@ export function Navbar({
   onSearchChange,
   onToggleTheme,
   onSelectAccent,
+  onToggleEventViewer,
 }: NavbarProps) {
   return (
     <header
@@ -460,6 +498,7 @@ export function Navbar({
             <button
               type="button"
               onClick={onToday}
+              disabled={isTodayDisabled}
               className="pressable px-3 py-1.5 text-sm font-medium"
               style={{
                 borderRadius: "var(--radius-full)",
@@ -467,6 +506,8 @@ export function Navbar({
                 boxShadow: "inset 0 0 0 0.5px var(--hairline)",
                 color: "var(--foreground)",
                 letterSpacing: "-0.004em",
+                opacity: isTodayDisabled ? 0.4 : 1,
+                cursor: isTodayDisabled ? "default" : "pointer",
               }}
             >
               Today
@@ -537,8 +578,8 @@ export function Navbar({
             placeholder={screenView === "notes" ? "Search notes…" : "Search events…"}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-8 w-36 bg-transparent text-sm outline-none lg:w-48"
-            style={{ color: "var(--foreground)", letterSpacing: "-0.004em" }}
+            className="h-8 w-36 bg-transparent text-sm outline-none focus:outline-none focus:ring-0 lg:w-48"
+            style={{ color: "var(--foreground)", letterSpacing: "-0.004em", outline: "none", boxShadow: "none" }}
             aria-label={screenView === "notes" ? "Search notes" : "Search events"}
           />
           {searchQuery && (
@@ -563,7 +604,12 @@ export function Navbar({
           />
         )}
 
-        <ScreenSwitcher screenView={screenView} onScreenViewChange={onScreenViewChange} />
+        <ScreenSwitcher
+          screenView={screenView}
+          onScreenViewChange={onScreenViewChange}
+          eventViewerOpen={eventViewerOpen}
+          onToggleEventViewer={onToggleEventViewer}
+        />
 
         <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 

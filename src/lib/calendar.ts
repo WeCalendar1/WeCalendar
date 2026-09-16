@@ -45,6 +45,25 @@ export function isSameMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
+export function isDateInView(date: Date, viewDate: Date, mode: CalendarMode): boolean {
+  switch (mode) {
+    case "day":
+      return isSameDay(date, viewDate);
+    case "week": {
+      const start = startOfWeek(viewDate);
+      const end = addDays(start, 6);
+      const t = date.getTime();
+      return t >= start.getTime() && t <= end.getTime();
+    }
+    case "month":
+      return isSameMonth(date, viewDate);
+    case "year":
+      return date.getFullYear() === viewDate.getFullYear();
+    default:
+      return false;
+  }
+}
+
 export function formatMonthYear(date: Date): string {
   return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
