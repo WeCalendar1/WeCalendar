@@ -14,12 +14,11 @@ import {
 } from "@/lib/notes";
 import { NoteEditor } from "./NoteEditor";
 import { NotesDialog } from "./NotesDialog";
-import { NotesFolderSidebar } from "./NotesFolderSidebar";
 import { NotesListPanel } from "./NotesListPanel";
 import { NotesLinkEventDialog } from "./NotesLinkEventDialog";
 import { NotesMoveToFolderDialog } from "./NotesMoveToFolderDialog";
 
-import type { Tables, Json } from "@/types/database";
+import type { Json } from "@/types/database";
 
 export type NoteDraftContext = {
   folderId?: string | null;
@@ -28,15 +27,9 @@ export type NoteDraftContext = {
   visibility?: "shared" | "private";
 };
 
-type Group = Tables<"groups">;
-
 type NotesAppProps = {
   groupId: string | null;
   groupName: string | null;
-  groups: Group[];
-  onSelectGroup: (groupId: string) => void;
-  onCreateGroup: (name: string) => Promise<void>;
-  onJoinGroup: (inviteCode: string) => Promise<void>;
   folders: NoteFolder[];
   notes: Note[];
   events: CalendarEvent[];
@@ -45,7 +38,6 @@ type NotesAppProps = {
   searchQuery: string;
   filter: NotesFilter;
   selectedNoteId: string | null;
-  onFilterChange: (filter: NotesFilter) => void;
   onSelectNote: (noteId: string | null) => void;
   onSearchChange: (query: string) => void;
   onCreateNote: (context?: NoteDraftContext) => Promise<string | null>;
@@ -69,18 +61,15 @@ type NotesAppProps = {
   onRestoreNote: (noteId: string) => Promise<void>;
   onPermanentlyDeleteNote: (noteId: string) => Promise<void>;
   onEmptyTrash: () => Promise<void>;
-  onCreateFolder: (name: string, visibility: "shared" | "private", color: string) => Promise<void>;
-  onDeleteFolder: (folderId: string) => Promise<void>;
-  onUpdateFolder: (folderId: string, patch: { name: string; color: string }) => Promise<void>;
+  // Drag state (lifted to AppShell, shared with Sidebar)
+  draggingNoteIds: string[];
+  onDraggingNoteIds: (ids: string[]) => void;
+  onDragOverTarget: (target: string | null) => void;
 };
 
 export function NotesApp({
   groupId,
   groupName,
-  groups,
-  onSelectGroup,
-  onCreateGroup,
-  onJoinGroup,
   folders,
   notes,
   events,
@@ -89,7 +78,6 @@ export function NotesApp({
   searchQuery,
   filter,
   selectedNoteId,
-  onFilterChange,
   onSelectNote,
   onSearchChange,
   onCreateNote,
@@ -99,9 +87,9 @@ export function NotesApp({
   onRestoreNote,
   onPermanentlyDeleteNote,
   onEmptyTrash,
-  onCreateFolder,
-  onDeleteFolder,
-  onUpdateFolder,
+  draggingNoteIds,
+  onDraggingNoteIds,
+  onDragOverTarget,
 }: NotesAppProps) {
   const [localSearch, setLocalSearch] = useState("");
   const [deleteNoteTarget, setDeleteNoteTarget] = useState<{ id: string; title: string } | null>(
@@ -111,8 +99,6 @@ export function NotesApp({
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [moveNoteTargets, setMoveNoteTargets] = useState<Note[]>([]);
   const [moveBusy, setMoveBusy] = useState(false);
-  const [draggingNoteIds, setDraggingNoteIds] = useState<string[]>([]);
-  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [notesSort, setNotesSort] = useState<NotesSort>(DEFAULT_NOTES_SORT);
   const [listPanelOpen, setListPanelOpen] = useState(true);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -153,8 +139,7 @@ export function NotesApp({
     return next;
   }, [selectedNoteIds, visibleNotes]);
 
-  const sharedFolders = folders.filter((f) => f.visibility === "shared");
-  const privateFolders = folders.filter((f) => f.visibility === "private");
+
 
   async function handleCreateNote() {
     const defaultVisibility =
@@ -205,7 +190,7 @@ export function NotesApp({
       if (!folder || !canMoveNoteToFolder(note, folder)) return;
     }
     if (note.folder_id === folderId && !note.deleted_at) return;
-    
+
     if (note.deleted_at) {
       await onRestoreNote(note.id);
     }
@@ -288,30 +273,11 @@ export function NotesApp({
   }
 
   function finishDrag() {
-    setDraggingNoteIds([]);
-    setDragOverTarget(null);
+    onDraggingNoteIds([]);
+    onDragOverTarget(null);
   }
 
-  async function handleDropNoteOnFolder(folderId: string | null, noteIds: string[]) {
-    if (noteIds.length === 0) return;
-    for (const noteId of noteIds) {
-      await handleMoveNoteToFolder(noteId, folderId);
-    }
-    finishDrag();
-    if (noteIds.length > 1) exitSelectionMode();
-  }
 
-  async function handleDropNoteOnTrash(noteIds: string[]) {
-    if (noteIds.length === 0) return;
-    for (const noteId of noteIds) {
-      await onDeleteNote(noteId);
-    }
-    if (selectedNoteId && noteIds.includes(selectedNoteId)) {
-      onSelectNote(visibleNotes.find((note) => !noteIds.includes(note.id))?.id ?? null);
-    }
-    finishDrag();
-    if (noteIds.length > 1) exitSelectionMode();
-  }
 
   if (!groupId) {
     return (
@@ -331,26 +297,6 @@ export function NotesApp({
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
-      <NotesFolderSidebar
-        filter={filter}
-        folders={folders}
-        sharedFolderCount={sharedFolders.length}
-        privateFolderCount={privateFolders.length}
-        groups={groups}
-        activeGroupId={groupId}
-        onSelectGroup={onSelectGroup}
-        onCreateGroup={onCreateGroup}
-        onJoinGroup={onJoinGroup}
-        onFilterChange={onFilterChange}
-        onCreateFolder={onCreateFolder}
-        onDeleteFolder={onDeleteFolder}
-        onUpdateFolder={onUpdateFolder}
-        draggingNoteIds={draggingNoteIds}
-        dragOverTarget={dragOverTarget}
-        onDragOverTarget={setDragOverTarget}
-        onDropNoteOnFolder={handleDropNoteOnFolder}
-        onDropNoteOnTrash={handleDropNoteOnTrash}
-      />
 
       <NotesListPanel
         filter={filter}
@@ -368,7 +314,7 @@ export function NotesApp({
         onSelectNote={(id) => onSelectNote(id)}
         onCreateNote={() => void handleCreateNote()}
         onEmptyTrash={() => void onEmptyTrash()}
-        onDragNoteStart={setDraggingNoteIds}
+        onDragNoteStart={onDraggingNoteIds}
         onDragNoteEnd={finishDrag}
         onRequestMoveNote={(note) => setMoveNoteTargets([note])}
         onToggleSelectionMode={toggleSelectionMode}

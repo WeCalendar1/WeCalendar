@@ -21,7 +21,7 @@ import {
   type ScreenView,
 } from "@/lib/calendar";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
-import { EMPTY_TIPTAP_DOC, isEmptyNotePatch, normalizeFolderColor } from "@/lib/notes";
+import { EMPTY_TIPTAP_DOC, isEmptyNotePatch, normalizeFolderColor, canMoveNoteToFolder, filterNotesByTags } from "@/lib/notes";
 import type { CalendarEvent } from "@/lib/events";
 import {
   conflictFingerprint,
@@ -66,6 +66,8 @@ export function AppShell() {
     null,
   );
   const [hiddenConflictKeys, setHiddenConflictKeys] = useState<Set<string>>(() => new Set());
+  const [draggingNoteIds, setDraggingNoteIds] = useState<string[]>([]);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
   const selectedNoteIdRef = useRef<string | null>(null);
@@ -333,6 +335,12 @@ export function AppShell() {
 
     return filtered;
   }, [events, searchQuery, activeTagIds, eventTags]);
+
+  // Filter notes by active tags (via linked event's tags)
+  const filteredNotes = useMemo(
+    () => filterNotesByTags(notes, activeTagIds, eventTags),
+    [notes, activeTagIds, eventTags],
+  );
 
   const conflictGroups = useMemo(() => conflictingEventGroups(events), [events]);
   const conflictFp = useMemo(
@@ -777,6 +785,37 @@ export function AppShell() {
     }
   }
 
+  // ─── Note drag-drop handlers (lifted from NotesApp) ──────────────────────
+
+  async function handleDropNoteOnFolder(folderId: string | null, noteIds: string[]) {
+    if (noteIds.length === 0) return;
+    for (const noteId of noteIds) {
+      const note = notes.find((n) => n.id === noteId);
+      if (!note) continue;
+      if (folderId) {
+        const folder = noteFolders.find((f) => f.id === folderId);
+        if (!folder || !canMoveNoteToFolder(note, folder)) continue;
+      }
+      if (note.folder_id === folderId && !note.deleted_at) continue;
+      if (note.deleted_at) await handleRestoreNote(noteId);
+      if (note.folder_id !== folderId) await handleUpdateNote(noteId, { folder_id: folderId });
+    }
+    setDraggingNoteIds([]);
+    setDragOverTarget(null);
+  }
+
+  async function handleDropNoteOnTrash(noteIds: string[]) {
+    if (noteIds.length === 0) return;
+    for (const noteId of noteIds) {
+      await handleDeleteNote(noteId);
+    }
+    if (selectedNoteId && noteIds.includes(selectedNoteId)) {
+      setSelectedNoteId(notes.find((note) => !noteIds.includes(note.id))?.id ?? null);
+    }
+    setDraggingNoteIds([]);
+    setDragOverTarget(null);
+  }
+
   const eventLinkedNotes = selectedEvent
     ? notes.filter((n) => n.event_id === selectedEvent.id)
     : [];
@@ -838,6 +877,7 @@ export function AppShell() {
       >
         <Sidebar
           open={sidebarOpen}
+          screenView={screenView}
           viewDate={viewDate}
           activeTagIds={activeTagIds}
           onTagToggle={handleTagToggle}
@@ -848,25 +888,31 @@ export function AppShell() {
           onSelectGroup={setActiveGroupId}
           onCreateGroup={handleCreateGroup}
           onJoinGroup={handleJoinGroup}
+          notesFilter={notesFilter}
+          noteFolders={noteFolders}
+          onNotesFilterChange={handleNotesFilterChange}
+          onCreateNoteFolder={handleCreateNoteFolder}
+          onDeleteNoteFolder={handleDeleteNoteFolder}
+          onUpdateNoteFolder={handleUpdateNoteFolder}
+          draggingNoteIds={draggingNoteIds}
+          dragOverTarget={dragOverTarget}
+          onDragOverTarget={setDragOverTarget}
+          onDropNoteOnFolder={handleDropNoteOnFolder}
+          onDropNoteOnTrash={handleDropNoteOnTrash}
         />
 
         {screenView === "notes" ? (
           <NotesApp
             groupId={activeGroupId}
             groupName={activeGroup?.name ?? null}
-            groups={groups}
-            onSelectGroup={setActiveGroupId}
-            onCreateGroup={handleCreateGroup}
-            onJoinGroup={handleJoinGroup}
             folders={noteFolders}
-            notes={notes}
+            notes={filteredNotes}
             events={events}
             eventTags={eventTags}
             tags={tags}
             searchQuery={notesSearchQuery}
             filter={notesFilter}
             selectedNoteId={selectedNoteId}
-            onFilterChange={handleNotesFilterChange}
             onSelectNote={setSelectedNoteId}
             onSearchChange={setNotesSearchQuery}
             onCreateNote={handleCreateNote}
@@ -876,9 +922,9 @@ export function AppShell() {
             onRestoreNote={handleRestoreNote}
             onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
             onEmptyTrash={handleEmptyTrash}
-            onCreateFolder={handleCreateNoteFolder}
-            onDeleteFolder={handleDeleteNoteFolder}
-            onUpdateFolder={handleUpdateNoteFolder}
+            draggingNoteIds={draggingNoteIds}
+            onDraggingNoteIds={setDraggingNoteIds}
+            onDragOverTarget={setDragOverTarget}
           />
         ) : (
           <>
