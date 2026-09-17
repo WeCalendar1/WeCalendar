@@ -289,6 +289,7 @@ function NotesSidebarContent({
   const [busy, setBusy] = useState(false);
   const [sharedFoldersOpen, setSharedFoldersOpen] = useState(true);
   const [privateFoldersOpen, setPrivateFoldersOpen] = useState(true);
+  const [notesOpen, setNotesOpen] = useState(true);
   const isDragging = draggingNoteIds.length > 0;
 
   const sharedFolders = folders.filter((f) => f.visibility === "shared");
@@ -392,7 +393,7 @@ function NotesSidebarContent({
 
   return (
     <>
-      {/* Note view filters */}
+      {/* Note view filters and folders */}
       <div
         className="flex flex-col gap-0"
         style={{
@@ -400,13 +401,56 @@ function NotesSidebarContent({
           background: "var(--surface)",
           boxShadow: "inset 0 0 0 0.5px var(--hairline), var(--shadow-sm)",
         }}
+        onDragEnter={() => {
+          if (isDragging) setNotesOpen(true);
+        }}
       >
-        <div className="space-y-0.5 px-2 py-2">
-          <div
-            onDragOver={(e) => handleFolderDragOver(e, NOTE_DROP_REMOVE)}
-            onDrop={(e) => handleFolderDrop(e, null)}
-            style={dropTargetStyle(dragOverTarget === NOTE_DROP_REMOVE)}
+        {/* Header - click to collapse/expand Notes */}
+        <button
+          type="button"
+          onClick={() => setNotesOpen((v) => !v)}
+          aria-expanded={notesOpen}
+          aria-controls="sidebar-notes-body"
+          className="pressable flex w-full items-center justify-between px-3 py-2.5"
+          style={{
+            background: "transparent",
+            borderRadius: notesOpen ? "var(--radius-xl) var(--radius-xl) 0 0" : "var(--radius-xl)",
+          }}
+        >
+          <p className="text-label" style={{ color: "var(--text-muted)" }}>
+            Notes
+          </p>
+          <motion.svg
+            animate={{ rotate: notesOpen ? 0 : -90 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.25 }}
+            viewBox="0 0 16 16"
+            className="h-3.5 w-3.5 shrink-0"
+            style={{ color: "var(--text-muted)" }}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
           >
+            <path d="M4 6l4 4 4-4" />
+          </motion.svg>
+        </button>
+
+        {/* Animated collapsible body */}
+        <motion.div
+          id="sidebar-notes-body"
+          initial={false}
+          animate={{ height: notesOpen ? "auto" : 0 }}
+          transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+          style={{ overflow: "hidden" }}
+        >
+          <div className="space-y-0.5 px-2 pb-2">
+            <div
+              onDragOver={(e) => handleFolderDragOver(e, NOTE_DROP_REMOVE)}
+              onDrop={(e) => handleFolderDrop(e, null)}
+              style={dropTargetStyle(dragOverTarget === NOTE_DROP_REMOVE)}
+            >
             <NavItem
               active={isFilterActive(filter, { type: "all" })}
               label="All Notes"
@@ -535,6 +579,7 @@ function NotesSidebarContent({
             />
           ))}
         </FolderSection>
+        </motion.div>
       </div>
 
       {/* Folder dialogs */}
