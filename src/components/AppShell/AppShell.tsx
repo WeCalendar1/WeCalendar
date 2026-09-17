@@ -836,21 +836,19 @@ export function AppShell() {
           filter: modalOpen ? "brightness(0.94) saturate(0.92)" : "none",
         }}
       >
-        {screenView === "calendar" && (
-          <Sidebar
-            open={sidebarOpen}
-            viewDate={viewDate}
-            activeTagIds={activeTagIds}
-            onTagToggle={handleTagToggle}
-            tags={tags}
-            onCreateTag={handleCreateTag}
-            groups={groups}
-            activeGroupId={activeGroupId}
-            onSelectGroup={setActiveGroupId}
-            onCreateGroup={handleCreateGroup}
-            onJoinGroup={handleJoinGroup}
-          />
-        )}
+        <Sidebar
+          open={sidebarOpen}
+          viewDate={viewDate}
+          activeTagIds={activeTagIds}
+          onTagToggle={handleTagToggle}
+          tags={tags}
+          onCreateTag={handleCreateTag}
+          groups={groups}
+          activeGroupId={activeGroupId}
+          onSelectGroup={setActiveGroupId}
+          onCreateGroup={handleCreateGroup}
+          onJoinGroup={handleJoinGroup}
+        />
 
         {screenView === "notes" ? (
           <NotesApp
