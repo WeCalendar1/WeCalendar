@@ -481,8 +481,11 @@ export function Navbar({
         </button>
 
         <div className="flex items-center gap-2">
-          <span
-            className="flex h-[30px] w-[30px] items-center justify-center text-sm font-bold text-white"
+          <button
+            type="button"
+            onClick={() => onScreenViewChange("calendar")}
+            aria-label="Go to calendar"
+            className="pressable flex h-[30px] w-[30px] items-center justify-center text-sm font-bold text-white"
             style={{
               borderRadius: "var(--radius-sm)",
               background: "var(--accent)",
@@ -490,7 +493,7 @@ export function Navbar({
             }}
           >
             W
-          </span>
+          </button>
           <span
             className="hidden text-base font-semibold tracking-tight sm:inline"
             style={{ color: "var(--foreground)", letterSpacing: "-0.018em" }}
