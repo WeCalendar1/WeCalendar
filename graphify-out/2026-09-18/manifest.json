@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "src/components/AppShell/AppShell.tsx": {
-    "mtime": 1789709523.2412026,
-    "seen": 1789772093.6061788,
-    "ast_hash": "0946f1d50dc6fce52b07bcc5e6a86fb0",
+    "mtime": 1789600012.5369985,
+    "seen": 1789600334.578616,
+    "ast_hash": "bf131c5bb35884d4a931586ac096ad2f",
     "semantic_hash": ""
   },
   "src/components/AppShell/index.ts": {
@@ -138,9 +138,9 @@
     "semantic_hash": "07dc0df219132d9253247d928ba3cb8e"
   },
   "src/components/Navbar/Navbar.tsx": {
-    "mtime": 1789771720.5878732,
-    "seen": 1789772093.6061788,
-    "ast_hash": "2cd30ca731b6c57223187518a9be413a",
+    "mtime": 1789600176.7638607,
+    "seen": 1789600334.578616,
+    "ast_hash": "d7efebd84864182e0dbf5eea0266b868",
     "semantic_hash": ""
   },
   "src/components/Navbar/index.ts": {
@@ -174,15 +174,15 @@
     "semantic_hash": "4fcb409cb819882396052d613a95587b"
   },
   "src/components/Sidebar/MiniCalendar.tsx": {
-    "mtime": 1789709523.2442038,
-    "seen": 1789772093.6061788,
-    "ast_hash": "f0c8e3509100eba92af438fa0a55fb35",
+    "mtime": 1788842187.4609127,
+    "seen": 1789600334.578616,
+    "ast_hash": "6f2d624efd382aae7e847568918dc18c",
     "semantic_hash": ""
   },
   "src/components/Sidebar/Sidebar.tsx": {
-    "mtime": 1789771470.143713,
-    "seen": 1789772093.6061788,
-    "ast_hash": "0f454643336163e2a357024435c9e7ca",
+    "mtime": 1789600004.8128426,
+    "seen": 1789600334.578616,
+    "ast_hash": "a4491811f579fec6f972761a7d9f7a6c",
     "semantic_hash": ""
   },
   "src/components/Sidebar/index.ts": {
@@ -474,15 +474,21 @@
     "semantic_hash": ""
   },
   "src/components/Notes/NotesApp.tsx": {
-    "mtime": 1789709523.2422059,
-    "seen": 1789772093.6061788,
-    "ast_hash": "22eea4f7e8797c554209eaf28ef31581",
+    "mtime": 1788898636.821548,
+    "seen": 1789600334.578616,
+    "ast_hash": "d13a278b5a956e8fa53e480ce88c2a74",
     "semantic_hash": ""
   },
   "src/components/Notes/NotesDialog.tsx": {
     "mtime": 1788842352.5471294,
     "seen": 1789600334.578616,
     "ast_hash": "9e9b5dc5f5d6d09305c28f89fb8fd6dc",
+    "semantic_hash": ""
+  },
+  "src/components/Notes/NotesFolderSidebar.tsx": {
+    "mtime": 1788842352.5501368,
+    "seen": 1789600334.578616,
+    "ast_hash": "f2ef0bf531cb8841ab96f683f9da1c57",
     "semantic_hash": ""
   },
   "src/components/Notes/NotesListPanel.tsx": {
@@ -492,21 +498,21 @@
     "semantic_hash": ""
   },
   "src/components/Notes/index.ts": {
-    "mtime": 1789709523.2432027,
-    "seen": 1789772093.6061788,
-    "ast_hash": "e6cdb14e1613a23d1b9e67e688bc9b31",
+    "mtime": 1788296969.7110283,
+    "seen": 1789600334.578616,
+    "ast_hash": "2eb1740c3f9c29c350b0892aee1da6a1",
     "semantic_hash": ""
   },
   "src/lib/notes.test.ts": {
-    "mtime": 1789709523.246204,
-    "seen": 1789772093.6061788,
-    "ast_hash": "1fe5b3971d1d5aead0ca6c6b2cde6207",
+    "mtime": 1788580838.6690655,
+    "seen": 1789600334.578616,
+    "ast_hash": "6f4343bcdc410a6c27557c75e93106fc",
     "semantic_hash": ""
   },
   "src/lib/notes.ts": {
-    "mtime": 1789709523.246204,
-    "seen": 1789772093.6061788,
-    "ast_hash": "a08872eb288e713423a0fe8bd6964e7f",
+    "mtime": 1788580830.8678749,
+    "seen": 1789600334.578616,
+    "ast_hash": "aa7ae400eaffbc954f20cf19156cf9ce",
     "semantic_hash": ""
   },
   "supabase/migrations/20260830120000_notes.sql": {
