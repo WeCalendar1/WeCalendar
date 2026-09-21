@@ -23,6 +23,8 @@ type SidebarProps = {
   onTagToggle: (id: string) => void;
   tags: Tag[];
   onCreateTag: (name: string, color: string) => Promise<void>;
+  onUpdateTag: (tagId: string, name: string, color: string) => Promise<void>;
+  onDeleteTag: (tagId: string) => Promise<void>;
   groups: Group[];
   activeGroupId: string | null;
   onSelectGroup: (groupId: string) => void;
@@ -50,6 +52,8 @@ export function Sidebar({
   onTagToggle,
   tags,
   onCreateTag,
+  onUpdateTag,
+  onDeleteTag,
   groups,
   activeGroupId,
   onSelectGroup,
@@ -69,6 +73,9 @@ export function Sidebar({
 }: SidebarProps) {
   const allOn = tags.length > 0 && activeTagIds.length === tags.length;
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [deletingTag, setDeletingTag] = useState<Tag | null>(null);
+  const [tagBusy, setTagBusy] = useState(false);
 
   function toggleAll() {
     if (allOn) {
@@ -78,7 +85,20 @@ export function Sidebar({
     }
   }
 
+  async function handleDeleteTagConfirm() {
+    if (!deletingTag) return;
+    setTagBusy(true);
+    try {
+      await onDeleteTag(deletingTag.id);
+      setDeletingTag(null);
+      if (editingTagId === deletingTag.id) setEditingTagId(null);
+    } finally {
+      setTagBusy(false);
+    }
+  }
+
   const isNotesView = screenView === "notes";
+  const editingTag = tags.find((t) => t.id === editingTagId) ?? null;
 
   return (
     <AnimatePresence initial={false}>
@@ -202,39 +222,75 @@ export function Sidebar({
                   )}
 
                   {tags.map((tag) => {
+                    if (editingTag?.id === tag.id) {
+                      return (
+                        <TagCreatorInline
+                          key={tag.id}
+                          initial={{ name: tag.name, color: tag.color }}
+                          submitLabel="Save"
+                          onCancel={() => setEditingTagId(null)}
+                          onAdd={async (name, color) => {
+                            await onUpdateTag(tag.id, name, color);
+                            setEditingTagId(null);
+                          }}
+                        />
+                      );
+                    }
+
                     const active = activeTagIds.includes(tag.id);
                     return (
-                      <label
-                        key={tag.id}
-                        htmlFor={`tag-${tag.id}`}
-                        className="pressable flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm"
-                        style={{
-                          background: active ? `color-mix(in srgb, ${tag.color} 12%, transparent)` : "transparent",
-                          letterSpacing: "-0.004em",
-                        }}
-                      >
-                        <span
-                          className="relative flex h-4 w-4 shrink-0 items-center justify-center"
+                      <div key={tag.id} className="group flex items-center gap-0.5">
+                        <label
+                          htmlFor={`tag-${tag.id}`}
+                          className="pressable flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm"
                           style={{
-                            borderRadius: "var(--radius-xs)",
-                            border: active ? "none" : `1.5px solid ${tag.color}`,
-                            background: active ? tag.color : "transparent",
+                            background: active ? `color-mix(in srgb, ${tag.color} 12%, transparent)` : "transparent",
+                            letterSpacing: "-0.004em",
                           }}
                         >
-                          {active && (
-                            <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M2 6l3 3 5-5" />
-                            </svg>
-                          )}
-                        </span>
-                        <input id={`tag-${tag.id}`} type="checkbox" checked={active} onChange={() => onTagToggle(tag.id)} className="sr-only" />
-                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: tag.color }} />
-                        <span style={{ color: "var(--foreground)", fontWeight: 500 }}>{tag.name}</span>
-                      </label>
+                          <span
+                            className="relative flex h-4 w-4 shrink-0 items-center justify-center"
+                            style={{
+                              borderRadius: "var(--radius-xs)",
+                              border: active ? "none" : `1.5px solid ${tag.color}`,
+                              background: active ? tag.color : "transparent",
+                            }}
+                          >
+                            {active && (
+                              <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M2 6l3 3 5-5" />
+                              </svg>
+                            )}
+                          </span>
+                          <input id={`tag-${tag.id}`} type="checkbox" checked={active} onChange={() => onTagToggle(tag.id)} className="sr-only" />
+                          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: tag.color }} />
+                          <span className="truncate" style={{ color: "var(--foreground)", fontWeight: 500 }}>{tag.name}</span>
+                        </label>
+                        <div className="hidden shrink-0 gap-0.5 pr-0.5 group-hover:flex">
+                          <button
+                            type="button"
+                            aria-label={`Edit ${tag.name}`}
+                            onClick={() => setEditingTagId(tag.id)}
+                            className="cursor-pointer px-1 text-xs"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            ✎
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Delete ${tag.name}`}
+                            onClick={() => setDeletingTag(tag)}
+                            className="cursor-pointer px-1 text-xs"
+                            style={{ color: "#dc2626" }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
 
-                  {activeGroupId && (
+                  {activeGroupId && !editingTagId && (
                     <div className="mt-1">
                       <TagCreatorInline onAdd={onCreateTag} />
                     </div>
@@ -244,6 +300,18 @@ export function Sidebar({
             </div>
 
           </div>
+
+          <NotesDialog
+            open={Boolean(deletingTag)}
+            busy={tagBusy}
+            mode="confirm"
+            danger
+            title={deletingTag ? `Delete "${deletingTag.name}"?` : "Delete tag?"}
+            description="This removes the tag from all events. Events themselves are kept."
+            confirmLabel="Delete tag"
+            onClose={() => setDeletingTag(null)}
+            onConfirm={handleDeleteTagConfirm}
+          />
         </motion.aside>
       )}
     </AnimatePresence>

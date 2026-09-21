@@ -406,6 +406,21 @@ export function AppShell() {
     await loadTags(activeGroupId);
   }
 
+  async function handleUpdateTag(tagId: string, name: string, color: string) {
+    if (!activeGroupId) throw new Error("Join or create a calendar first.");
+    const { error } = await supabase.from("tags").update({ name, color }).eq("id", tagId);
+    if (error) throw new Error(error.message);
+    await loadTags(activeGroupId);
+  }
+
+  async function handleDeleteTag(tagId: string) {
+    if (!activeGroupId) throw new Error("Join or create a calendar first.");
+    const { error } = await supabase.from("tags").delete().eq("id", tagId);
+    if (error) throw new Error(error.message);
+    setActiveTagIds((prev) => prev.filter((id) => id !== tagId));
+    await Promise.all([loadTags(activeGroupId), loadEventTags(activeGroupId)]);
+  }
+
   async function handleCreateEvent(input: EventDraft) {
     if (!user || !activeGroupId) {
       throw new Error("Join or create a shared workspace first.");
@@ -883,6 +898,8 @@ export function AppShell() {
           onTagToggle={handleTagToggle}
           tags={tags}
           onCreateTag={handleCreateTag}
+          onUpdateTag={handleUpdateTag}
+          onDeleteTag={handleDeleteTag}
           groups={groups}
           activeGroupId={activeGroupId}
           onSelectGroup={setActiveGroupId}
