@@ -230,15 +230,18 @@ function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => vo
 // ─── Profile Menu ─────────────────────────────────────────────────────────────
 
 const APPLE_ACCENTS = [
-  { name: "Blue", color: "#007AFF" },
-  { name: "Purple", color: "#AF52DE" },
-  { name: "Pink", color: "#FF2D55" },
-  { name: "Red", color: "#FF3B30" },
-  { name: "Orange", color: "#FF9500" },
-  { name: "Yellow", color: "#FFCC00" },
-  { name: "Green", color: "#34C759" },
-  { name: "Graphite", color: "#8E8E93" },
+  { name: "Blue",     color: "#007AFF" },
+  { name: "Purple",  color: "#AF52DE" },
+  { name: "Pink",    color: "#FF2D55" },
+  { name: "Red",     color: "#FF3B30" },
+  { name: "Orange",  color: "#FF9500" },
+  { name: "Yellow",  color: "#FFCC00" },
+  { name: "Green",   color: "#34C759" },
+  { name: "Graphite",color: "#8E8E93" },
 ];
+
+const RECENT_COLORS_KEY = "wecalendar-recent-accent-colors";
+const MAX_RECENT = 7;
 
 function ProfileMenu({
   userInitials,
@@ -252,7 +255,22 @@ function ProfileMenu({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [draftAccent, setDraftAccent] = useState(accent);
+  const [hexInput, setHexInput] = useState(accent);
+  const [recentColors, setRecentColors] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(RECENT_COLORS_KEY);
+      return stored ? (JSON.parse(stored) as string[]) : [];
+    } catch { return []; }
+  });
   const menuRef = useRef<HTMLDivElement>(null);
+  const hexInputRef = useRef<HTMLInputElement>(null);
+
+  function pushRecentColor(color: string) {
+    const next = [color, ...recentColors.filter((c) => c.toLowerCase() !== color.toLowerCase())].slice(0, MAX_RECENT);
+    setRecentColors(next);
+    try { localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -285,7 +303,11 @@ function ProfileMenu({
     <div ref={menuRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        onClick={() => {
+          // Reset draft + hex input to current applied accent each time the menu opens
+          if (!open) { setDraftAccent(accent); setHexInput(accent); }
+          setOpen((p) => !p);
+        }}
         aria-label="Account menu"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -325,42 +347,146 @@ function ProfileMenu({
                 <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                   Accent Color
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  {APPLE_ACCENTS.map((item) => {
-                    const isSelected = accent.toLowerCase() === item.color.toLowerCase();
-                    return (
-                      <button
-                        key={item.color}
-                        type="button"
-                        title={item.name}
-                        onClick={() => onSelectAccent?.(item.color)}
-                        className="pressable relative flex h-5 w-5 items-center justify-center rounded-full"
-                        style={{
-                          background: item.color,
-                          boxShadow: isSelected ? `0 0 0 2px var(--surface), 0 0 0 3.5px ${item.color}` : "none",
-                        }}
-                      >
-                        {isSelected && (
-                          <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M2.5 6l2.5 2.5 4.5-5" />
-                          </svg>
-                        )}
-                      </button>
-                    );
-                  })}
+
+                {/* Two-column layout: native picker swatch on left, swatches + controls on right */}
+                <div className="mt-2 flex gap-2">
+
+                  {/* Left — tall native color picker swatch. Opens OS dialog leftward, away from Apply. */}
                   <label
-                    title="Custom color"
-                    className="pressable relative flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border text-[11px] overflow-hidden"
-                    style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+                    title="Open color picker"
+                    className="pressable relative shrink-0 cursor-pointer overflow-hidden"
+                    style={{
+                      width: "28px",
+                      borderRadius: "var(--radius-md)",
+                      background: draftAccent,
+                      boxShadow: `inset 0 0 0 0.5px rgba(0,0,0,0.18), 0 0 0 1.5px var(--border)`,
+                    }}
                   >
                     <input
                       type="color"
-                      value={accent}
-                      onChange={(e) => onSelectAccent?.(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      value={/^#[0-9a-fA-F]{6}$/.test(draftAccent) ? draftAccent : "#000000"}
+                      onChange={(e) => { setDraftAccent(e.target.value); setHexInput(e.target.value); }}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      style={{ minHeight: "100%" }}
                     />
-                    <span style={{ color: "var(--text-secondary)" }}>+</span>
                   </label>
+
+                  {/* Right — swatches, hex input, Apply */}
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+
+                    {/* Row 1 — 8 preset swatches */}
+                    <div className="grid grid-cols-8 gap-1.5">
+                      {APPLE_ACCENTS.map((item) => {
+                        const isDraft = draftAccent.toLowerCase() === item.color.toLowerCase();
+                        return (
+                          <button
+                            key={item.color}
+                            type="button"
+                            title={item.name}
+                            onClick={() => { setDraftAccent(item.color); setHexInput(item.color); }}
+                            className="pressable relative flex h-5 w-5 items-center justify-center rounded-full"
+                            style={{
+                              background: item.color,
+                              boxShadow: isDraft ? `0 0 0 2px var(--surface), 0 0 0 3.5px ${item.color}` : "none",
+                            }}
+                          >
+                            {isDraft && (
+                              <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M2.5 6l2.5 2.5 4.5-5" />
+                              </svg>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Row 2 — up to 7 recent colours + + button pinned to col 8 */}
+                    <div className="grid grid-cols-8 gap-1.5">
+                      {recentColors.map((color) => {
+                        const isDraft = draftAccent.toLowerCase() === color.toLowerCase();
+                        return (
+                          <button
+                            key={color}
+                            type="button"
+                            title={color}
+                            onClick={() => { setDraftAccent(color); setHexInput(color); }}
+                            className="pressable relative flex h-5 w-5 items-center justify-center rounded-full"
+                            style={{
+                              background: color,
+                              boxShadow: isDraft ? `0 0 0 2px var(--surface), 0 0 0 3.5px ${color}` : "none",
+                            }}
+                          >
+                            {isDraft && (
+                              <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M2.5 6l2.5 2.5 4.5-5" />
+                              </svg>
+                            )}
+                          </button>
+                        );
+                      })}
+                      {/* + button — always col 8, focuses hex input */}
+                      <button
+                        type="button"
+                        title="Type a custom hex color"
+                        onClick={() => hexInputRef.current?.focus()}
+                        className="pressable flex h-5 w-5 items-center justify-center rounded-full border"
+                        style={{
+                          borderColor: "var(--border)",
+                          background: "var(--surface-2)",
+                          gridColumnStart: 8,
+                        }}
+                      >
+                        <span className="text-[11px] leading-none" style={{ color: "var(--text-secondary)" }}>+</span>
+                      </button>
+                    </div>
+
+                    {/* Hex input + Apply */}
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        ref={hexInputRef}
+                        type="text"
+                        value={hexInput}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (!val.startsWith("#")) val = "#" + val;
+                          setHexInput(val);
+                          if (/^#[0-9a-fA-F]{6}$/.test(val)) setDraftAccent(val);
+                        }}
+                        onBlur={() => {
+                          if (!/^#[0-9a-fA-F]{6}$/.test(hexInput)) setHexInput(draftAccent);
+                        }}
+                        maxLength={7}
+                        spellCheck={false}
+                        placeholder="#000000"
+                        className="min-w-0 flex-1 font-mono text-xs outline-none"
+                        style={{
+                          background: "var(--surface)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius-sm)",
+                          color: "var(--foreground)",
+                          padding: "3px 7px",
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSelectAccent?.(draftAccent);
+                          pushRecentColor(draftAccent);
+                          setOpen(false);
+                        }}
+                        disabled={draftAccent.toLowerCase() === accent.toLowerCase()}
+                        className="pressable shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold disabled:opacity-40"
+                        style={{
+                          background: "var(--accent)",
+                          color: "#fff",
+                          letterSpacing: "-0.004em",
+                        }}
+                      >
+                        Apply
+                      </button>
+                    </div>
+
+                  </div>
                 </div>
               </div>
 
