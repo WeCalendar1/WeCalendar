@@ -240,6 +240,25 @@ const APPLE_ACCENTS = [
   { name: "Graphite",color: "#8E8E93" },
 ];
 
+const RECENT_COLORS_KEY = "wecalendar-recent-accent-colors";
+const MAX_RECENT = 8;
+const PRESET_COLORS = new Set(APPLE_ACCENTS.map((a) => a.color.toLowerCase()));
+
+function loadRecentColors(): string[] {
+  try {
+    const stored = localStorage.getItem(RECENT_COLORS_KEY);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((c): c is string => typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c))
+      .filter((c) => !PRESET_COLORS.has(c.toLowerCase()))
+      .slice(0, MAX_RECENT);
+  } catch {
+    return [];
+  }
+}
+
 function ProfileMenu({
   userInitials,
   accent = "#007AFF",
@@ -254,7 +273,23 @@ function ProfileMenu({
   const [signingOut, setSigningOut] = useState(false);
   const [draftAccent, setDraftAccent] = useState(accent);
   const [hexInput, setHexInput] = useState(accent);
+  const [recentColors, setRecentColors] = useState<string[]>(loadRecentColors);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  function pushRecentColor(color: string) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) return;
+    if (PRESET_COLORS.has(color.toLowerCase())) return;
+    const next = [
+      color,
+      ...recentColors.filter((c) => c.toLowerCase() !== color.toLowerCase()),
+    ].slice(0, MAX_RECENT);
+    setRecentColors(next);
+    try {
+      localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -282,6 +317,8 @@ function ProfileMenu({
       setSigningOut(false);
     }
   }
+
+  const draftIsPreset = PRESET_COLORS.has(draftAccent.toLowerCase());
 
   return (
     <div ref={menuRef} className="relative">
@@ -355,10 +392,10 @@ function ProfileMenu({
                     />
                   </label>
 
-                  {/* Right — swatches, hex input, Apply */}
+                  {/* Right — presets, recent (max 8), custom hex */}
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5">
 
-                    {/* Preset swatches */}
+                    {/* Row 1 — preset swatches */}
                     <div className="grid grid-cols-8 gap-1.5">
                       {APPLE_ACCENTS.map((item) => {
                         const isDraft = draftAccent.toLowerCase() === item.color.toLowerCase();
@@ -383,6 +420,35 @@ function ProfileMenu({
                         );
                       })}
                     </div>
+
+                    {/* Row 2 — saved custom colors (hard cap 8) */}
+                    {recentColors.length > 0 && (
+                      <div className="grid grid-cols-8 gap-1.5">
+                        {recentColors.map((color) => {
+                          const isDraft =
+                            !draftIsPreset && draftAccent.toLowerCase() === color.toLowerCase();
+                          return (
+                            <button
+                              key={color}
+                              type="button"
+                              title={color}
+                              onClick={() => { setDraftAccent(color); setHexInput(color); }}
+                              className="pressable relative flex h-5 w-5 items-center justify-center rounded-full"
+                              style={{
+                                background: color,
+                                boxShadow: isDraft ? `0 0 0 2px var(--surface), 0 0 0 3.5px ${color}` : "none",
+                              }}
+                            >
+                              {isDraft && (
+                                <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <path d="M2.5 6l2.5 2.5 4.5-5" />
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     {/* Custom color */}
                     <div className="flex items-center gap-1.5">
@@ -415,6 +481,7 @@ function ProfileMenu({
                         type="button"
                         onClick={() => {
                           onSelectAccent?.(draftAccent);
+                          pushRecentColor(draftAccent);
                           setOpen(false);
                         }}
                         disabled={draftAccent.toLowerCase() === accent.toLowerCase()}
