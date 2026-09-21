@@ -240,9 +240,6 @@ const APPLE_ACCENTS = [
   { name: "Graphite",color: "#8E8E93" },
 ];
 
-const RECENT_COLORS_KEY = "wecalendar-recent-accent-colors";
-const MAX_RECENT = 7;
-
 function ProfileMenu({
   userInitials,
   accent = "#007AFF",
@@ -257,20 +254,7 @@ function ProfileMenu({
   const [signingOut, setSigningOut] = useState(false);
   const [draftAccent, setDraftAccent] = useState(accent);
   const [hexInput, setHexInput] = useState(accent);
-  const [recentColors, setRecentColors] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(RECENT_COLORS_KEY);
-      return stored ? (JSON.parse(stored) as string[]) : [];
-    } catch { return []; }
-  });
   const menuRef = useRef<HTMLDivElement>(null);
-  const hexInputRef = useRef<HTMLInputElement>(null);
-
-  function pushRecentColor(color: string) {
-    const next = [color, ...recentColors.filter((c) => c.toLowerCase() !== color.toLowerCase())].slice(0, MAX_RECENT);
-    setRecentColors(next);
-    try { localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-  }
 
   useEffect(() => {
     if (!open) return;
@@ -374,7 +358,7 @@ function ProfileMenu({
                   {/* Right — swatches, hex input, Apply */}
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5">
 
-                    {/* Row 1 — 8 preset swatches */}
+                    {/* Preset swatches */}
                     <div className="grid grid-cols-8 gap-1.5">
                       {APPLE_ACCENTS.map((item) => {
                         const isDraft = draftAccent.toLowerCase() === item.color.toLowerCase();
@@ -400,51 +384,11 @@ function ProfileMenu({
                       })}
                     </div>
 
-                    {/* Row 2 — up to 7 recent colours + + button pinned to col 8 */}
-                    <div className="grid grid-cols-8 gap-1.5">
-                      {recentColors.map((color) => {
-                        const isDraft = draftAccent.toLowerCase() === color.toLowerCase();
-                        return (
-                          <button
-                            key={color}
-                            type="button"
-                            title={color}
-                            onClick={() => { setDraftAccent(color); setHexInput(color); }}
-                            className="pressable relative flex h-5 w-5 items-center justify-center rounded-full"
-                            style={{
-                              background: color,
-                              boxShadow: isDraft ? `0 0 0 2px var(--surface), 0 0 0 3.5px ${color}` : "none",
-                            }}
-                          >
-                            {isDraft && (
-                              <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M2.5 6l2.5 2.5 4.5-5" />
-                              </svg>
-                            )}
-                          </button>
-                        );
-                      })}
-                      {/* + button — always col 8, focuses hex input */}
-                      <button
-                        type="button"
-                        title="Type a custom hex color"
-                        onClick={() => hexInputRef.current?.focus()}
-                        className="pressable flex h-5 w-5 items-center justify-center rounded-full border"
-                        style={{
-                          borderColor: "var(--border)",
-                          background: "var(--surface-2)",
-                          gridColumnStart: 8,
-                        }}
-                      >
-                        <span className="text-[11px] leading-none" style={{ color: "var(--text-secondary)" }}>+</span>
-                      </button>
-                    </div>
-
-                    {/* Hex input + Apply */}
+                    {/* Custom color */}
                     <div className="flex items-center gap-1.5">
                       <input
-                        ref={hexInputRef}
                         type="text"
+                        aria-label="Custom accent color"
                         value={hexInput}
                         onChange={(e) => {
                           let val = e.target.value;
@@ -471,7 +415,6 @@ function ProfileMenu({
                         type="button"
                         onClick={() => {
                           onSelectAccent?.(draftAccent);
-                          pushRecentColor(draftAccent);
                           setOpen(false);
                         }}
                         disabled={draftAccent.toLowerCase() === accent.toLowerCase()}
