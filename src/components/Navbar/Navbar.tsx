@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CalendarMode, ScreenView } from "@/lib/calendar";
 import { createClient } from "@/lib/supabase/client";
@@ -168,7 +168,121 @@ function ScreenSwitcher({
   );
 }
 
+// ─── Snapshot Button ──────────────────────────────────────────────────────────
+
+type SnapshotState = "idle" | "capturing" | "done";
+
+function SnapshotButton({ label }: { label: string }) {
+  const [state, setState] = useState<SnapshotState>("idle");
+
+  const handleCapture = useCallback(async () => {
+    if (state !== "idle") return;
+    setState("capturing");
+    try {
+      const target = document.querySelector<HTMLElement>("[data-snapshot-target]");
+      if (!target) { setState("idle"); return; }
+
+      // Lazy-load html2canvas to keep initial bundle light
+      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await html2canvas(target, {
+        useCORS: true,
+        scale: window.devicePixelRatio ?? 2,
+        backgroundColor: null,
+        logging: false,
+      });
+
+      const slug = label.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
+      const date = new Date().toISOString().slice(0, 10);
+      const filename = `wecalendar-${slug}-${date}.png`;
+
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+
+      setState("done");
+      setTimeout(() => setState("idle"), 2000);
+    } catch {
+      setState("idle");
+    }
+  }, [state, label]);
+
+  return (
+    <button
+      type="button"
+      onClick={() => void handleCapture()}
+      aria-label="Download calendar snapshot"
+      title={state === "done" ? "Saved!" : "Download snapshot"}
+      disabled={state === "capturing"}
+      className="pressable flex h-8 w-8 items-center justify-center"
+      style={{
+        borderRadius: "var(--radius-md)",
+        background: "var(--surface-2)",
+        boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+        color: state === "done" ? "var(--color-success)" : "var(--text-secondary)",
+        transition: "color var(--duration-fast) var(--ease-out)",
+      }}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {state === "capturing" ? (
+          <motion.svg
+            key="spinner"
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1, rotate: 360 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ rotate: { repeat: Infinity, duration: 0.8, ease: "linear" }, opacity: { duration: 0.15 } }}
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </motion.svg>
+        ) : state === "done" ? (
+          <motion.svg
+            key="check"
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ type: "spring", bounce: 0.4, duration: 0.35 }}
+          >
+            <path d="M20 6L9 17l-5-5" />
+          </motion.svg>
+        ) : (
+          <motion.svg
+            key="camera"
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ duration: 0.15 }}
+          >
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </motion.svg>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
+
 // ─── Dark mode toggle ─────────────────────────────────────────────────────────
+
 
 function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => void }) {
   return (
@@ -783,6 +897,8 @@ export function Navbar({
         />
 
         <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+
+        <SnapshotButton label={monthLabel} />
 
         <ProfileMenu
           userInitials={userInitials}

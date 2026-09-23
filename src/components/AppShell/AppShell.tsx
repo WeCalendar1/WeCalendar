@@ -981,7 +981,7 @@ export function AppShell() {
           />
         ) : (
           <>
-            <main className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
+            <main data-snapshot-target className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
               {!activeGroupId && (
                 <div
                   className="mb-3 rounded-xl px-4 py-3 text-sm"
