@@ -116,7 +116,7 @@ export function AppShell() {
 
       const { data, error } = await supabase
         .from("events")
-        .select("*")
+        .select("*, creator:profiles!events_created_by_fkey(display_name, theme_preferences)")
         .eq("group_id", groupId)
         .order("starts_at", { ascending: true });
 

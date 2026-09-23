@@ -1,7 +1,9 @@
 import { isSameDay, startOfDay } from "@/lib/calendar";
 import type { Tables } from "@/types/database";
 
-export type CalendarEvent = Tables<"events">;
+export type CalendarEvent = Tables<"events"> & {
+  creator?: Pick<Tables<"profiles">, "display_name" | "theme_preferences"> | null;
+};
 
 /** Single-day events that start on `day`, sorted by start time. */
 export function eventsForDay(events: CalendarEvent[], day: Date): CalendarEvent[] {

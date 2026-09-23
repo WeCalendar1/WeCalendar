@@ -561,6 +561,7 @@ export default function ProfilePage() {
   const [birthday, setBirthday] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("#6366f1");
   const [saved, setSaved] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const { prefs, setShowWorkspaceInSidebar } = useCalendarPrefs();
@@ -643,22 +644,44 @@ export default function ProfilePage() {
 
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
+    setSaved(false);
+    setProfileError(null);
+    if (!/^#[0-9a-f]{6}$/i.test(favoriteColor)) {
+      setProfileError("Enter a six-digit hex color, such as #6366f1.");
+      return;
+    }
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setProfileError("Please sign in again to save your profile.");
+      return;
+    }
+
+    const { data: profile, error: readError } = await supabase
+      .from("profiles").select("theme_preferences").eq("id", user.id).single();
+    if (readError) {
+      setProfileError(readError.message);
+      return;
+    }
+    const existing = profile.theme_preferences;
 
     const theme_preferences = {
+      ...(existing && typeof existing === "object" && !Array.isArray(existing) ? existing : {}),
       favorite_color: favoriteColor,
       pronouns,
       birthday,
     };
 
-    const { error } = await supabase.from("profiles").upsert({
-      id: user.id,
+    const { error } = await supabase.from("profiles").update({
       display_name: displayName.trim() || null,
       theme_preferences,
-    });
+    }).eq("id", user.id).select("id").single();
+
+    if (error) {
+      setProfileError(error.message);
+      return;
+    }
 
     if (!error) {
       await supabase.auth.updateUser({
@@ -925,12 +948,17 @@ export default function ProfilePage() {
                   />
                 </div>
                 <p className="mt-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
-                  Used to personalize your app theme.
+                  Identifies you as the creator of shared-calendar events.
                 </p>
               </div>
             </div>
 
             {/* Save button */}
+            {profileError && (
+              <p role="alert" className="text-sm" style={{ color: "var(--color-danger)" }}>
+                {profileError}
+              </p>
+            )}
             <div className="flex items-center justify-end gap-3">
               {saved && (
                 <span

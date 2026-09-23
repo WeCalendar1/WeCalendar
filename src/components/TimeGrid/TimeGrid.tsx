@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { EventCreatorBadge } from "@/components/EventCreatorBadge";
 
 import {
   DAY_HOURS,
@@ -192,7 +193,10 @@ export function TimeGrid({
                                 : "var(--shadow-sm)",
                             }}
                           >
-                            <div className="truncate">{event.title}</div>
+                            <div className="flex items-center gap-1">
+                              <EventCreatorBadge event={event} />
+                              <span className="truncate">{event.title}</span>
+                            </div>
                             <div className="truncate opacity-90">
                               {formatEventTime(event.starts_at)}
                             </div>

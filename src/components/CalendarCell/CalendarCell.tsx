@@ -1,4 +1,5 @@
 import React from "react";
+import { EventCreatorBadge } from "@/components/EventCreatorBadge";
 import type { CalendarDay } from "@/lib/calendar";
 import {
   eventsForDay,
@@ -242,9 +243,12 @@ export function CalendarCell({
             }}
           >
             {showLabel && (
-              <span style={{ overflow: "hidden", flexShrink: 1, minWidth: 0 }}>
+              <span className="flex min-w-0 items-center gap-1">
+                <EventCreatorBadge event={event} />
+                <span className="truncate">
                 {`${formatEventTime(event.starts_at)} `}
                 {event.title}
+                </span>
               </span>
             )}
           </button>
@@ -265,7 +269,7 @@ export function CalendarCell({
             <button
               key={event.id}
               type="button"
-              className="block w-full truncate px-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
+              className="flex w-full items-center gap-1 px-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
               title={`${event.title} · ${formatEventTime(event.starts_at)}`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -280,7 +284,8 @@ export function CalendarCell({
                 opacity: 0.92,
               }}
             >
-              {formatEventTime(event.starts_at)} {event.title}
+              <EventCreatorBadge event={event} />
+              <span className="truncate">{formatEventTime(event.starts_at)} {event.title}</span>
             </button>
           );
         })}
