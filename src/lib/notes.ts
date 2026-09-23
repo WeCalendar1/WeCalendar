@@ -377,3 +377,23 @@ export function filterLabel(filter: NotesFilter, folders: NoteFolder[]): string 
       return "Notes";
   }
 }
+
+/**
+ * Filters notes based on active tags inherited through linked events.
+ * Notes without a linked event always pass through tag filters.
+ */
+export function filterNotesByTags(
+  notes: Note[],
+  activeTagIds: string[],
+  eventTags: { event_id: string; tag_id: string }[],
+): Note[] {
+  if (activeTagIds.length === 0) return notes;
+  const activeSet = new Set(activeTagIds);
+  return notes.filter((note) => {
+    if (!note.event_id) return true;
+    const noteEventTagIds = eventTags
+      .filter((et) => et.event_id === note.event_id)
+      .map((et) => et.tag_id);
+    return noteEventTagIds.some((id) => activeSet.has(id));
+  });
+}

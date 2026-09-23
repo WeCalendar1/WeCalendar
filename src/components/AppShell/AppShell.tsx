@@ -21,7 +21,7 @@ import {
   type ScreenView,
 } from "@/lib/calendar";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
-import { EMPTY_TIPTAP_DOC, isEmptyNotePatch, normalizeFolderColor } from "@/lib/notes";
+import { EMPTY_TIPTAP_DOC, isEmptyNotePatch, normalizeFolderColor, canMoveNoteToFolder, filterNotesByTags } from "@/lib/notes";
 import type { CalendarEvent } from "@/lib/events";
 import {
   conflictFingerprint,
@@ -66,6 +66,8 @@ export function AppShell() {
     null,
   );
   const [hiddenConflictKeys, setHiddenConflictKeys] = useState<Set<string>>(() => new Set());
+  const [draggingNoteIds, setDraggingNoteIds] = useState<string[]>([]);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
   const selectedNoteIdRef = useRef<string | null>(null);
@@ -334,6 +336,12 @@ export function AppShell() {
     return filtered;
   }, [events, searchQuery, activeTagIds, eventTags]);
 
+  // Filter notes by active tags (via linked event's tags)
+  const filteredNotes = useMemo(
+    () => filterNotesByTags(notes, activeTagIds, eventTags),
+    [notes, activeTagIds, eventTags],
+  );
+
   const conflictGroups = useMemo(() => conflictingEventGroups(events), [events]);
   const conflictFp = useMemo(
     () => conflictFingerprint(conflictGroups.map((g) => g.key)),
@@ -396,6 +404,21 @@ export function AppShell() {
     });
     if (error) throw new Error(error.message);
     await loadTags(activeGroupId);
+  }
+
+  async function handleUpdateTag(tagId: string, name: string, color: string) {
+    if (!activeGroupId) throw new Error("Join or create a calendar first.");
+    const { error } = await supabase.from("tags").update({ name, color }).eq("id", tagId);
+    if (error) throw new Error(error.message);
+    await loadTags(activeGroupId);
+  }
+
+  async function handleDeleteTag(tagId: string) {
+    if (!activeGroupId) throw new Error("Join or create a calendar first.");
+    const { error } = await supabase.from("tags").delete().eq("id", tagId);
+    if (error) throw new Error(error.message);
+    setActiveTagIds((prev) => prev.filter((id) => id !== tagId));
+    await Promise.all([loadTags(activeGroupId), loadEventTags(activeGroupId)]);
   }
 
   async function handleCreateEvent(input: EventDraft) {
@@ -777,6 +800,37 @@ export function AppShell() {
     }
   }
 
+  // ─── Note drag-drop handlers (lifted from NotesApp) ──────────────────────
+
+  async function handleDropNoteOnFolder(folderId: string | null, noteIds: string[]) {
+    if (noteIds.length === 0) return;
+    for (const noteId of noteIds) {
+      const note = notes.find((n) => n.id === noteId);
+      if (!note) continue;
+      if (folderId) {
+        const folder = noteFolders.find((f) => f.id === folderId);
+        if (!folder || !canMoveNoteToFolder(note, folder)) continue;
+      }
+      if (note.folder_id === folderId && !note.deleted_at) continue;
+      if (note.deleted_at) await handleRestoreNote(noteId);
+      if (note.folder_id !== folderId) await handleUpdateNote(noteId, { folder_id: folderId });
+    }
+    setDraggingNoteIds([]);
+    setDragOverTarget(null);
+  }
+
+  async function handleDropNoteOnTrash(noteIds: string[]) {
+    if (noteIds.length === 0) return;
+    for (const noteId of noteIds) {
+      await handleDeleteNote(noteId);
+    }
+    if (selectedNoteId && noteIds.includes(selectedNoteId)) {
+      setSelectedNoteId(notes.find((note) => !noteIds.includes(note.id))?.id ?? null);
+    }
+    setDraggingNoteIds([]);
+    setDragOverTarget(null);
+  }
+
   const eventLinkedNotes = selectedEvent
     ? notes.filter((n) => n.event_id === selectedEvent.id)
     : [];
@@ -822,6 +876,33 @@ export function AppShell() {
         onSelectAccent={setAccentColor}
         eventViewerOpen={eventViewerOpen}
         onToggleEventViewer={() => setEventViewerOpen((v) => !v)}
+        onCreateEvent={() => openCreateModal()}
+        canCreateEvent={Boolean(activeGroupId)}
+        conflictAlert={
+          <ConflictToast
+            open={conflictToastOpen && screenView === "calendar"}
+            items={conflictToastItems}
+            hiddenKeys={hiddenConflictKeys}
+            onDismiss={() => setDismissedConflictFingerprint(conflictFp)}
+            onHideHighlights={() => {
+              setDismissedConflictFingerprint(conflictFp);
+              setHiddenHighlightFingerprint(conflictFp);
+            }}
+            onToggleHidden={(key) => {
+              setHiddenConflictKeys((prev) => {
+                const next = new Set(prev);
+                if (next.has(key)) next.delete(key);
+                else next.add(key);
+                return next;
+              });
+              setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
+            }}
+            onSetHiddenKeys={(keys) => {
+              setHiddenConflictKeys(keys);
+              setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
+            }}
+          />
+        }
       />
 
       <div
@@ -834,41 +915,46 @@ export function AppShell() {
           filter: modalOpen ? "brightness(0.94) saturate(0.92)" : "none",
         }}
       >
-        {screenView === "calendar" && (
-          <Sidebar
-            open={sidebarOpen}
-            viewDate={viewDate}
-            activeTagIds={activeTagIds}
-            onCreateEvent={() => openCreateModal()}
-            onTagToggle={handleTagToggle}
-            tags={tags}
-            onCreateTag={handleCreateTag}
-            groups={groups}
-            activeGroupId={activeGroupId}
-            onSelectGroup={setActiveGroupId}
-            onCreateGroup={handleCreateGroup}
-            onJoinGroup={handleJoinGroup}
-            canCreateEvent={Boolean(activeGroupId)}
-          />
-        )}
+        <Sidebar
+          open={sidebarOpen}
+          screenView={screenView}
+          viewDate={viewDate}
+          activeTagIds={activeTagIds}
+          onTagToggle={handleTagToggle}
+          tags={tags}
+          onCreateTag={handleCreateTag}
+          onUpdateTag={handleUpdateTag}
+          onDeleteTag={handleDeleteTag}
+          groups={groups}
+          activeGroupId={activeGroupId}
+          onSelectGroup={setActiveGroupId}
+          onCreateGroup={handleCreateGroup}
+          onJoinGroup={handleJoinGroup}
+          notesFilter={notesFilter}
+          noteFolders={noteFolders}
+          onNotesFilterChange={handleNotesFilterChange}
+          onCreateNoteFolder={handleCreateNoteFolder}
+          onDeleteNoteFolder={handleDeleteNoteFolder}
+          onUpdateNoteFolder={handleUpdateNoteFolder}
+          draggingNoteIds={draggingNoteIds}
+          dragOverTarget={dragOverTarget}
+          onDragOverTarget={setDragOverTarget}
+          onDropNoteOnFolder={handleDropNoteOnFolder}
+          onDropNoteOnTrash={handleDropNoteOnTrash}
+        />
 
         {screenView === "notes" ? (
           <NotesApp
             groupId={activeGroupId}
             groupName={activeGroup?.name ?? null}
-            groups={groups}
-            onSelectGroup={setActiveGroupId}
-            onCreateGroup={handleCreateGroup}
-            onJoinGroup={handleJoinGroup}
             folders={noteFolders}
-            notes={notes}
+            notes={filteredNotes}
             events={events}
             eventTags={eventTags}
             tags={tags}
             searchQuery={notesSearchQuery}
             filter={notesFilter}
             selectedNoteId={selectedNoteId}
-            onFilterChange={handleNotesFilterChange}
             onSelectNote={setSelectedNoteId}
             onSearchChange={setNotesSearchQuery}
             onCreateNote={handleCreateNote}
@@ -878,9 +964,9 @@ export function AppShell() {
             onRestoreNote={handleRestoreNote}
             onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
             onEmptyTrash={handleEmptyTrash}
-            onCreateFolder={handleCreateNoteFolder}
-            onDeleteFolder={handleDeleteNoteFolder}
-            onUpdateFolder={handleUpdateNoteFolder}
+            draggingNoteIds={draggingNoteIds}
+            onDraggingNoteIds={setDraggingNoteIds}
+            onDragOverTarget={setDragOverTarget}
           />
         ) : (
           <>
@@ -930,31 +1016,6 @@ export function AppShell() {
           </>
         )}
       </div>
-
-      <ConflictToast
-        open={conflictToastOpen && screenView === "calendar"}
-        items={conflictToastItems}
-        hiddenKeys={hiddenConflictKeys}
-        onDismiss={() => setDismissedConflictFingerprint(conflictFp)}
-        onHideHighlights={() => {
-          setDismissedConflictFingerprint(conflictFp);
-          setHiddenHighlightFingerprint(conflictFp);
-        }}
-        onToggleHidden={(key) => {
-          setHiddenConflictKeys((prev) => {
-            const next = new Set(prev);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
-            return next;
-          });
-          // Re-enable highlights if user was in "hide all" mode
-          setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
-        }}
-        onSetHiddenKeys={(keys) => {
-          setHiddenConflictKeys(keys);
-          setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
-        }}
-      />
 
       <CreateEventModal
         key="create-event-modal"

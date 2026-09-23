@@ -5,6 +5,7 @@ import {
   bulkMoveFolderOptions,
   canMoveNoteToFolder,
   filterNotes,
+  filterNotesByTags,
   foldersForNote,
   folderNameForNote,
   folderBadgeStyle,
@@ -314,5 +315,38 @@ describe("filterNoOpNotePatch", () => {
     const note = baseNote({ content: { type: "doc", content: [] } });
     expect(noteContentsEqual(note.content, { type: "doc", content: [] })).toBe(true);
     expect(serializeNoteContent(note.content)).toBe('{"type":"doc","content":[]}');
+  });
+});
+
+describe("filterNotesByTags", () => {
+  const noteUnlinked = baseNote({ id: "n1", event_id: null });
+  const noteWithEvent1 = baseNote({ id: "n2", event_id: "e1" });
+  const noteWithEvent2 = baseNote({ id: "n3", event_id: "e2" });
+  const allNotes = [noteUnlinked, noteWithEvent1, noteWithEvent2];
+
+  const eventTags = [
+    { event_id: "e1", tag_id: "tag-work" },
+    { event_id: "e1", tag_id: "tag-urgent" },
+    { event_id: "e2", tag_id: "tag-personal" },
+  ];
+
+  it("returns all notes when activeTagIds is empty", () => {
+    expect(filterNotesByTags(allNotes, [], eventTags)).toEqual(allNotes);
+  });
+
+  it("includes unlinked notes and notes whose linked events match active tags", () => {
+    const result = filterNotesByTags(allNotes, ["tag-work"], eventTags);
+    expect(result.map((n) => n.id)).toEqual(["n1", "n2"]);
+  });
+
+  it("filters notes when matching a different tag", () => {
+    const result = filterNotesByTags(allNotes, ["tag-personal"], eventTags);
+    expect(result.map((n) => n.id)).toEqual(["n1", "n3"]);
+  });
+
+  it("filters out notes whose linked event tags do not match any active tags", () => {
+    const result = filterNotesByTags(allNotes, ["tag-other"], eventTags);
+    // Unlinked note still passes, but event-linked notes without the tag are excluded
+    expect(result.map((n) => n.id)).toEqual(["n1"]);
   });
 });
