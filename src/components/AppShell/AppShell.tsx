@@ -941,6 +941,7 @@ export function AppShell() {
           onSelectGroup={setActiveGroupId}
           onCreateGroup={handleCreateGroup}
           onJoinGroup={handleJoinGroup}
+          showWorkspace={prefs.showWorkspaceInSidebar}
           notesFilter={notesFilter}
           noteFolders={noteFolders}
           onNotesFilterChange={handleNotesFilterChange}

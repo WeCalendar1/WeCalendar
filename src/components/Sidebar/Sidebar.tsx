@@ -30,6 +30,7 @@ type SidebarProps = {
   onSelectGroup: (groupId: string) => void;
   onCreateGroup: (name: string) => Promise<void>;
   onJoinGroup: (inviteCode: string) => Promise<void>;
+  showWorkspace?: boolean;
   // Notes-specific (consumed when screenView === "notes")
   notesFilter?: NotesFilter;
   noteFolders?: NoteFolder[];
@@ -59,6 +60,7 @@ export function Sidebar({
   onSelectGroup,
   onCreateGroup,
   onJoinGroup,
+  showWorkspace = false,
   notesFilter,
   noteFolders = [],
   onNotesFilterChange,
@@ -126,14 +128,15 @@ export function Sidebar({
         >
           <div className="flex h-full w-[var(--sidebar-width)] flex-col gap-3 overflow-y-auto p-3">
 
-            {/* Shared workspace — always visible */}
-            <SharedWorkspace
-              groups={groups}
-              activeGroupId={activeGroupId}
-              onSelectGroup={onSelectGroup}
-              onCreateGroup={onCreateGroup}
-              onJoinGroup={onJoinGroup}
-            />
+            {showWorkspace && (
+              <SharedWorkspace
+                groups={groups}
+                activeGroupId={activeGroupId}
+                onSelectGroup={onSelectGroup}
+                onCreateGroup={onCreateGroup}
+                onJoinGroup={onJoinGroup}
+              />
+            )}
 
             {/* Mini calendar — always visible */}
             <MiniCalendar viewDate={viewDate} />

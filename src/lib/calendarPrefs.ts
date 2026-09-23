@@ -10,6 +10,7 @@ const KEYS = {
   weekStartsOnMonday: "wecalendar.pref.weekStartsOnMonday",
   defaultView: "wecalendar.pref.defaultView",
   showDeclinedEvents: "wecalendar.pref.showDeclinedEvents",
+  showWorkspaceInSidebar: "wecalendar.pref.showWorkspaceInSidebar",
 } as const;
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ const DEFAULTS = {
   weekStartsOnMonday: false,
   defaultView: "month" as CalendarMode,
   showDeclinedEvents: false,
+  showWorkspaceInSidebar: false,
 };
 
 // ─── Loader helpers ───────────────────────────────────────────────────────────
@@ -48,6 +50,8 @@ export interface CalendarPrefs {
   defaultView: CalendarMode;
   /** Show events that the user has declined (rendered dimmed). */
   showDeclinedEvents: boolean;
+  /** Keep shared-calendar controls visible in the main sidebar. */
+  showWorkspaceInSidebar: boolean;
 }
 
 export function useCalendarPrefs() {
@@ -62,6 +66,9 @@ export function useCalendarPrefs() {
   );
   const [showDeclinedEvents, _setShowDeclinedEvents] = useState<boolean>(() =>
     loadBool(KEYS.showDeclinedEvents, DEFAULTS.showDeclinedEvents),
+  );
+  const [showWorkspaceInSidebar, _setShowWorkspaceInSidebar] = useState<boolean>(() =>
+    loadBool(KEYS.showWorkspaceInSidebar, DEFAULTS.showWorkspaceInSidebar),
   );
 
   const setHidePastConflicts = useCallback((v: boolean) => {
@@ -84,11 +91,17 @@ export function useCalendarPrefs() {
     try { localStorage.setItem(KEYS.showDeclinedEvents, String(v)); } catch { /* ignore */ }
   }, []);
 
+  const setShowWorkspaceInSidebar = useCallback((v: boolean) => {
+    _setShowWorkspaceInSidebar(v);
+    try { localStorage.setItem(KEYS.showWorkspaceInSidebar, String(v)); } catch { /* ignore */ }
+  }, []);
+
   return {
-    prefs: { hidePastConflicts, weekStartsOnMonday, defaultView, showDeclinedEvents },
+    prefs: { hidePastConflicts, weekStartsOnMonday, defaultView, showDeclinedEvents, showWorkspaceInSidebar },
     setHidePastConflicts,
     setWeekStartsOnMonday,
     setDefaultView,
     setShowDeclinedEvents,
+    setShowWorkspaceInSidebar,
   };
 }

@@ -6,6 +6,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useCalendarPrefs } from "@/lib/calendarPrefs";
 import type { CalendarMode } from "@/lib/calendar";
+import { SharedWorkspace } from "@/components/SharedWorkspace";
+import type { Tables } from "@/types/database";
+
+type Group = Tables<"groups">;
+const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -556,7 +561,9 @@ export default function ProfilePage() {
   const [birthday, setBirthday] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("#6366f1");
   const [saved, setSaved] = useState(false);
-  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const { prefs, setShowWorkspaceInSidebar } = useCalendarPrefs();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -599,19 +606,25 @@ export default function ProfilePage() {
       // Load groups the user belongs to
       const { data: memberRows } = await supabase
         .from("group_members")
-        .select("group_id, groups(id, name)")
+        .select("group_id, groups(*)")
         .eq("user_id", user.id);
 
       if (!mounted) return;
 
       const loadedGroups = (memberRows ?? [])
         .map((row) => {
-          const g = row.groups as { id: string; name: string } | null;
-          return g ? { id: g.id, name: g.name } : null;
+          const g = row.groups as Group | null;
+          return g;
         })
-        .filter((g): g is { id: string; name: string } => g !== null);
+        .filter((g): g is Group => g !== null);
 
       setGroups(loadedGroups);
+      const storedGroupId = window.localStorage.getItem(ACTIVE_GROUP_KEY);
+      setActiveGroupId(
+        loadedGroups.some((group) => group.id === storedGroupId)
+          ? storedGroupId
+          : loadedGroups[0]?.id ?? null,
+      );
     }
 
     void loadUser();
@@ -683,6 +696,41 @@ export default function ProfilePage() {
       .eq("group_id", groupId)
       .eq("user_id", user.id);
     setGroups((prev) => prev.filter((g) => g.id !== groupId));
+  }
+
+  async function reloadGroups() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data } = await supabase
+      .from("group_members")
+      .select("group_id, groups(*)")
+      .eq("user_id", user.id);
+    const nextGroups = (data ?? [])
+      .map((row) => row.groups as Group | null)
+      .filter((group): group is Group => group !== null);
+    setGroups(nextGroups);
+    return nextGroups;
+  }
+
+  async function handleCreateGroup(name: string) {
+    const { data, error } = await supabase.rpc("create_group", { p_name: name });
+    if (error) throw new Error(error.message);
+    await reloadGroups();
+    if (data?.id) handleSelectGroup(data.id);
+  }
+
+  async function handleJoinGroup(inviteCode: string) {
+    const { data, error } = await supabase.rpc("join_group_by_invite", {
+      p_invite_code: inviteCode,
+    });
+    if (error) throw new Error(error.message);
+    await reloadGroups();
+    if (data?.id) handleSelectGroup(data.id);
+  }
+
+  function handleSelectGroup(groupId: string) {
+    setActiveGroupId(groupId);
+    window.localStorage.setItem(ACTIVE_GROUP_KEY, groupId);
   }
 
   const initials = displayName
@@ -1027,6 +1075,33 @@ export default function ProfilePage() {
               </label>
             ))}
           </div>
+        </SectionCard>
+
+        <SectionCard
+          icon={
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="3" />
+              <path d="M3 9h18M8 3v4M16 3v4" />
+            </svg>
+          }
+          title="Shared Calendars"
+          description="Choose your active calendar and manage shared access"
+        >
+          <SharedWorkspace
+            variant="settings"
+            groups={groups}
+            activeGroupId={activeGroupId}
+            onSelectGroup={handleSelectGroup}
+            onCreateGroup={handleCreateGroup}
+            onJoinGroup={handleJoinGroup}
+          />
+          <SettingRow
+            id="pref-workspace-in-sidebar"
+            label="Show shared calendars in sidebar"
+            description="Keep workspace controls available from the calendar"
+            checked={prefs.showWorkspaceInSidebar}
+            onChange={setShowWorkspaceInSidebar}
+          />
         </SectionCard>
 
         {/* ── Calendar Settings ───────────────────────────── */}
