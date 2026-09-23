@@ -10,8 +10,8 @@
     "semantic_hash": "025f4fcb6024b3524d19492cf7ce54a2"
   },
   "package.json": {
-    "mtime": 1790146760.589479,
-    "ast_hash": "65b7716b90dea1f4693dc7b967994da8",
+    "mtime": 1790147962.761147,
+    "ast_hash": "583ca627768eaf4688a5583c8ac4f7f0",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -40,13 +40,13 @@
     "semantic_hash": "09f98620ebe8378864ef4ca2e01e75d6"
   },
   "src/app/profile/page.tsx": {
-    "mtime": 1788844927.4721787,
-    "ast_hash": "52f07062611a83bce23d18393773e236",
+    "mtime": 1790147529.940775,
+    "ast_hash": "fa363cf4f0ef6e54876daf2e70c5b401",
     "semantic_hash": ""
   },
   "src/components/AppShell/AppShell.tsx": {
-    "mtime": 1790146760.6036613,
-    "ast_hash": "5626f99351a451df38e4a6d687c1a7f6",
+    "mtime": 1790148058.033587,
+    "ast_hash": "97f7b3ad879f2a2e779a354b865504ee",
     "semantic_hash": ""
   },
   "src/components/AppShell/index.ts": {
@@ -115,8 +115,8 @@
     "semantic_hash": "07dc0df219132d9253247d928ba3cb8e"
   },
   "src/components/Navbar/Navbar.tsx": {
-    "mtime": 1790146760.631984,
-    "ast_hash": "7655d4a9feb2e5e4b0a2d45279e934e1",
+    "mtime": 1790148026.5645795,
+    "ast_hash": "26f08358aebe234d412af562a2de27a2",
     "semantic_hash": ""
   },
   "src/components/Navbar/index.ts": {
@@ -593,6 +593,11 @@
   ".agents/skills/ponytail/SKILL.md": {
     "mtime": 1789513061.2541742,
     "ast_hash": "37c0d353703d82b307605d70af93be29",
+    "semantic_hash": ""
+  },
+  "src/lib/calendarPrefs.ts": {
+    "mtime": 1790147472.86648,
+    "ast_hash": "7e8b7b6b551704f901c3d96e20c684b8",
     "semantic_hash": ""
   }
 }
