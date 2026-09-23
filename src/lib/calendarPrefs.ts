@@ -1,0 +1,94 @@
+"use client";
+
+import { useCallback, useState } from "react";
+import type { CalendarMode } from "@/lib/calendar";
+
+// ─── Storage keys ─────────────────────────────────────────────────────────────
+
+const KEYS = {
+  hidePastConflicts: "wecalendar.pref.hidePastConflicts",
+  weekStartsOnMonday: "wecalendar.pref.weekStartsOnMonday",
+  defaultView: "wecalendar.pref.defaultView",
+  showDeclinedEvents: "wecalendar.pref.showDeclinedEvents",
+} as const;
+
+// ─── Defaults ─────────────────────────────────────────────────────────────────
+
+const DEFAULTS = {
+  hidePastConflicts: true,
+  weekStartsOnMonday: false,
+  defaultView: "month" as CalendarMode,
+  showDeclinedEvents: false,
+};
+
+// ─── Loader helpers ───────────────────────────────────────────────────────────
+
+function loadBool(key: string, fallback: boolean): boolean {
+  if (typeof window === "undefined") return fallback;
+  const v = localStorage.getItem(key);
+  if (v === null) return fallback;
+  return v === "true";
+}
+
+function loadStr<T extends string>(key: string, fallback: T, allowed: readonly T[]): T {
+  if (typeof window === "undefined") return fallback;
+  const v = localStorage.getItem(key) as T | null;
+  if (v && (allowed as readonly string[]).includes(v)) return v;
+  return fallback;
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export interface CalendarPrefs {
+  /** Don't surface conflict alerts / highlights for events fully in the past. */
+  hidePastConflicts: boolean;
+  /** When true, week columns begin on Monday instead of Sunday. */
+  weekStartsOnMonday: boolean;
+  /** The calendar view opened by default when the app loads. */
+  defaultView: CalendarMode;
+  /** Show events that the user has declined (rendered dimmed). */
+  showDeclinedEvents: boolean;
+}
+
+export function useCalendarPrefs() {
+  const [hidePastConflicts, _setHidePastConflicts] = useState<boolean>(() =>
+    loadBool(KEYS.hidePastConflicts, DEFAULTS.hidePastConflicts),
+  );
+  const [weekStartsOnMonday, _setWeekStartsOnMonday] = useState<boolean>(() =>
+    loadBool(KEYS.weekStartsOnMonday, DEFAULTS.weekStartsOnMonday),
+  );
+  const [defaultView, _setDefaultView] = useState<CalendarMode>(() =>
+    loadStr(KEYS.defaultView, DEFAULTS.defaultView, ["day", "week", "month", "year"]),
+  );
+  const [showDeclinedEvents, _setShowDeclinedEvents] = useState<boolean>(() =>
+    loadBool(KEYS.showDeclinedEvents, DEFAULTS.showDeclinedEvents),
+  );
+
+  const setHidePastConflicts = useCallback((v: boolean) => {
+    _setHidePastConflicts(v);
+    try { localStorage.setItem(KEYS.hidePastConflicts, String(v)); } catch { /* ignore */ }
+  }, []);
+
+  const setWeekStartsOnMonday = useCallback((v: boolean) => {
+    _setWeekStartsOnMonday(v);
+    try { localStorage.setItem(KEYS.weekStartsOnMonday, String(v)); } catch { /* ignore */ }
+  }, []);
+
+  const setDefaultView = useCallback((v: CalendarMode) => {
+    _setDefaultView(v);
+    try { localStorage.setItem(KEYS.defaultView, v); } catch { /* ignore */ }
+  }, []);
+
+  const setShowDeclinedEvents = useCallback((v: boolean) => {
+    _setShowDeclinedEvents(v);
+    try { localStorage.setItem(KEYS.showDeclinedEvents, String(v)); } catch { /* ignore */ }
+  }, []);
+
+  return {
+    prefs: { hidePastConflicts, weekStartsOnMonday, defaultView, showDeclinedEvents },
+    setHidePastConflicts,
+    setWeekStartsOnMonday,
+    setDefaultView,
+    setShowDeclinedEvents,
+  };
+}

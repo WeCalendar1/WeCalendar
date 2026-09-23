@@ -30,6 +30,7 @@ import {
 import { colorForEvent, tagIdsForEvent, type EventTag, type Tag } from "@/lib/tags";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables, Json } from "@/types/database";
+import { useCalendarPrefs } from "@/lib/calendarPrefs";
 
 type Group = Tables<"groups">;
 
@@ -37,6 +38,7 @@ const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
 
 export function AppShell() {
   const { mode: themeMode, accent, toggleMode: toggleTheme, setAccentColor } = useTheme();
+  const { prefs } = useCalendarPrefs();
   const [viewDate, setViewDate] = useState(() => startOfDay(new Date()));
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [screenView, setScreenView] = useState<ScreenView>("calendar");
@@ -346,12 +348,12 @@ export function AppShell() {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     const todayMs = startOfToday.getTime();
-    // Ignore events whose day has fully passed — past conflicts are not actionable.
-    const upcomingEvents = events.filter(
-      (e) => new Date(e.ends_at).getTime() > todayMs,
-    );
-    return conflictingEventGroups(upcomingEvents);
-  }, [events]);
+    // When the pref is enabled, ignore events whose day has fully passed.
+    const eventsToCheck = prefs.hidePastConflicts
+      ? events.filter((e) => new Date(e.ends_at).getTime() > todayMs)
+      : events;
+    return conflictingEventGroups(eventsToCheck);
+  }, [events, prefs.hidePastConflicts]);
   const conflictFp = useMemo(
     () => conflictFingerprint(conflictGroups.map((g) => g.key)),
     [conflictGroups],

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useCalendarPrefs } from "@/lib/calendarPrefs";
+import type { CalendarMode } from "@/lib/calendar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -268,6 +270,155 @@ function DangerButton({
 }
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
+
+// ─── Calendar Settings ───────────────────────────────────────────────────────
+
+function SettingRow({
+  id,
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label
+      htmlFor={id}
+      className="flex cursor-pointer items-center justify-between gap-4 px-6 py-3.5"
+      style={{ borderBottom: "0.5px solid var(--separator)" }}
+    >
+      <div>
+        <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+          {label}
+        </p>
+        {description && (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {description}
+          </p>
+        )}
+      </div>
+      {/* iOS-style toggle */}
+      <div
+        id={id}
+        role="switch"
+        aria-checked={checked}
+        tabIndex={0}
+        onClick={() => onChange(!checked)}
+        onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") onChange(!checked); }}
+        className="relative shrink-0 cursor-pointer"
+        style={{
+          width: "42px",
+          height: "24px",
+          borderRadius: "var(--radius-full)",
+          background: checked ? "var(--accent)" : "var(--border)",
+          transition: "background 200ms var(--ease-out)",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: "2px",
+            left: checked ? "20px" : "2px",
+            width: "20px",
+            height: "20px",
+            borderRadius: "var(--radius-full)",
+            background: "#fff",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+            transition: "left 200ms var(--ease-out)",
+          }}
+        />
+      </div>
+    </label>
+  );
+}
+
+const CALENDAR_VIEWS: { id: CalendarMode; label: string }[] = [
+  { id: "day",   label: "Day" },
+  { id: "week",  label: "Week" },
+  { id: "month", label: "Month" },
+  { id: "year",  label: "Year" },
+];
+
+function CalendarSettingsSection() {
+  const { prefs, setHidePastConflicts, setWeekStartsOnMonday, setDefaultView, setShowDeclinedEvents } =
+    useCalendarPrefs();
+
+  return (
+    <SectionCard
+      defaultOpen={false}
+      icon={
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="5" width="18" height="16" rx="3" />
+          <path d="M3 9h18M8 3v4M16 3v4" />
+        </svg>
+      }
+      title="Calendar Settings"
+      description="Customize how your calendar looks and behaves"
+    >
+      <div>
+        <SettingRow
+          id="pref-hide-past-conflicts"
+          label="Hide past conflicts"
+          description="Don't show conflict alerts or highlights for events that have already passed"
+          checked={prefs.hidePastConflicts}
+          onChange={setHidePastConflicts}
+        />
+        <SettingRow
+          id="pref-week-monday"
+          label="Week starts on Monday"
+          description="Show Monday as the first day of the week in all views"
+          checked={prefs.weekStartsOnMonday}
+          onChange={setWeekStartsOnMonday}
+        />
+        <SettingRow
+          id="pref-show-declined"
+          label="Show declined events"
+          description="Display events you've declined, rendered at reduced opacity"
+          checked={prefs.showDeclinedEvents}
+          onChange={setShowDeclinedEvents}
+        />
+
+        {/* Default view — segmented control */}
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 px-6 py-3.5"
+          style={{ borderBottom: "0.5px solid var(--separator)" }}
+        >
+          <div>
+            <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+              Default view
+            </p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Which calendar view opens when you launch the app
+            </p>
+          </div>
+          <div
+            className="segmented"
+            role="group"
+            aria-label="Default calendar view"
+          >
+            {CALENDAR_VIEWS.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                className="segmented-item pressable"
+                data-active={prefs.defaultView === v.id}
+                aria-pressed={prefs.defaultView === v.id}
+                onClick={() => setDefaultView(v.id)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
 
 function LeaveGroupRow({
   groups,
@@ -877,6 +1028,9 @@ export default function ProfilePage() {
             ))}
           </div>
         </SectionCard>
+
+        {/* ── Calendar Settings ───────────────────────────── */}
+        <CalendarSettingsSection />
 
         {/* ── Danger Zone ────────────────────────────────── */}
         <SectionCard
