@@ -342,7 +342,16 @@ export function AppShell() {
     [notes, activeTagIds, eventTags],
   );
 
-  const conflictGroups = useMemo(() => conflictingEventGroups(events), [events]);
+  const conflictGroups = useMemo(() => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayMs = startOfToday.getTime();
+    // Ignore events whose day has fully passed — past conflicts are not actionable.
+    const upcomingEvents = events.filter(
+      (e) => new Date(e.ends_at).getTime() > todayMs,
+    );
+    return conflictingEventGroups(upcomingEvents);
+  }, [events]);
   const conflictFp = useMemo(
     () => conflictFingerprint(conflictGroups.map((g) => g.key)),
     [conflictGroups],
