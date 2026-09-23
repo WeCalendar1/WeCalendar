@@ -878,6 +878,31 @@ export function AppShell() {
         onToggleEventViewer={() => setEventViewerOpen((v) => !v)}
         onCreateEvent={() => openCreateModal()}
         canCreateEvent={Boolean(activeGroupId)}
+        conflictAlert={
+          <ConflictToast
+            open={conflictToastOpen && screenView === "calendar"}
+            items={conflictToastItems}
+            hiddenKeys={hiddenConflictKeys}
+            onDismiss={() => setDismissedConflictFingerprint(conflictFp)}
+            onHideHighlights={() => {
+              setDismissedConflictFingerprint(conflictFp);
+              setHiddenHighlightFingerprint(conflictFp);
+            }}
+            onToggleHidden={(key) => {
+              setHiddenConflictKeys((prev) => {
+                const next = new Set(prev);
+                if (next.has(key)) next.delete(key);
+                else next.add(key);
+                return next;
+              });
+              setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
+            }}
+            onSetHiddenKeys={(keys) => {
+              setHiddenConflictKeys(keys);
+              setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
+            }}
+          />
+        }
       />
 
       <div
@@ -991,31 +1016,6 @@ export function AppShell() {
           </>
         )}
       </div>
-
-      <ConflictToast
-        open={conflictToastOpen && screenView === "calendar"}
-        items={conflictToastItems}
-        hiddenKeys={hiddenConflictKeys}
-        onDismiss={() => setDismissedConflictFingerprint(conflictFp)}
-        onHideHighlights={() => {
-          setDismissedConflictFingerprint(conflictFp);
-          setHiddenHighlightFingerprint(conflictFp);
-        }}
-        onToggleHidden={(key) => {
-          setHiddenConflictKeys((prev) => {
-            const next = new Set(prev);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
-            return next;
-          });
-          // Re-enable highlights if user was in "hide all" mode
-          setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
-        }}
-        onSetHiddenKeys={(keys) => {
-          setHiddenConflictKeys(keys);
-          setHiddenHighlightFingerprint((fp) => (fp === conflictFp ? null : fp));
-        }}
-      />
 
       <CreateEventModal
         key="create-event-modal"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useDragControls, useMotionValue } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export type ConflictToastItem = {
   key: string;
@@ -40,11 +40,7 @@ export function ConflictToast({
   const [managing, setManaging] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
-  const constraintsRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
-  const dragControls = useDragControls();
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
 
   const visibleCount = items.length;
   const preview = listOpen || managing ? items : items.slice(0, DEFAULT_PREVIEW);
@@ -95,21 +91,15 @@ export function ConflictToast({
   return (
     <AnimatePresence>
       {open && (
-        <div ref={constraintsRef} className="pointer-events-none fixed inset-0 z-50">
-          {minimized ? (
+        <div className="relative h-8 w-8 shrink-0">
             <motion.button
               key="conflict-bubble"
               type="button"
-              aria-label="Expand scheduling conflict panel. Drag to move."
-              title="Drag to move · Click to expand"
-              onClick={() => setMinimized(false)}
-              drag
-              dragConstraints={constraintsRef}
-              dragMomentum={false}
-              dragElastic={0.12}
+              aria-label="Scheduling conflicts"
+              aria-expanded={!minimized}
+              title="Scheduling conflicts"
+              onClick={() => setMinimized((value) => !value)}
               style={{
-                x,
-                y,
                 borderRadius: "var(--radius-full)",
                 background: "var(--color-danger)",
                 boxShadow: "var(--shadow-md)",
@@ -118,10 +108,8 @@ export function ConflictToast({
                 fontSize: "0.95rem",
                 fontWeight: 700,
                 lineHeight: 1,
-                cursor: "grab",
               }}
-              whileDrag={{ cursor: "grabbing", scale: 1.05 }}
-              className="pressable pointer-events-auto absolute top-16 right-3 flex h-9 w-9 items-center justify-center sm:right-4"
+              className="pressable flex h-8 w-8 items-center justify-center"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
@@ -129,22 +117,14 @@ export function ConflictToast({
             >
               !
             </motion.button>
-          ) : (
+          {!minimized && (
             <motion.div
               key="conflict-panel"
               role="status"
               aria-live="polite"
-              aria-label="Scheduling conflict panel. Drag the header to move."
-              drag
-              dragControls={dragControls}
-              dragListener={false}
-              dragConstraints={constraintsRef}
-              dragMomentum={false}
-              dragElastic={0.12}
-              className="glass-heavy pointer-events-auto absolute top-16 right-3 w-[min(100%-1.5rem,20rem)] overflow-hidden p-3.5 sm:right-4"
+              aria-label="Scheduling conflict panel"
+              className="glass-heavy fixed left-3 top-16 z-50 max-h-[calc(100dvh-5rem)] w-[min(calc(100vw-1.5rem),20rem)] overflow-auto p-3.5 sm:absolute sm:left-0 sm:top-full sm:mt-2"
               style={{
-                x,
-                y,
                 borderRadius: "var(--radius-lg)",
                 boxShadow: "var(--shadow-menu)",
               }}
@@ -154,12 +134,7 @@ export function ConflictToast({
               transition={{ type: "spring", bounce: 0, duration: 0.32 }}
             >
               <div
-                className="flex cursor-grab items-center justify-between gap-2 active:cursor-grabbing"
-                onPointerDown={(event) => {
-                  if ((event.target as HTMLElement).closest("[data-no-drag]")) return;
-                  dragControls.start(event);
-                }}
-                title="Drag to move"
+                className="flex items-center justify-between gap-2"
               >
                 <div className="flex min-w-0 items-center gap-1.5">
                   <span
@@ -178,7 +153,6 @@ export function ConflictToast({
                 </div>
                 <button
                   type="button"
-                  data-no-drag
                   aria-label="Minimize scheduling conflict panel"
                   onClick={() => setMinimized(true)}
                   className="pressable flex h-5 w-5 shrink-0 items-center justify-center rounded-full"

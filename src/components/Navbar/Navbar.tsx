@@ -561,6 +561,7 @@ export type NavbarProps = {
   onToggleEventViewer?: () => void;
   onCreateEvent?: () => void;
   canCreateEvent?: boolean;
+  conflictAlert?: ReactNode;
 };
 
 export function Navbar({
@@ -586,6 +587,7 @@ export function Navbar({
   onToggleEventViewer,
   onCreateEvent,
   canCreateEvent = false,
+  conflictAlert,
 }: NavbarProps) {
   return (
     <header
@@ -700,6 +702,7 @@ export function Navbar({
 
       {/* Right: create + search + mode picker + view switcher + theme toggle + avatar */}
       <div className="flex items-center gap-2">
+        {conflictAlert}
         {onCreateEvent && (
           <button
             type="button"
