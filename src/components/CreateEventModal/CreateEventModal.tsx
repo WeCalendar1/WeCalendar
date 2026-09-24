@@ -40,6 +40,10 @@ type CreateEventModalProps = {
   linkedNotes?: Note[];
   onOpenNote?: (noteId: string) => void;
   onCreateNoteForEvent?: (eventId: string) => Promise<void>;
+  /** ID of the currently logged-in user (for ownership checks) */
+  currentUserId?: string | null;
+  /** When true, deleting another user's event requires an extra confirmation */
+  confirmDeleteOthers?: boolean;
 };
 
 function toDateInput(date: Date): string {
@@ -261,6 +265,8 @@ function CreateEventModalContent({
   linkedNotes = [],
   onOpenNote,
   onCreateNoteForEvent,
+  currentUserId,
+  confirmDeleteOthers = true,
 }: CreateEventModalProps) {
   const isEditing = Boolean(event);
 
@@ -285,6 +291,8 @@ function CreateEventModalContent({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTagIds);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Extra owner-confirmation step: fires when deleting another user's event
+  const [confirmOwner, setConfirmOwner] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [repeats, setRepeats] = useState(false);
@@ -452,12 +460,28 @@ function CreateEventModalContent({
     }
   }
 
+  // True when the event was created by someone other than the current user
+  const isOthersEvent =
+    Boolean(event) &&
+    Boolean(currentUserId) &&
+    event?.created_by !== currentUserId;
+
   async function handleDelete() {
     if (!event || !onDelete) return;
+
+    // Step 1: if the event belongs to another user and the pref is on,
+    // gate behind an owner-specific confirmation before the normal one.
+    if (isOthersEvent && confirmDeleteOthers && !confirmOwner) {
+      setConfirmOwner(true);
+      return;
+    }
+
+    // Step 2: normal delete confirmation
     if (!confirmDelete) {
       setConfirmDelete(true);
       return;
     }
+
     setBusy(true);
     setError(null);
     try {
@@ -466,6 +490,7 @@ function CreateEventModalContent({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete event.");
       setConfirmDelete(false);
+      setConfirmOwner(false);
     } finally {
       setBusy(false);
     }
@@ -473,10 +498,17 @@ function CreateEventModalContent({
 
   async function handleDeleteSeriesAction() {
     if (!event || !event.recurrence_group_id || !onDeleteSeries) return;
+
+    if (isOthersEvent && confirmDeleteOthers && !confirmOwner) {
+      setConfirmOwner(true);
+      return;
+    }
+
     if (!confirmDelete) {
       setConfirmDelete(true);
       return;
     }
+
     setBusy(true);
     setError(null);
     try {
@@ -485,6 +517,7 @@ function CreateEventModalContent({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete series.");
       setConfirmDelete(false);
+      setConfirmOwner(false);
     } finally {
       setBusy(false);
     }
@@ -832,6 +865,31 @@ function CreateEventModalContent({
                   </div>
                 )}
 
+                {/* Owner-confirmation warning banner */}
+                {confirmOwner && !confirmDelete && isOthersEvent && (
+                  <div
+                    className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs"
+                    style={{
+                      background: "rgba(255, 149, 0, 0.08)",
+                      border: "1px solid rgba(255, 149, 0, 0.3)",
+                      color: "var(--foreground)",
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "#f97316" }} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <span style={{ color: "var(--text-secondary)" }}>
+                      This event was created by{" "}
+                      <strong style={{ color: "var(--foreground)" }}>
+                        {event?.creator?.display_name ?? "another user"}
+                      </strong>
+                      . Are you sure you want to delete it?
+                    </span>
+                  </div>
+                )}
+
+                {/* Error */}
                 {error && (
                   <p className="text-xs font-medium" style={{ color: "var(--color-danger)" }}>
                     {error}
@@ -853,11 +911,11 @@ function CreateEventModalContent({
                         style={{
                           borderRadius: "var(--radius-md)",
                           border: "1px solid rgba(255, 59, 48, 0.3)",
-                          background: confirmDelete ? "var(--color-danger)" : "rgba(255, 59, 48, 0.08)",
-                          color: confirmDelete ? "#fff" : "var(--color-danger)",
+                          background: confirmDelete ? "var(--color-danger)" : confirmOwner ? "rgba(255, 149, 0, 0.12)" : "rgba(255, 59, 48, 0.08)",
+                          color: confirmDelete ? "#fff" : confirmOwner ? "#ea580c" : "var(--color-danger)",
                         }}
                       >
-                        {confirmDelete ? "Confirm delete" : "Delete"}
+                        {confirmDelete ? "Confirm delete" : confirmOwner ? "Yes, delete it" : "Delete"}
                       </button>
                       {event?.recurrence_group_id && onDeleteSeries && (
                         <button
@@ -868,17 +926,18 @@ function CreateEventModalContent({
                           style={{
                             borderRadius: "var(--radius-md)",
                             border: "1px solid rgba(255, 59, 48, 0.3)",
-                            background: confirmDelete ? "var(--color-danger)" : "rgba(255, 59, 48, 0.08)",
-                            color: confirmDelete ? "#fff" : "var(--color-danger)",
+                            background: confirmDelete ? "var(--color-danger)" : confirmOwner ? "rgba(255, 149, 0, 0.12)" : "rgba(255, 59, 48, 0.08)",
+                            color: confirmDelete ? "#fff" : confirmOwner ? "#ea580c" : "var(--color-danger)",
                           }}
                         >
-                          {confirmDelete ? "Confirm series" : "Delete series"}
+                          {confirmDelete ? "Confirm series" : confirmOwner ? "Yes, delete series" : "Delete series"}
                         </button>
                       )}
                     </div>
                   ) : (
                     <span />
                   )}
+
 
                   <div className="flex items-center gap-2">
                     <button

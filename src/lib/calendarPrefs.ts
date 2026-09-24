@@ -11,6 +11,7 @@ const KEYS = {
   defaultView: "wecalendar.pref.defaultView",
   showDeclinedEvents: "wecalendar.pref.showDeclinedEvents",
   showWorkspaceInSidebar: "wecalendar.pref.showWorkspaceInSidebar",
+  confirmDeleteOthers: "wecalendar.pref.confirmDeleteOthers",
 } as const;
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -21,6 +22,7 @@ const DEFAULTS = {
   defaultView: "month" as CalendarMode,
   showDeclinedEvents: false,
   showWorkspaceInSidebar: false,
+  confirmDeleteOthers: true,
 };
 
 // ─── Loader helpers ───────────────────────────────────────────────────────────
@@ -52,6 +54,8 @@ export interface CalendarPrefs {
   showDeclinedEvents: boolean;
   /** Keep shared-calendar controls visible in the main sidebar. */
   showWorkspaceInSidebar: boolean;
+  /** Require an extra confirmation step before deleting another user's event. */
+  confirmDeleteOthers: boolean;
 }
 
 export function useCalendarPrefs() {
@@ -66,6 +70,9 @@ export function useCalendarPrefs() {
   );
   const [showDeclinedEvents, _setShowDeclinedEvents] = useState<boolean>(() =>
     loadBool(KEYS.showDeclinedEvents, DEFAULTS.showDeclinedEvents),
+  );
+  const [confirmDeleteOthers, _setConfirmDeleteOthers] = useState<boolean>(() =>
+    loadBool(KEYS.confirmDeleteOthers, DEFAULTS.confirmDeleteOthers),
   );
   const [showWorkspaceInSidebar, _setShowWorkspaceInSidebar] = useState<boolean>(() =>
     loadBool(KEYS.showWorkspaceInSidebar, DEFAULTS.showWorkspaceInSidebar),
@@ -91,17 +98,23 @@ export function useCalendarPrefs() {
     try { localStorage.setItem(KEYS.showDeclinedEvents, String(v)); } catch { /* ignore */ }
   }, []);
 
+  const setConfirmDeleteOthers = useCallback((v: boolean) => {
+    _setConfirmDeleteOthers(v);
+    try { localStorage.setItem(KEYS.confirmDeleteOthers, String(v)); } catch { /* ignore */ }
+  }, []);
+
   const setShowWorkspaceInSidebar = useCallback((v: boolean) => {
     _setShowWorkspaceInSidebar(v);
     try { localStorage.setItem(KEYS.showWorkspaceInSidebar, String(v)); } catch { /* ignore */ }
   }, []);
 
   return {
-    prefs: { hidePastConflicts, weekStartsOnMonday, defaultView, showDeclinedEvents, showWorkspaceInSidebar },
+    prefs: { hidePastConflicts, weekStartsOnMonday, defaultView, showDeclinedEvents, showWorkspaceInSidebar, confirmDeleteOthers },
     setHidePastConflicts,
     setWeekStartsOnMonday,
     setDefaultView,
     setShowDeclinedEvents,
     setShowWorkspaceInSidebar,
+    setConfirmDeleteOthers,
   };
 }

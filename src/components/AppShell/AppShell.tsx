@@ -1083,6 +1083,8 @@ export function AppShell() {
         linkedNotes={eventLinkedNotes}
         onOpenNote={openNotesForEvent}
         onCreateNoteForEvent={handleCreateNoteForEvent}
+        currentUserId={user?.id}
+        confirmDeleteOthers={prefs.confirmDeleteOthers}
       />
     </div>
   );

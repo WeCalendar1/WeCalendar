@@ -350,7 +350,7 @@ const CALENDAR_VIEWS: { id: CalendarMode; label: string }[] = [
 ];
 
 function CalendarSettingsSection() {
-  const { prefs, setHidePastConflicts, setWeekStartsOnMonday, setDefaultView, setShowDeclinedEvents } =
+  const { prefs, setHidePastConflicts, setWeekStartsOnMonday, setDefaultView, setShowDeclinedEvents, setConfirmDeleteOthers } =
     useCalendarPrefs();
 
   return (
@@ -386,6 +386,13 @@ function CalendarSettingsSection() {
           description="Display events you've declined, rendered at reduced opacity"
           checked={prefs.showDeclinedEvents}
           onChange={setShowDeclinedEvents}
+        />
+        <SettingRow
+          id="pref-confirm-delete-others"
+          label="Confirm before deleting others' events"
+          description="Show an extra warning when you try to delete an event created by another person"
+          checked={prefs.confirmDeleteOthers}
+          onChange={setConfirmDeleteOthers}
         />
 
         {/* Default view — segmented control */}
