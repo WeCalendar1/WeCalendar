@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { EventCreatorBadge } from "@/components/EventCreatorBadge";
+import { EventCreatorAccent, EventCreatorBadge } from "@/components/EventCreatorBadge";
 
 import {
   DAY_HOURS,
@@ -176,7 +176,7 @@ export function TimeGrid({
                           <button
                             key={event.id}
                             type="button"
-                            className="pointer-events-auto absolute overflow-hidden px-1.5 py-1 text-left text-[11px] font-semibold text-white"
+                            className="pointer-events-auto absolute overflow-hidden pl-3.5 pr-1.5 py-1 text-left text-[11px] font-semibold text-white"
                             title={`${event.title} · ${formatEventTime(event.starts_at)}`}
                             onClick={() => onSelectEvent?.(event)}
                             style={{
@@ -193,6 +193,7 @@ export function TimeGrid({
                                 : "var(--shadow-sm)",
                             }}
                           >
+                            <EventCreatorAccent event={event} width="21px" />
                             <div className="flex items-center gap-1">
                               <EventCreatorBadge event={event} />
                               <span className="truncate">{event.title}</span>

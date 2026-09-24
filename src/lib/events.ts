@@ -2,7 +2,7 @@ import { isSameDay, startOfDay } from "@/lib/calendar";
 import type { Tables } from "@/types/database";
 
 export type CalendarEvent = Tables<"events"> & {
-  creator?: Pick<Tables<"profiles">, "display_name" | "theme_preferences"> | null;
+  creator?: Pick<Tables<"profiles">, "display_name" | "avatar_url" | "theme_preferences"> | null;
 };
 
 /** Single-day events that start on `day`, sorted by start time. */

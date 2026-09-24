@@ -555,6 +555,7 @@ export default function ProfilePage() {
   const supabase = useMemo(() => createClient(), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [pronouns, setPronouns] = useState("");
@@ -587,7 +588,7 @@ export default function ProfilePage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("display_name, theme_preferences")
+        .select("display_name, avatar_url, theme_preferences")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -596,6 +597,7 @@ export default function ProfilePage() {
       if (profile?.display_name) {
         setDisplayName(profile.display_name);
       }
+      setAvatarUrl(profile?.avatar_url ?? null);
 
       const theme = profile?.theme_preferences as
         | { favorite_color?: string; pronouns?: string; birthday?: string }
@@ -638,6 +640,7 @@ export default function ProfilePage() {
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setAvatarFile(file);
     const url = URL.createObjectURL(file);
     setAvatarUrl(url);
   }
@@ -673,8 +676,24 @@ export default function ProfilePage() {
       birthday,
     };
 
+    let nextAvatarUrl = avatarUrl;
+    if (avatarFile) {
+      const extension = avatarFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/avatar.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
+      if (uploadError) {
+        setProfileError(uploadError.message);
+        return;
+      }
+      const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(path);
+      nextAvatarUrl = `${publicUrl.publicUrl}?v=${Date.now()}`;
+    }
+
     const { error } = await supabase.from("profiles").update({
       display_name: displayName.trim() || null,
+      avatar_url: nextAvatarUrl,
       theme_preferences,
     }).eq("id", user.id).select("id").single();
 
@@ -684,6 +703,8 @@ export default function ProfilePage() {
     }
 
     if (!error) {
+      setAvatarUrl(nextAvatarUrl);
+      setAvatarFile(null);
       await supabase.auth.updateUser({
         data: { display_name: displayName.trim() || undefined },
       });
@@ -885,7 +906,7 @@ export default function ProfilePage() {
                 {avatarUrl && (
                   <button
                     type="button"
-                    onClick={() => setAvatarUrl(null)}
+                    onClick={() => { setAvatarUrl(null); setAvatarFile(null); }}
                     className="text-xs underline"
                     style={{ color: "#dc2626" }}
                   >

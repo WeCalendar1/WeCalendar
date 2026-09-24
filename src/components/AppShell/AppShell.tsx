@@ -33,6 +33,7 @@ import type { Tables, Json } from "@/types/database";
 import { useCalendarPrefs } from "@/lib/calendarPrefs";
 
 type Group = Tables<"groups">;
+type EventCreator = NonNullable<CalendarEvent["creator"]>;
 
 const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
 
@@ -114,9 +115,9 @@ export function AppShell() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data: eventData, error } = await supabase
         .from("events")
-        .select("*, creator:profiles!events_created_by_fkey(display_name, theme_preferences)")
+        .select("*")
         .eq("group_id", groupId)
         .order("starts_at", { ascending: true });
 
@@ -125,7 +126,40 @@ export function AppShell() {
         return;
       }
 
-      const nextEvents = data ?? [];
+      const creatorIds = [...new Set((eventData ?? []).map((event) => event.created_by))];
+      const creatorsById = new Map<string, EventCreator>();
+
+      if (creatorIds.length > 0) {
+        const { data: profilesWithAvatars, error: profileError } = await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url, theme_preferences")
+          .in("id", creatorIds);
+
+        if (profileError) {
+          // Existing deployments can load events before the avatar migration is applied.
+          const { data: profiles, error: fallbackError } = await supabase
+            .from("profiles")
+            .select("id, display_name, theme_preferences")
+            .in("id", creatorIds);
+
+          if (fallbackError) {
+            console.warn("loadEventCreators", fallbackError);
+          } else {
+            (profiles ?? []).forEach((profile) => {
+              creatorsById.set(profile.id, { ...profile, avatar_url: null });
+            });
+          }
+        } else {
+          (profilesWithAvatars ?? []).forEach((profile) => {
+            creatorsById.set(profile.id, profile);
+          });
+        }
+      }
+
+      const nextEvents: CalendarEvent[] = (eventData ?? []).map((event) => ({
+        ...event,
+        creator: creatorsById.get(event.created_by) ?? null,
+      }));
       setEvents(nextEvents);
       setSelectedEvent((current) => {
         if (!current) return current;

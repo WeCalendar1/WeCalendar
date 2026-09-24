@@ -1,5 +1,5 @@
 import React from "react";
-import { EventCreatorBadge } from "@/components/EventCreatorBadge";
+import { EventCreatorAccent, EventCreatorBadge } from "@/components/EventCreatorBadge";
 import type { CalendarDay } from "@/lib/calendar";
 import {
   eventsForDay,
@@ -233,7 +233,7 @@ export function CalendarCell({
               background:   color,
               color:        "#fff",
               borderRadius: barRadius(pos),
-              padding:      "0 5px",
+              padding:      showLabel && (pos === "solo" || pos === "start") ? "0 5px 0 10px" : "0 5px",
               fontSize:     "10px",
               fontWeight:   600,
               lineHeight:   1,
@@ -242,6 +242,9 @@ export function CalendarCell({
               boxShadow:    conflictBarShadow(warn, pos),
             }}
           >
+            {showLabel && (pos === "solo" || pos === "start") && (
+              <EventCreatorAccent event={event} width="17px" radius="4px" />
+            )}
             {showLabel && (
               <span className="flex min-w-0 items-center gap-1">
                 <EventCreatorBadge event={event} />
@@ -269,7 +272,7 @@ export function CalendarCell({
             <button
               key={event.id}
               type="button"
-              className="flex w-full items-center gap-1 px-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
+              className="relative flex w-full items-center gap-1 overflow-hidden pl-3.5 pr-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
               title={`${event.title} · ${formatEventTime(event.starts_at)}`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -284,6 +287,7 @@ export function CalendarCell({
                 opacity: 0.92,
               }}
             >
+              <EventCreatorAccent event={event} width="21px" />
               <EventCreatorBadge event={event} />
               <span className="truncate">{formatEventTime(event.starts_at)} {event.title}</span>
             </button>
