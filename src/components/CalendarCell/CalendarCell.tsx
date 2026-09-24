@@ -10,7 +10,8 @@ import {
   type CalendarEvent,
   type SpanPosition,
 } from "@/lib/events";
-import { colorForEvent, type EventTag, type Tag } from "@/lib/tags";
+import { colorsForEvent, type EventTag, type Tag } from "@/lib/tags";
+import { EventTagStripes } from "@/components/EventTagStripes";
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 /** Top padding of the cell (matches `p-2` = 8px). */
@@ -209,11 +210,21 @@ export function CalendarCell({
       {visibleBars.map((event) => {
         const slot  = multiDaySlots.get(event.id) ?? 0;
         const pos   = getSeriesSpanPosition(event, events, day.date, dayOfWeek);
-        const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+        const tagColors = colorsForEvent(event.id, eventTags, tags);
+        const color = tagColors[0] ?? "var(--accent)";
+        const secondaryColors = tagColors.slice(1, 5);
         const { left, right } = barEdges(pos);
         const showLabel = pos === "solo" || pos === "start";
         const warn =
           showConflictHighlights && Boolean(conflictIds?.has(event.id));
+
+        const baseLeftPad = 10;
+        const leftPad =
+          showLabel && (pos === "solo" || pos === "start")
+            ? secondaryColors.length > 0
+              ? Math.max(baseLeftPad, 8 + secondaryColors.length * 4)
+              : baseLeftPad
+            : 5;
 
         return (
           <button
@@ -233,7 +244,7 @@ export function CalendarCell({
               background:   color,
               color:        "#fff",
               borderRadius: barRadius(pos),
-              padding:      showLabel && (pos === "solo" || pos === "start") ? "0 5px 0 10px" : "0 5px",
+              padding:      showLabel && (pos === "solo" || pos === "start") ? `0 5px 0 ${leftPad}px` : "0 5px",
               fontSize:     "10px",
               fontWeight:   600,
               lineHeight:   1,
@@ -243,7 +254,10 @@ export function CalendarCell({
             }}
           >
             {showLabel && (pos === "solo" || pos === "start") && (
-              <EventCreatorAccent event={event} width="17px" radius="4px" />
+              <>
+                <EventTagStripes colors={tagColors} />
+                <EventCreatorAccent event={event} width={`${leftPad + 7}px`} radius="4px" />
+              </>
             )}
             {showLabel && (
               <span className="flex min-w-0 items-center gap-1">
@@ -265,14 +279,18 @@ export function CalendarCell({
 
       <div className="space-y-1">
         {visibleSingle.map((event) => {
-          const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+          const tagColors = colorsForEvent(event.id, eventTags, tags);
+          const color = tagColors[0] ?? "var(--accent)";
+          const secondaryColors = tagColors.slice(1, 5);
           const warn =
             showConflictHighlights && Boolean(conflictIds?.has(event.id));
+          const leftPad = secondaryColors.length > 0 ? Math.max(14, 10 + secondaryColors.length * 4) : 14;
+          const creatorAccentWidth = `${leftPad + 7}px`;
           return (
             <button
               key={event.id}
               type="button"
-              className="relative flex w-full items-center gap-1 overflow-hidden pl-3.5 pr-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
+              className="relative flex w-full items-center gap-1 overflow-hidden pr-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
               title={`${event.title} · ${formatEventTime(event.starts_at)}`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -282,12 +300,14 @@ export function CalendarCell({
                 borderRadius: "var(--radius-sm)",
                 background:   color,
                 color:        "#fff",
+                paddingLeft:  `${leftPad}px`,
                 boxShadow:    conflictOutline(warn),
                 letterSpacing: "-0.01em",
                 opacity: 0.92,
               }}
             >
-              <EventCreatorAccent event={event} width="21px" />
+              <EventTagStripes colors={tagColors} />
+              <EventCreatorAccent event={event} width={creatorAccentWidth} />
               <EventCreatorBadge event={event} />
               <span className="truncate">{formatEventTime(event.starts_at)} {event.title}</span>
             </button>

@@ -18,7 +18,8 @@ import {
   type CalendarEvent,
 } from "@/lib/events";
 
-import { colorForEvent, type EventTag, type Tag } from "@/lib/tags";
+import { colorsForEvent, type EventTag, type Tag } from "@/lib/tags";
+import { EventTagStripes } from "@/components/EventTagStripes";
 
 export const HOUR_HEIGHT_PX = 52;
 
@@ -163,7 +164,9 @@ export function TimeGrid({
                     <div key={day.date.toISOString()} className="relative">
                       {layouts.map(({ event, column, totalColumns }) => {
                         const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
-                        const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+                        const tagColors = colorsForEvent(event.id, eventTags, tags);
+                        const color = tagColors[0] ?? "var(--accent)";
+                        const secondaryColors = tagColors.slice(1, 5);
                         const warn =
                           showConflictHighlights && Boolean(conflictIds?.has(event.id));
 
@@ -171,12 +174,14 @@ export function TimeGrid({
                         const GAP = 2; // px gap between sub-columns
                         const widthPct = 100 / totalColumns;
                         const leftPct = column * widthPct;
+                        const leftPad = secondaryColors.length > 0 ? Math.max(14, 10 + secondaryColors.length * 4) : 14;
+                        const creatorAccentWidth = `${leftPad + 7}px`;
 
                         return (
                           <button
                             key={event.id}
                             type="button"
-                            className="pointer-events-auto absolute overflow-hidden pl-3.5 pr-1.5 py-1 text-left text-[11px] font-semibold text-white"
+                            className="pointer-events-auto absolute overflow-hidden pr-1.5 py-1 text-left text-[11px] font-semibold text-white"
                             title={`${event.title} · ${formatEventTime(event.starts_at)}`}
                             onClick={() => onSelectEvent?.(event)}
                             style={{
@@ -188,12 +193,14 @@ export function TimeGrid({
                                 : `calc(${100 - leftPct - widthPct}% + ${GAP}px)`,
                               borderRadius: "var(--radius-sm)",
                               background: color,
+                              paddingLeft: `${leftPad}px`,
                               boxShadow: warn
                                 ? "0 0 0 2px #dc2626, var(--shadow-sm)"
                                 : "var(--shadow-sm)",
                             }}
                           >
-                            <EventCreatorAccent event={event} width="21px" />
+                            <EventTagStripes colors={tagColors} />
+                            <EventCreatorAccent event={event} width={creatorAccentWidth} />
                             <div className="flex items-center gap-1">
                               <EventCreatorBadge event={event} />
                               <span className="truncate">{event.title}</span>
