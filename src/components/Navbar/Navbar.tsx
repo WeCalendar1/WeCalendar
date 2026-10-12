@@ -182,8 +182,9 @@ function SnapshotButton({ label }: { label: string }) {
       const target = document.querySelector<HTMLElement>("[data-snapshot-target]");
       if (!target) { setState("idle"); return; }
 
-      // Lazy-load html2canvas to keep initial bundle light
-      const { default: html2canvas } = await import("html2canvas");
+      // Lazy-load html2canvas-pro to keep initial bundle light.
+      // (The -pro fork understands oklch()/color-mix(), which Tailwind v4 emits.)
+      const { default: html2canvas } = await import("html2canvas-pro");
       const canvas = await html2canvas(target, {
         useCORS: true,
         scale: window.devicePixelRatio ?? 2,
@@ -202,7 +203,8 @@ function SnapshotButton({ label }: { label: string }) {
 
       setState("done");
       setTimeout(() => setState("idle"), 2000);
-    } catch {
+    } catch (err) {
+      console.error("Calendar snapshot failed:", err);
       setState("idle");
     }
   }, [state, label]);
