@@ -1,168 +1,62 @@
 {
   "communities": {
     "0": [
-      "src_components_appshell_appshell",
-      "src_components_appshell_appshell_eventcreator",
-      "src_components_appshell_appshell_group",
-      "src_components_calendar_calendar",
-      "src_components_calendar_calendar_calendar",
-      "src_components_calendar_calendar_calendarprops",
-      "src_components_calendar_index",
-      "src_components_calendarcell_calendarcell",
-      "src_components_calendarcell_calendarcell_baredges",
-      "src_components_calendarcell_calendarcell_barradius",
-      "src_components_calendarcell_calendarcell_calendarcell",
-      "src_components_calendarcell_calendarcell_calendarcellprops",
-      "src_components_calendarcell_calendarcell_conflictbarshadow",
-      "src_components_calendarcell_calendarcell_conflictoutline",
-      "src_components_calendarcell_index",
-      "src_components_calendargrid_calendargrid",
-      "src_components_calendargrid_calendargrid_calendargrid",
-      "src_components_calendargrid_calendargrid_calendargridprops",
-      "src_components_calendargrid_calendargrid_computemultidayslots",
-      "src_components_calendargrid_calendargrid_weekdays",
-      "src_components_calendargrid_index",
-      "src_components_dayview_dayview",
-      "src_components_dayview_dayview_dayview",
-      "src_components_dayview_dayview_dayviewprops",
-      "src_components_dayview_index",
-      "src_components_eventcreatorbadge",
-      "src_components_eventcreatorbadge_eventcreatoraccent",
-      "src_components_eventcreatorbadge_eventcreatorbadge",
-      "src_components_eventcreatorbadge_geteventcreatorcolor",
-      "src_components_eventtagstripes",
-      "src_components_eventtagstripes_eventtagstripes",
-      "src_components_eventtagstripes_eventtagstripesprops",
-      "src_components_eventviewerpanel_eventviewerpanel",
-      "src_components_eventviewerpanel_eventviewerpanel_bucket_meta",
-      "src_components_eventviewerpanel_eventviewerpanel_bucket_order",
-      "src_components_eventviewerpanel_eventviewerpanel_bucketsection",
-      "src_components_eventviewerpanel_eventviewerpanel_eventrow",
-      "src_components_eventviewerpanel_eventviewerpanel_eventviewerpanel",
-      "src_components_eventviewerpanel_eventviewerpanel_eventviewerpanelprops",
-      "src_components_eventviewerpanel_eventviewerpanel_timebucket",
-      "src_components_eventviewerpanel_index",
-      "src_components_notes_notesapp_notemetabar",
-      "src_components_notes_noteslinkeventdialog",
-      "src_components_notes_noteslinkeventdialog_noteslinkeventdialogcontent",
-      "src_components_notes_noteslinkeventdialog_noteslinkeventdialogprops",
-      "src_components_timegrid_index",
-      "src_components_timegrid_timegrid",
-      "src_components_timegrid_timegrid_dayascalendarday",
-      "src_components_timegrid_timegrid_hour_height_px",
-      "src_components_timegrid_timegrid_timegrid",
-      "src_components_timegrid_timegrid_timegridprops",
-      "src_components_weekview_index",
-      "src_components_weekview_weekview",
-      "src_components_weekview_weekview_weekview",
-      "src_components_weekview_weekview_weekviewprops",
-      "src_lib_auth",
-      "src_lib_auth_getinitials",
-      "src_lib_calendar_calendarday",
-      "src_lib_calendar_formathourlabel",
-      "src_lib_calendar_getminutessincemidnight",
+      "src_app_page",
+      "src_app_page_home",
+      "src_components_appshell_appshell_appshell",
+      "src_components_appshell_index",
+      "src_components_createeventmodal_createeventmodal",
+      "src_components_createeventmodal_createeventmodal_createeventmodal",
+      "src_components_createeventmodal_createeventmodal_createeventmodalcontent",
+      "src_components_createeventmodal_createeventmodal_createeventmodalprops",
+      "src_components_createeventmodal_createeventmodal_daypicker",
+      "src_components_createeventmodal_createeventmodal_daypickerprops",
+      "src_components_createeventmodal_createeventmodal_eventdraft",
+      "src_components_createeventmodal_createeventmodal_groupconsecutivedates",
+      "src_components_createeventmodal_createeventmodal_picker_days",
+      "src_components_createeventmodal_createeventmodal_todateinput",
+      "src_components_createeventmodal_createeventmodal_totimeinput",
+      "src_components_createeventmodal_index",
+      "src_components_eventviewerpanel_eventviewerpanel_bucketevents",
+      "src_components_yearview_index",
+      "src_components_yearview_yearview",
+      "src_components_yearview_yearview_minimonth",
+      "src_components_yearview_yearview_weekdays",
+      "src_components_yearview_yearview_yearview",
+      "src_components_yearview_yearview_yearviewprops",
+      "src_lib_calendar",
+      "src_lib_calendar_adddays",
+      "src_lib_calendar_addmonths",
+      "src_lib_calendar_addyears",
+      "src_lib_calendar_calendarmode",
+      "src_lib_calendar_day_hours",
+      "src_lib_calendar_formatdaylabel",
+      "src_lib_calendar_formatmonthyear",
+      "src_lib_calendar_formatviewlabel",
+      "src_lib_calendar_formatweeklabel",
+      "src_lib_calendar_formatyearlabel",
+      "src_lib_calendar_getmonthgrid",
+      "src_lib_calendar_getweekdays",
+      "src_lib_calendar_isdateinview",
+      "src_lib_calendar_issameday",
+      "src_lib_calendar_issamemonth",
+      "src_lib_calendar_shiftviewdate",
       "src_lib_calendar_startofday",
-      "src_lib_eventpicker",
-      "src_lib_eventpicker_eventpickerfilters",
-      "src_lib_eventpicker_eventpickergroup",
-      "src_lib_eventpicker_filterandgroupeventsforpicker",
-      "src_lib_eventpicker_filtereventsforpicker",
-      "src_lib_eventpicker_formateventpickertimerange",
-      "src_lib_eventpicker_formatlinkedeventlabel",
-      "src_lib_eventpicker_formatpickerdatelabel",
-      "src_lib_eventpicker_groupeventsforpicker",
-      "src_lib_eventpicker_localdatekey",
-      "src_lib_eventpicker_sorteventsforpicker",
-      "src_lib_eventpicker_test",
-      "src_lib_eventpicker_test_makeevent",
-      "src_lib_events",
-      "src_lib_events_calendarevent",
-      "src_lib_events_eventlayout",
-      "src_lib_events_eventposition",
-      "src_lib_events_eventsforday",
-      "src_lib_events_eventsspanningday",
-      "src_lib_events_formateventtime",
-      "src_lib_events_getseriesspanposition",
-      "src_lib_events_getspanposition",
-      "src_lib_events_ismultidayevent",
-      "src_lib_events_layoutoverlappingevents",
-      "src_lib_events_spanposition",
-      "src_lib_events_test",
-      "src_lib_events_test_makeevent",
-      "src_lib_tags",
-      "src_lib_tags_colorforevent",
-      "src_lib_tags_colorsforevent",
-      "src_lib_tags_eventtag",
-      "src_lib_tags_tag",
-      "src_lib_tags_tag_palette",
-      "src_lib_tags_tagidsforevent",
-      "src_lib_tags_tagsforevent",
-      "src_lib_tags_test",
-      "src_lib_tags_test_eventtags",
-      "src_lib_tags_test_taga",
-      "src_lib_tags_test_tagb",
-      "src_types_database_tables"
+      "src_lib_calendar_startofmonth",
+      "src_lib_calendar_startofweek",
+      "src_lib_calendar_test",
+      "src_lib_scheduling",
+      "src_lib_scheduling_conflictfingerprint",
+      "src_lib_scheduling_conflictgroup",
+      "src_lib_scheduling_conflictingeventgroups",
+      "src_lib_scheduling_conflictingeventids",
+      "src_lib_scheduling_draftoverlapsexisting",
+      "src_lib_scheduling_isschedulingconflicterror",
+      "src_lib_scheduling_rangesoverlap",
+      "src_lib_scheduling_scheduling_conflict_message",
+      "src_lib_scheduling_test"
     ],
     "1": [
-      "src_app_auth_callback_route",
-      "src_app_auth_callback_route_get",
-      "src_app_login_page",
-      "src_app_login_page_loginpage",
-      "src_app_profile_page",
-      "src_app_profile_page_calendar_views",
-      "src_app_profile_page_calendarsettingssection",
-      "src_app_profile_page_dangerbutton",
-      "src_app_profile_page_fieldlabel",
-      "src_app_profile_page_group",
-      "src_app_profile_page_leavegrouprow",
-      "src_app_profile_page_profilepage",
-      "src_app_profile_page_sectioncard",
-      "src_app_profile_page_settingrow",
-      "src_app_profile_page_textinput",
-      "src_components_auth_index",
-      "src_components_auth_loginform",
-      "src_components_auth_loginform_formatautherror",
-      "src_components_auth_loginform_loginform",
-      "src_components_auth_loginform_mode",
-      "src_components_navbar_index",
-      "src_components_navbar_navbar",
-      "src_components_navbar_navbar_apple_accents",
-      "src_components_navbar_navbar_loadrecentcolors",
-      "src_components_navbar_navbar_modes",
-      "src_components_navbar_navbar_navbar",
-      "src_components_navbar_navbar_navbarprops",
-      "src_components_navbar_navbar_preset_colors",
-      "src_components_navbar_navbar_profilemenu",
-      "src_components_navbar_navbar_screens",
-      "src_components_navbar_navbar_screenswitcher",
-      "src_components_navbar_navbar_snapshotbutton",
-      "src_components_navbar_navbar_snapshotstate",
-      "src_components_navbar_navbar_themetoggle",
-      "src_components_navbar_navbar_viewmodepicker",
-      "src_components_sharedworkspace_index",
-      "src_components_sharedworkspace_sharedworkspace",
-      "src_components_sharedworkspace_sharedworkspace_group",
-      "src_components_sharedworkspace_sharedworkspace_sharedworkspace",
-      "src_components_sharedworkspace_sharedworkspace_sharedworkspaceprops",
-      "src_lib_calendar_calendarmode",
-      "src_lib_calendar_screenview",
-      "src_lib_calendarprefs",
-      "src_lib_calendarprefs_calendarprefs",
-      "src_lib_calendarprefs_defaults",
-      "src_lib_calendarprefs_keys",
-      "src_lib_calendarprefs_loadbool",
-      "src_lib_calendarprefs_loadstr",
-      "src_lib_calendarprefs_usecalendarprefs",
-      "src_lib_supabase_client",
-      "src_lib_supabase_client_createclient",
-      "src_lib_supabase_server",
-      "src_lib_supabase_server_createclient",
-      "src_types_database",
-      "src_types_database_database",
-      "src_types_database_tablesinsert",
-      "src_types_database_tablesupdate"
-    ],
-    "2": [
       "ui_context",
       "ui_context_10_shared_lists_tasks",
       "ui_context_11_calendar_interactions",
@@ -211,12 +105,12 @@
       "ui_context_typography",
       "ui_context_wecalendar_full_project_context"
     ],
-    "3": [
+    "2": [
       "framer_motion",
       "next",
       "package_dependencies",
       "package_dependencies_framer_motion",
-      "package_dependencies_html2canvas",
+      "package_dependencies_html2canvas_pro",
       "package_dependencies_next",
       "package_dependencies_react",
       "package_dependencies_react_dom",
@@ -237,7 +131,7 @@
       "package_dependencies_tiptap_pm",
       "package_dependencies_tiptap_react",
       "package_dependencies_tiptap_starter_kit",
-      "package_json_html2canvas",
+      "package_json_html2canvas_pro",
       "react",
       "react_dom",
       "supabase_ssr",
@@ -257,45 +151,97 @@
       "tiptap_react",
       "tiptap_starter_kit"
     ],
+    "3": [
+      "src_app_login_page",
+      "src_app_login_page_loginpage",
+      "src_app_profile_page",
+      "src_app_profile_page_calendar_views",
+      "src_app_profile_page_calendarsettingssection",
+      "src_app_profile_page_dangerbutton",
+      "src_app_profile_page_fieldlabel",
+      "src_app_profile_page_group",
+      "src_app_profile_page_leavegrouprow",
+      "src_app_profile_page_profilepage",
+      "src_app_profile_page_sectioncard",
+      "src_app_profile_page_settingrow",
+      "src_app_profile_page_textinput",
+      "src_components_auth_index",
+      "src_components_auth_loginform",
+      "src_components_auth_loginform_formatautherror",
+      "src_components_auth_loginform_loginform",
+      "src_components_auth_loginform_mode",
+      "src_components_navbar_index",
+      "src_components_navbar_navbar",
+      "src_components_navbar_navbar_apple_accents",
+      "src_components_navbar_navbar_loadrecentcolors",
+      "src_components_navbar_navbar_modes",
+      "src_components_navbar_navbar_navbar",
+      "src_components_navbar_navbar_navbarprops",
+      "src_components_navbar_navbar_preset_colors",
+      "src_components_navbar_navbar_profilemenu",
+      "src_components_navbar_navbar_screens",
+      "src_components_navbar_navbar_screenswitcher",
+      "src_components_navbar_navbar_snapshotbutton",
+      "src_components_navbar_navbar_snapshotstate",
+      "src_components_navbar_navbar_themetoggle",
+      "src_components_navbar_navbar_viewmodepicker",
+      "src_lib_calendar_screenview",
+      "src_lib_calendarprefs",
+      "src_lib_calendarprefs_calendarprefs",
+      "src_lib_calendarprefs_defaults",
+      "src_lib_calendarprefs_keys",
+      "src_lib_calendarprefs_loadbool",
+      "src_lib_calendarprefs_loadstr",
+      "src_lib_calendarprefs_subscribeprefs",
+      "src_lib_calendarprefs_usecalendarprefs",
+      "src_lib_calendarprefs_usecreatorcoloraccent",
+      "src_lib_supabase_client_createclient"
+    ],
     "4": [
-      "src_components_createeventmodal_createeventmodal",
-      "src_components_createeventmodal_createeventmodal_createeventmodal",
-      "src_components_createeventmodal_createeventmodal_createeventmodalcontent",
-      "src_components_createeventmodal_createeventmodal_createeventmodalprops",
-      "src_components_createeventmodal_createeventmodal_daypicker",
-      "src_components_createeventmodal_createeventmodal_daypickerprops",
-      "src_components_createeventmodal_createeventmodal_eventdraft",
-      "src_components_createeventmodal_createeventmodal_groupconsecutivedates",
-      "src_components_createeventmodal_createeventmodal_picker_days",
-      "src_components_createeventmodal_createeventmodal_todateinput",
-      "src_components_createeventmodal_createeventmodal_totimeinput",
-      "src_components_createeventmodal_index",
-      "src_components_eventviewerpanel_eventviewerpanel_bucketevents",
-      "src_components_yearview_index",
-      "src_components_yearview_yearview",
-      "src_components_yearview_yearview_minimonth",
-      "src_components_yearview_yearview_weekdays",
-      "src_components_yearview_yearview_yearview",
-      "src_components_yearview_yearview_yearviewprops",
-      "src_lib_calendar",
-      "src_lib_calendar_adddays",
-      "src_lib_calendar_addmonths",
-      "src_lib_calendar_addyears",
-      "src_lib_calendar_day_hours",
-      "src_lib_calendar_formatdaylabel",
-      "src_lib_calendar_formatmonthyear",
-      "src_lib_calendar_formatviewlabel",
-      "src_lib_calendar_formatweeklabel",
-      "src_lib_calendar_formatyearlabel",
-      "src_lib_calendar_getmonthgrid",
-      "src_lib_calendar_getweekdays",
-      "src_lib_calendar_isdateinview",
-      "src_lib_calendar_issameday",
-      "src_lib_calendar_issamemonth",
-      "src_lib_calendar_shiftviewdate",
-      "src_lib_calendar_startofmonth",
-      "src_lib_calendar_startofweek",
-      "src_lib_calendar_test"
+      "src_components_calendarcell_calendarcell",
+      "src_components_calendarcell_calendarcell_baredges",
+      "src_components_calendarcell_calendarcell_barradius",
+      "src_components_calendarcell_calendarcell_calendarcell",
+      "src_components_calendarcell_calendarcell_calendarcellprops",
+      "src_components_calendarcell_calendarcell_conflictbarshadow",
+      "src_components_calendarcell_calendarcell_conflictoutline",
+      "src_components_calendarcell_index",
+      "src_components_calendargrid_calendargrid",
+      "src_components_calendargrid_calendargrid_calendargrid",
+      "src_components_calendargrid_calendargrid_calendargridprops",
+      "src_components_calendargrid_calendargrid_computemultidayslots",
+      "src_components_calendargrid_calendargrid_weekdays",
+      "src_components_calendargrid_index",
+      "src_components_eventcreatorbadge",
+      "src_components_eventcreatorbadge_eventcreatorbadge",
+      "src_components_eventcreatorbadge_geteventcreatorcolor",
+      "src_components_eventtagstripes",
+      "src_components_eventtagstripes_eventtagstripes",
+      "src_components_eventtagstripes_eventtagstripesprops",
+      "src_components_timegrid_index",
+      "src_components_timegrid_timegrid",
+      "src_components_timegrid_timegrid_dayascalendarday",
+      "src_components_timegrid_timegrid_hour_height_px",
+      "src_components_timegrid_timegrid_timegrid",
+      "src_components_timegrid_timegrid_timegridprops",
+      "src_lib_calendar_calendarday",
+      "src_lib_calendar_formathourlabel",
+      "src_lib_calendar_getminutessincemidnight",
+      "src_lib_events",
+      "src_lib_events_calendarevent",
+      "src_lib_events_eventlayout",
+      "src_lib_events_eventposition",
+      "src_lib_events_eventsforday",
+      "src_lib_events_eventsspanningday",
+      "src_lib_events_formateventtime",
+      "src_lib_events_getseriesspanposition",
+      "src_lib_events_getspanposition",
+      "src_lib_events_ismultidayevent",
+      "src_lib_events_layoutoverlappingevents",
+      "src_lib_events_spanposition",
+      "src_lib_events_test",
+      "src_lib_events_test_makeevent",
+      "src_lib_tags_colorsforevent"
     ],
     "5": [
       "agents_skills_animate_expo_recipes",
@@ -495,32 +441,32 @@
       "readme_wecalendar"
     ],
     "11": [
-      "src_app_page",
-      "src_app_page_home",
-      "src_components_appshell_appshell_appshell",
-      "src_components_appshell_index",
-      "src_components_rightpanel_index",
-      "src_components_rightpanel_rightpanel",
-      "src_components_rightpanel_rightpanel_rightpanel",
-      "src_components_rightpanel_rightpanel_rightpanelprops",
-      "src_lib_scheduling",
-      "src_lib_scheduling_conflictfingerprint",
-      "src_lib_scheduling_conflictgroup",
-      "src_lib_scheduling_conflictingeventgroups",
-      "src_lib_scheduling_conflictingeventids",
-      "src_lib_scheduling_draftoverlapsexisting",
-      "src_lib_scheduling_isschedulingconflicterror",
-      "src_lib_scheduling_rangesoverlap",
-      "src_lib_scheduling_scheduling_conflict_message",
-      "src_lib_scheduling_test",
-      "src_lib_theme",
-      "src_lib_theme_applytheme",
-      "src_lib_theme_default_accent",
-      "src_lib_theme_getsystemtheme",
-      "src_lib_theme_loadaccent",
-      "src_lib_theme_loadtheme",
-      "src_lib_theme_thememode",
-      "src_lib_theme_usetheme"
+      "src_components_sidebar_index",
+      "src_components_sidebar_minicalendar",
+      "src_components_sidebar_minicalendar_minicalendar",
+      "src_components_sidebar_minicalendar_minicalendarprops",
+      "src_components_sidebar_minicalendar_weekdays",
+      "src_components_sidebar_sidebar",
+      "src_components_sidebar_sidebar_chevronicon",
+      "src_components_sidebar_sidebar_droptargetstyle",
+      "src_components_sidebar_sidebar_folderdialogstate",
+      "src_components_sidebar_sidebar_folderrow",
+      "src_components_sidebar_sidebar_foldersection",
+      "src_components_sidebar_sidebar_group",
+      "src_components_sidebar_sidebar_isfilteractive",
+      "src_components_sidebar_sidebar_navitem",
+      "src_components_sidebar_sidebar_notessidebarcontent",
+      "src_components_sidebar_sidebar_sidebar",
+      "src_components_sidebar_sidebar_sidebarprops",
+      "src_components_tagcreatorinline_index",
+      "src_components_tagcreatorinline_tagcreatorinline",
+      "src_components_tagcreatorinline_tagcreatorinline_tagcreatorinline",
+      "src_components_tagcreatorinline_tagcreatorinline_tagcreatorinlineprops",
+      "src_lib_notes_note_drag_ids_mime",
+      "src_lib_notes_note_drag_mime",
+      "src_lib_notes_note_drop_remove",
+      "src_lib_notes_notesfilter",
+      "src_lib_notes_readnotedragids"
     ],
     "12": [
       "agents_skills_improve_animations_audit",
@@ -549,32 +495,6 @@
       "agents_skills_improve_animations_skill_workflow"
     ],
     "13": [
-      "src_components_sidebar_index",
-      "src_components_sidebar_minicalendar",
-      "src_components_sidebar_minicalendar_minicalendar",
-      "src_components_sidebar_minicalendar_minicalendarprops",
-      "src_components_sidebar_minicalendar_weekdays",
-      "src_components_sidebar_sidebar",
-      "src_components_sidebar_sidebar_chevronicon",
-      "src_components_sidebar_sidebar_droptargetstyle",
-      "src_components_sidebar_sidebar_folderdialogstate",
-      "src_components_sidebar_sidebar_folderrow",
-      "src_components_sidebar_sidebar_foldersection",
-      "src_components_sidebar_sidebar_group",
-      "src_components_sidebar_sidebar_isfilteractive",
-      "src_components_sidebar_sidebar_navitem",
-      "src_components_sidebar_sidebar_notessidebarcontent",
-      "src_components_sidebar_sidebar_sidebar",
-      "src_components_sidebar_sidebar_sidebarprops",
-      "src_components_tagcreatorinline_index",
-      "src_components_tagcreatorinline_tagcreatorinline",
-      "src_components_tagcreatorinline_tagcreatorinline_tagcreatorinline",
-      "src_components_tagcreatorinline_tagcreatorinline_tagcreatorinlineprops",
-      "src_lib_notes_note_drag_mime",
-      "src_lib_notes_note_drop_remove",
-      "src_lib_notes_readnotedragids"
-    ],
-    "14": [
       "supabase_migrations_20260730120000_init_schema",
       "supabase_migrations_20260730120000_init_schema_events_set_updated_at",
       "supabase_migrations_20260730120000_init_schema_groups_set_updated_at",
@@ -600,7 +520,7 @@
       "supabase_migrations_20260730120000_init_schema_sql_public_handle_new_user",
       "supabase_migrations_20260730120000_init_schema_sql_public_set_updated_at"
     ],
-    "15": [
+    "14": [
       "supabase_migrations_20260806140000_bootstrap_schema",
       "supabase_migrations_20260806140000_bootstrap_schema_events_set_updated_at",
       "supabase_migrations_20260806140000_bootstrap_schema_groups_set_updated_at",
@@ -626,7 +546,7 @@
       "supabase_migrations_20260806140000_bootstrap_schema_sql_public_handle_new_user",
       "supabase_migrations_20260806140000_bootstrap_schema_sql_public_set_updated_at"
     ],
-    "16": [
+    "15": [
       "agents_skills_write_swift_skill",
       "agents_skills_write_swift_skill_10_arc_and_object_lifetime",
       "agents_skills_write_swift_skill_11_testing_swift_testing_by_default",
@@ -650,31 +570,7 @@
       "agents_skills_write_swift_skill_the_rule_that_changed",
       "agents_skills_write_swift_skill_write_swift"
     ],
-    "17": [
-      "src_components_notes_noteslistpanel",
-      "src_components_notes_noteslistpanel_badge",
-      "src_components_notes_noteslistpanel_noteslistpanel",
-      "src_components_notes_noteslistpanel_noteslistpanelprops",
-      "src_lib_notes",
-      "src_lib_notes_bulkmovefolderresult",
-      "src_lib_notes_filterlabel",
-      "src_lib_notes_folderbadgestyle",
-      "src_lib_notes_folderfornote",
-      "src_lib_notes_foldernamefornote",
-      "src_lib_notes_formatnotedate",
-      "src_lib_notes_note",
-      "src_lib_notes_notecharactercount",
-      "src_lib_notes_noteidsfordrag",
-      "src_lib_notes_notepreviewtext",
-      "src_lib_notes_notes_sort_options",
-      "src_lib_notes_notesfilter",
-      "src_lib_notes_noteshowsprivatelock",
-      "src_lib_notes_notessort",
-      "src_lib_notes_notevisibility",
-      "src_lib_notes_walknodes",
-      "src_lib_notes_writenotedragdata"
-    ],
-    "18": [
+    "16": [
       "agents_skills_apple_design_skill",
       "agents_skills_apple_design_skill_10_gesture_design_details_the_feel_checklist",
       "agents_skills_apple_design_skill_11_frame_level_smoothness",
@@ -697,7 +593,7 @@
       "agents_skills_apple_design_skill_quick_reference",
       "agents_skills_apple_design_skill_the_core_idea"
     ],
-    "19": [
+    "17": [
       "agents_skills_prototype_picker",
       "agents_skills_prototype_picker_behavior_contract",
       "agents_skills_prototype_picker_markup",
@@ -719,7 +615,28 @@
       "agents_skills_prototype_skill_tone",
       "agents_skills_prototype_skill_workflow"
     ],
-    "20": [
+    "18": [
+      "src_components_notes_noteslistpanel",
+      "src_components_notes_noteslistpanel_badge",
+      "src_components_notes_noteslistpanel_noteslistpanel",
+      "src_components_notes_noteslistpanel_noteslistpanelprops",
+      "src_lib_notes",
+      "src_lib_notes_bulkmovefolderresult",
+      "src_lib_notes_default_notes_sort",
+      "src_lib_notes_filterlabel",
+      "src_lib_notes_folderbadgestyle",
+      "src_lib_notes_folderfornote",
+      "src_lib_notes_formatnotedate",
+      "src_lib_notes_noteidsfordrag",
+      "src_lib_notes_notepreviewtext",
+      "src_lib_notes_notes_sort_options",
+      "src_lib_notes_noteshowsprivatelock",
+      "src_lib_notes_notetitle",
+      "src_lib_notes_notevisibility",
+      "src_lib_notes_walknodes",
+      "src_lib_notes_writenotedragdata"
+    ],
+    "19": [
       "agents_skills_animation_vocabulary_skill",
       "agents_skills_animation_vocabulary_skill_animation_vocabulary",
       "agents_skills_animation_vocabulary_skill_easing_how_speed_changes_over_an_animation",
@@ -739,6 +656,26 @@
       "agents_skills_animation_vocabulary_skill_spring_animations_physics_based_motion_as_an_alternative_to_fixed_duration_easing",
       "agents_skills_animation_vocabulary_skill_transitions_between_states_connecting_one_state_view_or_element_to_another"
     ],
+    "20": [
+      "src_components_eventviewerpanel_eventviewerpanel",
+      "src_components_eventviewerpanel_eventviewerpanel_bucket_meta",
+      "src_components_eventviewerpanel_eventviewerpanel_bucket_order",
+      "src_components_eventviewerpanel_eventviewerpanel_bucketsection",
+      "src_components_eventviewerpanel_eventviewerpanel_eventrow",
+      "src_components_eventviewerpanel_eventviewerpanel_eventviewerpanelprops",
+      "src_components_eventviewerpanel_eventviewerpanel_timebucket",
+      "src_lib_tags",
+      "src_lib_tags_colorforevent",
+      "src_lib_tags_eventtag",
+      "src_lib_tags_tag",
+      "src_lib_tags_tag_palette",
+      "src_lib_tags_tagidsforevent",
+      "src_lib_tags_tagsforevent",
+      "src_lib_tags_test",
+      "src_lib_tags_test_eventtags",
+      "src_lib_tags_test_taga",
+      "src_lib_tags_test_tagb"
+    ],
     "21": [
       "src_components_notes_index",
       "src_components_notes_notesapp",
@@ -753,12 +690,32 @@
       "src_components_notes_notesfolderdialog_notesfolderdialog",
       "src_components_notes_noteslinkeventdialog_noteslinkeventdialog",
       "src_lib_notes_canmovenotetofolder",
-      "src_lib_notes_default_notes_sort",
       "src_lib_notes_filternotes",
+      "src_lib_notes_notecharactercount",
+      "src_lib_notes_notessort",
       "src_lib_notes_searchnotes",
       "src_lib_notes_sortnotesforlist"
     ],
     "22": [
+      "src_components_notes_notesapp_notemetabar",
+      "src_components_notes_noteslinkeventdialog",
+      "src_components_notes_noteslinkeventdialog_noteslinkeventdialogcontent",
+      "src_components_notes_noteslinkeventdialog_noteslinkeventdialogprops",
+      "src_lib_eventpicker",
+      "src_lib_eventpicker_eventpickerfilters",
+      "src_lib_eventpicker_eventpickergroup",
+      "src_lib_eventpicker_filterandgroupeventsforpicker",
+      "src_lib_eventpicker_filtereventsforpicker",
+      "src_lib_eventpicker_formateventpickertimerange",
+      "src_lib_eventpicker_formatlinkedeventlabel",
+      "src_lib_eventpicker_formatpickerdatelabel",
+      "src_lib_eventpicker_groupeventsforpicker",
+      "src_lib_eventpicker_localdatekey",
+      "src_lib_eventpicker_sorteventsforpicker",
+      "src_lib_eventpicker_test",
+      "src_lib_eventpicker_test_makeevent"
+    ],
+    "23": [
       "agents_skills_find_animation_opportunities_skill",
       "agents_skills_find_animation_opportunities_skill_1_frequency_how_often_will_a_user_see_this",
       "agents_skills_find_animation_opportunities_skill_2_purpose_why_does_this_animate",
@@ -776,25 +733,25 @@
       "agents_skills_find_animation_opportunities_skill_where_to_hunt",
       "agents_skills_find_animation_opportunities_skill_workflow"
     ],
-    "23": [
+    "24": [
       "src_components_notes_notesmovetofolderdialog",
       "src_components_notes_notesmovetofolderdialog_notesmovetofolderdialog",
       "src_components_notes_notesmovetofolderdialog_notesmovetofolderdialogprops",
       "src_lib_notes_bulkmovefolderoptions",
       "src_lib_notes_filternoopnotepatch",
       "src_lib_notes_filternotesbytags",
+      "src_lib_notes_foldernamefornote",
       "src_lib_notes_foldersfornote",
       "src_lib_notes_isemptynotepatch",
-      "src_lib_notes_note_drag_ids_mime",
+      "src_lib_notes_note",
       "src_lib_notes_notecontentsequal",
       "src_lib_notes_notefolder",
       "src_lib_notes_notepatchbumpsupdatedat",
-      "src_lib_notes_notetitle",
       "src_lib_notes_test",
       "src_lib_notes_test_basefolder",
       "src_lib_notes_test_basenote"
     ],
-    "24": [
+    "25": [
       "src_components_notes_notetoolbar",
       "src_components_notes_notetoolbar_bullet_presets",
       "src_components_notes_notetoolbar_bulletpicker",
@@ -812,7 +769,7 @@
       "src_components_notes_notetoolbar_toolbarselect",
       "src_components_notes_notetoolbar_toolbarsep"
     ],
-    "25": [
+    "26": [
       "docs_context",
       "docs_context_branch_note",
       "docs_context_how_two_accounts_sync",
@@ -829,7 +786,7 @@
       "docs_context_what_this_app_is",
       "docs_context_what_was_worked_on"
     ],
-    "26": [
+    "27": [
       "public_validate_note_event_group",
       "supabase_migrations_20260830120000_notes",
       "supabase_migrations_20260830120000_notes_note_folders_set_updated_at",
@@ -846,7 +803,7 @@
       "supabase_migrations_20260830120000_notes_sql_public_profiles",
       "supabase_migrations_20260830120000_notes_sql_public_set_updated_at"
     ],
-    "27": [
+    "28": [
       "agents_skills_ask_sonner_api",
       "agents_skills_ask_sonner_api_functions",
       "agents_skills_ask_sonner_api_sonner_api_reference",
@@ -860,7 +817,21 @@
       "agents_skills_ask_sonner_skill_troubleshooting",
       "agents_skills_ask_sonner_skill_working_with_sonner"
     ],
-    "28": [
+    "29": [
+      "src_components_appshell_appshell",
+      "src_components_appshell_appshell_eventcreator",
+      "src_components_appshell_appshell_group",
+      "src_components_conflicttoast_conflicttoast",
+      "src_components_conflicttoast_conflicttoast_conflicttoast",
+      "src_components_conflicttoast_conflicttoast_conflicttoastitem",
+      "src_components_conflicttoast_conflicttoast_conflicttoastprops",
+      "src_components_conflicttoast_index",
+      "src_components_eventviewerpanel_eventviewerpanel_eventviewerpanel",
+      "src_components_eventviewerpanel_index",
+      "src_lib_auth",
+      "src_lib_auth_getinitials"
+    ],
+    "30": [
       "public_group_members",
       "supabase_migrations_20260818000000_tags",
       "supabase_migrations_20260818000000_tags_public_event_tags",
@@ -873,20 +844,7 @@
       "supabase_migrations_20260818000000_tags_sql_public_set_updated_at",
       "supabase_migrations_20260818000000_tags_tags_set_updated_at"
     ],
-    "29": [
-      "src_components_notes_noteeditor",
-      "src_components_notes_noteeditor_noteeditor",
-      "src_components_notes_noteeditor_noteeditorprops",
-      "src_components_notes_noteeditorextensions",
-      "src_components_notes_noteeditorextensions_commands",
-      "src_components_notes_noteeditorextensions_custombullet",
-      "src_components_notes_noteeditorextensions_lineheight",
-      "src_components_notes_noteeditorextensions_tiptap_core",
-      "src_lib_notes_empty_tiptap_doc",
-      "src_lib_notes_serializenotecontent",
-      "src_types_database_json"
-    ],
-    "30": [
+    "31": [
       "agents_skills_pick_ui_library_skill",
       "agents_skills_pick_ui_library_skill_charts",
       "agents_skills_pick_ui_library_skill_common_mismatches_to_catch",
@@ -898,7 +856,31 @@
       "agents_skills_pick_ui_library_skill_the_list",
       "agents_skills_pick_ui_library_skill_ui_components_primitives"
     ],
-    "31": [
+    "32": [
+      "src_app_auth_callback_route",
+      "src_app_auth_callback_route_get",
+      "src_lib_supabase_client",
+      "src_lib_supabase_server",
+      "src_lib_supabase_server_createclient",
+      "src_types_database",
+      "src_types_database_database",
+      "src_types_database_json",
+      "src_types_database_tablesinsert",
+      "src_types_database_tablesupdate"
+    ],
+    "33": [
+      "src_components_notes_noteeditor",
+      "src_components_notes_noteeditor_noteeditor",
+      "src_components_notes_noteeditor_noteeditorprops",
+      "src_components_notes_noteeditorextensions",
+      "src_components_notes_noteeditorextensions_commands",
+      "src_components_notes_noteeditorextensions_custombullet",
+      "src_components_notes_noteeditorextensions_lineheight",
+      "src_components_notes_noteeditorextensions_tiptap_core",
+      "src_lib_notes_empty_tiptap_doc",
+      "src_lib_notes_serializenotecontent"
+    ],
+    "34": [
       "agents_skills_emil_design_eng_skill",
       "agents_skills_emil_design_eng_skill_accessibility",
       "agents_skills_emil_design_eng_skill_design_engineering",
@@ -909,7 +891,7 @@
       "agents_skills_emil_design_eng_skill_stagger_animations",
       "agents_skills_emil_design_eng_skill_touch_device_hover_states"
     ],
-    "32": [
+    "35": [
       "src_components_notes_notesfolderdialog",
       "src_components_notes_notesfolderdialog_foldercoloricon",
       "src_components_notes_notesfolderdialog_notesfolderdialogform",
@@ -920,7 +902,7 @@
       "src_lib_notes_foldercolor",
       "src_lib_notes_normalizefoldercolor"
     ],
-    "33": [
+    "36": [
       "agents_skills_emil_design_eng_skill_animate_enter_states_with_starting_style",
       "agents_skills_emil_design_eng_skill_buttons_must_feel_responsive",
       "agents_skills_emil_design_eng_skill_component_building_principles",
@@ -930,7 +912,27 @@
       "agents_skills_emil_design_eng_skill_use_blur_to_mask_imperfect_transitions",
       "agents_skills_emil_design_eng_skill_use_css_transitions_over_keyframes_for_interruptible_ui"
     ],
-    "34": [
+    "37": [
+      "src_components_calendar_calendar",
+      "src_components_calendar_calendar_calendar",
+      "src_components_calendar_calendar_calendarprops",
+      "src_components_calendar_index",
+      "src_components_weekview_index",
+      "src_components_weekview_weekview",
+      "src_components_weekview_weekview_weekview",
+      "src_components_weekview_weekview_weekviewprops"
+    ],
+    "38": [
+      "src_lib_theme",
+      "src_lib_theme_applytheme",
+      "src_lib_theme_default_accent",
+      "src_lib_theme_getsystemtheme",
+      "src_lib_theme_loadaccent",
+      "src_lib_theme_loadtheme",
+      "src_lib_theme_thememode",
+      "src_lib_theme_usetheme"
+    ],
+    "39": [
       "src_app_layout",
       "src_app_layout_jetbrainsmono",
       "src_app_layout_merriweather",
@@ -939,7 +941,7 @@
       "src_app_layout_rootlayout",
       "src_app_layout_varelaround"
     ],
-    "35": [
+    "40": [
       "agents_skills_emil_design_eng_skill_1_should_this_animate_at_all",
       "agents_skills_emil_design_eng_skill_2_what_is_the_purpose",
       "agents_skills_emil_design_eng_skill_3_what_easing_should_it_use",
@@ -947,7 +949,7 @@
       "agents_skills_emil_design_eng_skill_perceived_performance",
       "agents_skills_emil_design_eng_skill_the_animation_decision_framework"
     ],
-    "36": [
+    "41": [
       "agents_skills_emil_design_eng_skill_clip_path_for_animation",
       "agents_skills_emil_design_eng_skill_comparison_sliders",
       "agents_skills_emil_design_eng_skill_hold_to_delete_pattern",
@@ -955,7 +957,7 @@
       "agents_skills_emil_design_eng_skill_tabs_with_perfect_color_transitions",
       "agents_skills_emil_design_eng_skill_the_inset_shape"
     ],
-    "37": [
+    "42": [
       "agents_skills_emil_design_eng_skill_css_animations_beat_js_under_load",
       "agents_skills_emil_design_eng_skill_css_variables_are_inheritable",
       "agents_skills_emil_design_eng_skill_framer_motion_hardware_acceleration_caveat",
@@ -963,7 +965,7 @@
       "agents_skills_emil_design_eng_skill_performance_rules",
       "agents_skills_emil_design_eng_skill_use_waapi_for_programmatic_css_animations"
     ],
-    "38": [
+    "43": [
       "agents_skills_emil_design_eng_skill_damping_at_boundaries",
       "agents_skills_emil_design_eng_skill_friction_instead_of_hard_stops",
       "agents_skills_emil_design_eng_skill_gesture_and_drag_interactions",
@@ -971,7 +973,15 @@
       "agents_skills_emil_design_eng_skill_multi_touch_protection",
       "agents_skills_emil_design_eng_skill_pointer_capture_for_drag"
     ],
-    "39": [
+    "44": [
+      "src_components_sharedworkspace_index",
+      "src_components_sharedworkspace_sharedworkspace",
+      "src_components_sharedworkspace_sharedworkspace_group",
+      "src_components_sharedworkspace_sharedworkspace_sharedworkspace",
+      "src_components_sharedworkspace_sharedworkspace_sharedworkspaceprops",
+      "src_types_database_tables"
+    ],
+    "45": [
       "src_lib_supabase_proxy",
       "src_lib_supabase_proxy_copycookies",
       "src_lib_supabase_proxy_updatesession",
@@ -979,184 +989,189 @@
       "src_proxy_config",
       "src_proxy_proxy"
     ],
-    "40": [
+    "46": [
       "agents_skills_emil_design_eng_skill_3d_transforms_for_depth",
       "agents_skills_emil_design_eng_skill_css_transform_mastery",
       "agents_skills_emil_design_eng_skill_scale_scales_children_too",
       "agents_skills_emil_design_eng_skill_transform_origin",
       "agents_skills_emil_design_eng_skill_translatey_with_percentages"
     ],
-    "41": [
+    "47": [
       "agents_skills_emil_design_eng_skill_asymmetric_enter_exit_timing",
       "agents_skills_emil_design_eng_skill_cohesion_matters",
       "agents_skills_emil_design_eng_skill_review_your_work_the_next_day",
       "agents_skills_emil_design_eng_skill_the_opacity_height_combination",
       "agents_skills_emil_design_eng_skill_the_sonner_principles_building_loved_components"
     ],
-    "42": [
+    "48": [
       "agents_skills_emil_design_eng_skill_interruptibility_advantage",
       "agents_skills_emil_design_eng_skill_spring_animations",
       "agents_skills_emil_design_eng_skill_spring_based_mouse_interactions",
       "agents_skills_emil_design_eng_skill_spring_configuration",
       "agents_skills_emil_design_eng_skill_when_to_use_springs"
     ],
-    "43": [
+    "49": [
       "agents_skills_ponytail_skill",
       "agents_skills_ponytail_skill_persistence",
       "agents_skills_ponytail_skill_ponytail",
       "agents_skills_ponytail_skill_rules",
       "agents_skills_ponytail_skill_the_ladder"
     ],
-    "44": [
-      "src_components_conflicttoast_conflicttoast",
-      "src_components_conflicttoast_conflicttoast_conflicttoast",
-      "src_components_conflicttoast_conflicttoast_conflicttoastitem",
-      "src_components_conflicttoast_conflicttoast_conflicttoastprops",
-      "src_components_conflicttoast_index"
-    ],
-    "45": [
+    "50": [
       "agents_skills_emil_design_eng_skill_beauty_is_leverage",
       "agents_skills_emil_design_eng_skill_core_philosophy",
       "agents_skills_emil_design_eng_skill_taste_is_trained_not_innate",
       "agents_skills_emil_design_eng_skill_unseen_details_compound"
     ],
-    "46": [
+    "51": [
       "agents_skills_emil_design_eng_skill_debugging_animations",
       "agents_skills_emil_design_eng_skill_frame_by_frame_inspection",
       "agents_skills_emil_design_eng_skill_slow_motion_testing",
       "agents_skills_emil_design_eng_skill_test_on_real_devices"
     ],
-    "47": [
+    "52": [
       "public_set_notes_updated_at_on_content_change",
       "supabase_migrations_20260831120000_notes_updated_at_content_only",
       "supabase_migrations_20260831120000_notes_updated_at_content_only_notes_set_updated_at",
       "supabase_migrations_20260831120000_notes_updated_at_content_only_public_set_notes_updated_at_on_content_change"
     ],
-    "48": [
+    "53": [
+      "src_components_dayview_dayview",
+      "src_components_dayview_dayview_dayview",
+      "src_components_dayview_dayview_dayviewprops",
+      "src_components_dayview_index"
+    ],
+    "54": [
+      "src_components_rightpanel_index",
+      "src_components_rightpanel_rightpanel",
+      "src_components_rightpanel_rightpanel_rightpanel",
+      "src_components_rightpanel_rightpanel_rightpanelprops"
+    ],
+    "55": [
       "supabase_migrations_20260806130000_fix_profile_signup_trigger",
       "supabase_migrations_20260806130000_fix_profile_signup_trigger_on_auth_user_created",
       "supabase_migrations_20260806130000_fix_profile_signup_trigger_public_handle_new_user",
       "supabase_migrations_20260806130000_fix_profile_signup_trigger_sql_public_handle_new_user"
     ],
-    "49": [
+    "56": [
       "eslint_config",
       "eslint_config_eslintconfig"
     ],
-    "50": [
+    "57": [
       "next_config",
       "next_config_nextconfig"
     ],
-    "51": [
+    "58": [
       "postcss_config",
       "postcss_config_config"
     ],
-    "52": [
+    "59": [
       "supabase_migrations_20260901160000_notes_trash",
       "supabase_migrations_20260901160000_notes_trash_public_cleanup_old_trashed_notes"
     ],
-    "53": [
-      "html2canvas_html2canvas"
-    ],
-    "54": [
-      "public_note_folders"
-    ],
-    "55": [
-      "public_notes"
-    ],
-    "56": [
-      "supabase_migrations_20260807150000_events_no_overlap"
-    ],
-    "57": [
-      "supabase_migrations_20260807150000_events_no_overlap_sql_public_events"
-    ],
-    "58": [
-      "supabase_migrations_20260818160000_lists_realtime"
-    ],
-    "59": [
-      "supabase_migrations_20260824000000_recurrence_group_id"
-    ],
     "60": [
-      "supabase_migrations_20260824000000_recurrence_group_id_sql_public_events"
+      "html2canvas_pro_html2canvas_pro"
     ],
     "61": [
-      "supabase_migrations_20260826120000_allow_event_overlaps"
+      "public_note_folders"
     ],
     "62": [
-      "supabase_migrations_20260826120000_allow_event_overlaps_sql_public_events"
+      "public_notes"
     ],
     "63": [
-      "supabase_migrations_20260831130000_note_folder_colors"
+      "supabase_migrations_20260807150000_events_no_overlap"
     ],
     "64": [
-      "supabase_migrations_20260923170000_profile_avatars"
+      "supabase_migrations_20260807150000_events_no_overlap_sql_public_events"
     ],
     "65": [
-      "supabase_migrations_20260923170000_profile_avatars_sql_public_profiles"
+      "supabase_migrations_20260818160000_lists_realtime"
     ],
     "66": [
-      "supabase_seed"
+      "supabase_migrations_20260824000000_recurrence_group_id"
     ],
     "67": [
+      "supabase_migrations_20260824000000_recurrence_group_id_sql_public_events"
+    ],
+    "68": [
+      "supabase_migrations_20260826120000_allow_event_overlaps"
+    ],
+    "69": [
+      "supabase_migrations_20260826120000_allow_event_overlaps_sql_public_events"
+    ],
+    "70": [
+      "supabase_migrations_20260831130000_note_folder_colors"
+    ],
+    "71": [
+      "supabase_migrations_20260923170000_profile_avatars"
+    ],
+    "72": [
+      "supabase_migrations_20260923170000_profile_avatars_sql_public_profiles"
+    ],
+    "73": [
+      "supabase_seed"
+    ],
+    "74": [
       "vitest_config"
     ]
   },
   "cohesion": {
-    "0": 0.05207920792079208,
-    "1": 0.05075187969924812,
-    "2": 0.0425531914893617,
-    "3": 0.046511627906976744,
-    "4": 0.12802275960170698,
+    "0": 0.0880503144654088,
+    "1": 0.0425531914893617,
+    "2": 0.046511627906976744,
+    "3": 0.06025369978858351,
+    "4": 0.113107822410148,
     "5": 0.058823529411764705,
     "6": 0.06060606060606061,
     "7": 0.0625,
     "8": 0.0625,
     "9": 0.07407407407407407,
     "10": 0.07407407407407407,
-    "11": 0.12,
+    "11": 0.1076923076923077,
     "12": 0.08695652173913043,
-    "13": 0.11956521739130435,
+    "13": 0.14492753623188406,
     "14": 0.14492753623188406,
-    "15": 0.14492753623188406,
-    "16": 0.09090909090909091,
-    "17": 0.19480519480519481,
-    "18": 0.09523809523809523,
-    "19": 0.1,
-    "20": 0.1111111111111111,
-    "21": 0.19117647058823528,
-    "22": 0.125,
-    "23": 0.175,
-    "24": 0.13333333333333333,
+    "15": 0.09090909090909091,
+    "16": 0.09523809523809523,
+    "17": 0.1,
+    "18": 0.23391812865497075,
+    "19": 0.1111111111111111,
+    "20": 0.1895424836601307,
+    "21": 0.17647058823529413,
+    "22": 0.25735294117647056,
+    "23": 0.125,
+    "24": 0.16666666666666666,
     "25": 0.13333333333333333,
-    "26": 0.20952380952380953,
-    "27": 0.16666666666666666,
-    "28": 0.2545454545454545,
-    "29": 0.23636363636363636,
-    "30": 0.2,
-    "31": 0.2222222222222222,
-    "32": 0.2777777777777778,
-    "33": 0.25,
-    "34": 0.2857142857142857,
-    "35": 0.3333333333333333,
-    "36": 0.3333333333333333,
-    "37": 0.3333333333333333,
-    "38": 0.3333333333333333,
-    "39": 0.5333333333333333,
-    "40": 0.4,
-    "41": 0.4,
-    "42": 0.4,
-    "43": 0.4,
-    "44": 0.5,
-    "45": 0.5,
-    "46": 0.5,
-    "47": 0.5,
-    "48": 0.5,
-    "49": 1.0,
-    "50": 1.0,
-    "51": 1.0,
-    "52": 1.0,
-    "53": 1.0,
-    "54": 1.0,
-    "55": 1.0,
+    "26": 0.13333333333333333,
+    "27": 0.20952380952380953,
+    "28": 0.16666666666666666,
+    "29": 0.22727272727272727,
+    "30": 0.2545454545454545,
+    "31": 0.2,
+    "32": 0.28888888888888886,
+    "33": 0.26666666666666666,
+    "34": 0.2222222222222222,
+    "35": 0.2777777777777778,
+    "36": 0.25,
+    "37": 0.32142857142857145,
+    "38": 0.39285714285714285,
+    "39": 0.2857142857142857,
+    "40": 0.3333333333333333,
+    "41": 0.3333333333333333,
+    "42": 0.3333333333333333,
+    "43": 0.3333333333333333,
+    "44": 0.4,
+    "45": 0.5333333333333333,
+    "46": 0.4,
+    "47": 0.4,
+    "48": 0.4,
+    "49": 0.4,
+    "50": 0.5,
+    "51": 0.5,
+    "52": 0.5,
+    "53": 0.6666666666666666,
+    "54": 0.6666666666666666,
+    "55": 0.5,
     "56": 1.0,
     "57": 1.0,
     "58": 1.0,
@@ -1168,7 +1183,14 @@
     "64": 1.0,
     "65": 1.0,
     "66": 1.0,
-    "67": 1.0
+    "67": 1.0,
+    "68": 1.0,
+    "69": 1.0,
+    "70": 1.0,
+    "71": 1.0,
+    "72": 1.0,
+    "73": 1.0,
+    "74": 1.0
   },
   "gods": [
     {
@@ -1182,18 +1204,23 @@
       "degree": 19
     },
     {
+      "id": "src_lib_events_calendarevent",
+      "label": "CalendarEvent",
+      "degree": 18
+    },
+    {
       "id": "agents_skills_write_swift_skill_write_swift",
       "label": "Write Swift",
       "degree": 18
     },
     {
-      "id": "src_lib_events_calendarevent",
-      "label": "CalendarEvent",
-      "degree": 17
+      "id": "ui_context_wecalendar_full_project_context",
+      "label": "WeCalendar — Full Project Context",
+      "degree": 16
     },
     {
-      "id": "ui_context_wecalendar_full_project_context",
-      "label": "WeCalendar \u2014 Full Project Context",
+      "id": "agents_skills_emil_design_eng_skill_design_engineering",
+      "label": "Design Engineering",
       "degree": 16
     },
     {
@@ -1207,33 +1234,17 @@
       "degree": 16
     },
     {
-      "id": "agents_skills_emil_design_eng_skill_design_engineering",
-      "label": "Design Engineering",
-      "degree": 16
+      "id": "src_lib_calendar_startofday",
+      "label": "startOfDay()",
+      "degree": 15
     },
     {
       "id": "agents_skills_animate_recipes_animation_recipes",
       "label": "Animation Recipes",
       "degree": 15
-    },
-    {
-      "id": "src_lib_calendar_startofday",
-      "label": "startOfDay()",
-      "degree": 15
     }
   ],
   "surprises": [
-    {
-      "source": "AppShell()",
-      "target": "createClient()",
-      "source_files": [
-        "src/components/AppShell/AppShell.tsx",
-        "src/lib/supabase/client.ts"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "calls",
-      "why": "bridges separate communities"
-    },
     {
       "source": "AppShell()",
       "target": "getInitials()",
@@ -1246,22 +1257,11 @@
       "why": "bridges separate communities"
     },
     {
-      "source": "CalendarSettingsSection()",
+      "source": "AppShell()",
       "target": "useCalendarPrefs()",
       "source_files": [
-        "src/app/profile/page.tsx",
-        "src/lib/calendarPrefs.ts"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "calls",
-      "why": "peripheral node `CalendarSettingsSection()` unexpectedly reaches hub `useCalendarPrefs()`"
-    },
-    {
-      "source": "AppShell()",
-      "target": "formatViewLabel()",
-      "source_files": [
         "src/components/AppShell/AppShell.tsx",
-        "src/lib/calendar.ts"
+        "src/lib/calendarPrefs.ts"
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
@@ -1269,18 +1269,73 @@
     },
     {
       "source": "AppShell()",
-      "target": "isDateInView()",
+      "target": "canMoveNoteToFolder()",
       "source_files": [
         "src/components/AppShell/AppShell.tsx",
-        "src/lib/calendar.ts"
+        "src/lib/notes.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "AppShell()",
+      "target": "filterNotesByTags()",
+      "source_files": [
+        "src/components/AppShell/AppShell.tsx",
+        "src/lib/notes.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "AppShell()",
+      "target": "isEmptyNotePatch()",
+      "source_files": [
+        "src/components/AppShell/AppShell.tsx",
+        "src/lib/notes.ts"
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
       "why": "bridges separate communities"
     }
   ],
-  "tokens": {
-    "input": 0,
-    "output": 0
-  }
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `dependencies` to `devDependencies`?",
+      "why": "High betweenness centrality (0.005) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `CalendarEvent` connect `events.ts` to `calendar.ts`, `Calendar.tsx`, `EventViewerPanel.tsx`, `DayView.tsx`, `NotesApp.tsx`, `eventPicker.ts`, `AppShell.tsx`?",
+      "why": "High betweenness centrality (0.005) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Tag` connect `EventViewerPanel.tsx` to `calendar.ts`, `events.ts`, `Calendar.tsx`, `Sidebar.tsx`, `DayView.tsx`, `NotesApp.tsx`, `eventPicker.ts`, `AppShell.tsx`?",
+      "why": "High betweenness centrality (0.004) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `CreateEventModalProps`, `DayPickerProps`, `YearViewProps` to the rest of the system?",
+      "why": "461 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `calendar.ts` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.0880503144654088 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `WeCalendar — Full Project Context` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.0425531914893617 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `dependencies` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.046511627906976744 - nodes in this community are weakly interconnected."
+    }
+  ]
 }

@@ -10,9 +10,9 @@
     "semantic_hash": "025f4fcb6024b3524d19492cf7ce54a2"
   },
   "package.json": {
-    "mtime": 1790147962.761147,
-    "ast_hash": "583ca627768eaf4688a5583c8ac4f7f0",
-    "semantic_hash": "583ca627768eaf4688a5583c8ac4f7f0"
+    "mtime": 1791782373.3438735,
+    "ast_hash": "019541a22a02140afcbe7ba8a4523e3f",
+    "semantic_hash": "019541a22a02140afcbe7ba8a4523e3f"
   },
   "postcss.config.mjs": {
     "mtime": 1785360921.685908,
@@ -40,9 +40,9 @@
     "semantic_hash": "09f98620ebe8378864ef4ca2e01e75d6"
   },
   "src/app/profile/page.tsx": {
-    "mtime": 1790219651.7035606,
-    "ast_hash": "40f0b71daf6236701bfa26f67e786af9",
-    "semantic_hash": "40f0b71daf6236701bfa26f67e786af9"
+    "mtime": 1791781798.2819173,
+    "ast_hash": "fdb81fcf28870e68323513806c662581",
+    "semantic_hash": "fdb81fcf28870e68323513806c662581"
   },
   "src/components/AppShell/AppShell.tsx": {
     "mtime": 1790219537.6488166,
@@ -65,9 +65,9 @@
     "semantic_hash": "dec5f84ccbe58bca6bfefce498b9efcb"
   },
   "src/components/CalendarCell/CalendarCell.tsx": {
-    "mtime": 1790224848.0878513,
-    "ast_hash": "941fe7412410b59894cfb2352f739907",
-    "semantic_hash": "941fe7412410b59894cfb2352f739907"
+    "mtime": 1791781809.468374,
+    "ast_hash": "a931ed382270a8ffd7de0ac844494765",
+    "semantic_hash": "a931ed382270a8ffd7de0ac844494765"
   },
   "src/components/CalendarCell/index.ts": {
     "mtime": 1785798925.0747957,
@@ -115,9 +115,9 @@
     "semantic_hash": "07dc0df219132d9253247d928ba3cb8e"
   },
   "src/components/Navbar/Navbar.tsx": {
-    "mtime": 1790218630.3601024,
-    "ast_hash": "098b87b284ff3d50b5f53068bc067615",
-    "semantic_hash": "098b87b284ff3d50b5f53068bc067615"
+    "mtime": 1791782372.4557295,
+    "ast_hash": "c3fc80fc0a818aea7fdf0359b550cf59",
+    "semantic_hash": "c3fc80fc0a818aea7fdf0359b550cf59"
   },
   "src/components/Navbar/index.ts": {
     "mtime": 1785798925.195362,
@@ -160,9 +160,9 @@
     "semantic_hash": "430919ce8845554d9c5b0318fa7028e8"
   },
   "src/components/TimeGrid/TimeGrid.tsx": {
-    "mtime": 1790224986.35053,
-    "ast_hash": "350b8db49c1067414730a9afd0fb663b",
-    "semantic_hash": "350b8db49c1067414730a9afd0fb663b"
+    "mtime": 1791781811.4861631,
+    "ast_hash": "2cd632d79a7de967a6031b1617ce45c0",
+    "semantic_hash": "2cd632d79a7de967a6031b1617ce45c0"
   },
   "src/components/TimeGrid/index.ts": {
     "mtime": 1786580760.165262,
@@ -626,14 +626,14 @@
     "semantic_hash": ""
   },
   "src/lib/calendarPrefs.ts": {
-    "mtime": 1790219470.7838116,
-    "ast_hash": "c1c8c29b0c2ff9b69c3d3f5b15d3f1f4",
-    "semantic_hash": "c1c8c29b0c2ff9b69c3d3f5b15d3f1f4"
+    "mtime": 1791781793.1680462,
+    "ast_hash": "b65aec234e6eb3bdd3356f0fa322883d",
+    "semantic_hash": "b65aec234e6eb3bdd3356f0fa322883d"
   },
   "src/components/EventCreatorBadge.tsx": {
-    "mtime": 1790218630.3188803,
-    "ast_hash": "b05863dc5f4ff5ff6685b3ce83c62e10",
-    "semantic_hash": "b05863dc5f4ff5ff6685b3ce83c62e10"
+    "mtime": 1791779514.8594952,
+    "ast_hash": "d0339bd17b7283dab2b013252aeddc9e",
+    "semantic_hash": "d0339bd17b7283dab2b013252aeddc9e"
   },
   "supabase/migrations/20260923170000_profile_avatars.sql": {
     "mtime": 1790218630.4456663,
@@ -641,8 +641,8 @@
     "semantic_hash": "9edffed735d6ad8e6934d014d3c28d8c"
   },
   "src/components/EventTagStripes.tsx": {
-    "mtime": 1790224775.94861,
-    "ast_hash": "32ff8e2d079f7b1386a556e563d3d3b3",
-    "semantic_hash": "32ff8e2d079f7b1386a556e563d3d3b3"
+    "mtime": 1791781800.3098042,
+    "ast_hash": "240249bc2401f2331303755a7983d9e4",
+    "semantic_hash": "240249bc2401f2331303755a7983d9e4"
   }
 }
