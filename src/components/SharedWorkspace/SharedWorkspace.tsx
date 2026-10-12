@@ -11,6 +11,7 @@ type SharedWorkspaceProps = {
   onSelectGroup: (groupId: string) => void;
   onCreateGroup: (name: string) => Promise<void>;
   onJoinGroup: (inviteCode: string) => Promise<void>;
+  variant?: "sidebar" | "settings";
 };
 
 export function SharedWorkspace({
@@ -19,6 +20,7 @@ export function SharedWorkspace({
   onSelectGroup,
   onCreateGroup,
   onJoinGroup,
+  variant = "sidebar",
 }: SharedWorkspaceProps) {
   const [groupName, setGroupName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -33,6 +35,7 @@ export function SharedWorkspace({
   const [modalOpen, setModalOpen] = useState(false);
 
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
+  const isSidebar = variant === "sidebar";
 
   async function handleCreate() {
     if (!groupName.trim()) return;
@@ -76,13 +79,13 @@ export function SharedWorkspace({
       <div
         className="flex flex-col gap-0"
         style={{
-          borderRadius: "var(--radius-xl)",
-          border: "1.5px solid var(--border)",
-          background: "var(--surface-2)",
+          borderRadius: isSidebar ? "var(--radius-xl)" : 0,
+          border: isSidebar ? "1.5px solid var(--border)" : "none",
+          background: isSidebar ? "var(--surface-2)" : "transparent",
         }}
       >
         {/* Header - always visible, click to collapse */}
-        <button
+        {isSidebar && <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
           className="flex w-full cursor-pointer items-center justify-between px-3 py-2.5"
@@ -110,20 +113,20 @@ export function SharedWorkspace({
           >
             <path d="M4 6l4 4 4-4" />
           </svg>
-        </button>
+        </button>}
 
         {/* Collapsible body - max-height transition keeps elements in the DOM */}
         <div
           style={{
             overflow: "hidden",
-            maxHeight: collapsed ? "0px" : "600px",
-            transition: "max-height 0.25s ease-in-out",
+            maxHeight: isSidebar && collapsed ? "0px" : "600px",
+            transition: isSidebar ? "max-height 0.25s ease-in-out" : "none",
           }}
         >
-          <div className="flex flex-col gap-3 px-3 pb-3">
+          <div className={isSidebar ? "flex flex-col gap-3 px-3 pb-3" : "flex flex-col gap-3 px-6 pb-6 pt-4"}>
             {/* Active Calendar selector - shown when at least one group exists */}
             {groups.length > 0 && (
-              <label className="flex flex-col gap-1 text-xs font-semibold">
+              <label className={`flex flex-col text-xs font-semibold ${isSidebar ? "gap-1" : "gap-2"}`}>
                 Active calendar
                 <select
                   value={activeGroupId ?? ""}

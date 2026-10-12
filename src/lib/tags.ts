@@ -26,6 +26,40 @@ export function colorForEvent(
   return tags.find((t) => t.id === tagId)?.color;
 }
 
+/**
+ * Returns colours for ALL tags attached to an event, in attachment order.
+ * First element = primary (used for the background).
+ * Additional elements are used for secondary stripes on the left edge.
+ */
+export function colorsForEvent(
+  eventId: string,
+  eventTags: EventTag[],
+  tags: Tag[],
+): string[] {
+  const tagIds = eventTags
+    .filter((et) => et.event_id === eventId)
+    .map((et) => et.tag_id);
+  return tagIds
+    .map((id) => tags.find((t) => t.id === id)?.color)
+    .filter((c): c is string => Boolean(c));
+}
+
+/**
+ * Returns all Tag objects attached to an event, in attachment order.
+ */
+export function tagsForEvent(
+  eventId: string,
+  eventTags: EventTag[],
+  tags: Tag[],
+): Tag[] {
+  const tagIds = eventTags
+    .filter((et) => et.event_id === eventId)
+    .map((et) => et.tag_id);
+  return tagIds
+    .map((id) => tags.find((t) => t.id === id))
+    .filter((t): t is Tag => Boolean(t));
+}
+
 /** Returns the tag IDs attached to a specific event */
 export function tagIdsForEvent(eventId: string, eventTags: EventTag[]): string[] {
   return eventTags.filter((et) => et.event_id === eventId).map((et) => et.tag_id);

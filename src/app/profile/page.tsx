@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useCalendarPrefs } from "@/lib/calendarPrefs";
+import type { CalendarMode } from "@/lib/calendar";
+import { SharedWorkspace } from "@/components/SharedWorkspace";
+import type { Tables } from "@/types/database";
+
+type Group = Tables<"groups">;
+const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -269,6 +276,169 @@ function DangerButton({
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
+// ─── Calendar Settings ───────────────────────────────────────────────────────
+
+function SettingRow({
+  id,
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label
+      htmlFor={id}
+      className="flex cursor-pointer items-center justify-between gap-4 px-6 py-3.5"
+      style={{ borderBottom: "0.5px solid var(--separator)" }}
+    >
+      <div>
+        <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+          {label}
+        </p>
+        {description && (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {description}
+          </p>
+        )}
+      </div>
+      {/* iOS-style toggle */}
+      <div
+        id={id}
+        role="switch"
+        aria-checked={checked}
+        tabIndex={0}
+        onClick={() => onChange(!checked)}
+        onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") onChange(!checked); }}
+        className="relative shrink-0 cursor-pointer"
+        style={{
+          width: "42px",
+          height: "24px",
+          borderRadius: "var(--radius-full)",
+          background: checked ? "var(--accent)" : "var(--border)",
+          transition: "background 200ms var(--ease-out)",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: "2px",
+            left: checked ? "20px" : "2px",
+            width: "20px",
+            height: "20px",
+            borderRadius: "var(--radius-full)",
+            background: "#fff",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+            transition: "left 200ms var(--ease-out)",
+          }}
+        />
+      </div>
+    </label>
+  );
+}
+
+const CALENDAR_VIEWS: { id: CalendarMode; label: string }[] = [
+  { id: "day",   label: "Day" },
+  { id: "week",  label: "Week" },
+  { id: "month", label: "Month" },
+  { id: "year",  label: "Year" },
+];
+
+function CalendarSettingsSection() {
+  const { prefs, setHidePastConflicts, setWeekStartsOnMonday, setDefaultView, setShowDeclinedEvents, setConfirmDeleteOthers, setCreatorColorAccent } =
+    useCalendarPrefs();
+
+  return (
+    <SectionCard
+      defaultOpen={false}
+      icon={
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="5" width="18" height="16" rx="3" />
+          <path d="M3 9h18M8 3v4M16 3v4" />
+        </svg>
+      }
+      title="Calendar Settings"
+      description="Customize how your calendar looks and behaves"
+    >
+      <div>
+        <SettingRow
+          id="pref-hide-past-conflicts"
+          label="Hide past conflicts"
+          description="Don't show conflict alerts or highlights for events that have already passed"
+          checked={prefs.hidePastConflicts}
+          onChange={setHidePastConflicts}
+        />
+        <SettingRow
+          id="pref-week-monday"
+          label="Week starts on Monday"
+          description="Show Monday as the first day of the week in all views"
+          checked={prefs.weekStartsOnMonday}
+          onChange={setWeekStartsOnMonday}
+        />
+        <SettingRow
+          id="pref-show-declined"
+          label="Show declined events"
+          description="Display events you've declined, rendered at reduced opacity"
+          checked={prefs.showDeclinedEvents}
+          onChange={setShowDeclinedEvents}
+        />
+        <SettingRow
+          id="pref-confirm-delete-others"
+          label="Confirm before deleting others' events"
+          description="Show an extra warning when you try to delete an event created by another person"
+          checked={prefs.confirmDeleteOthers}
+          onChange={setConfirmDeleteOthers}
+        />
+        <SettingRow
+          id="pref-creator-color-accent"
+          label="Show creator colour on events"
+          description="Colour the left edge of each event with its creator's favourite colour instead of the secondary tag"
+          checked={prefs.creatorColorAccent}
+          onChange={setCreatorColorAccent}
+        />
+
+        {/* Default view — segmented control */}
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 px-6 py-3.5"
+          style={{ borderBottom: "0.5px solid var(--separator)" }}
+        >
+          <div>
+            <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+              Default view
+            </p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Which calendar view opens when you launch the app
+            </p>
+          </div>
+          <div
+            className="segmented"
+            role="group"
+            aria-label="Default calendar view"
+          >
+            {CALENDAR_VIEWS.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                className="segmented-item pressable"
+                data-active={prefs.defaultView === v.id}
+                aria-pressed={prefs.defaultView === v.id}
+                onClick={() => setDefaultView(v.id)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
 function LeaveGroupRow({
   groups,
   onLeave,
@@ -399,13 +569,17 @@ export default function ProfilePage() {
   const supabase = useMemo(() => createClient(), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [pronouns, setPronouns] = useState("");
   const [birthday, setBirthday] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("#6366f1");
   const [saved, setSaved] = useState(false);
-  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const { prefs, setShowWorkspaceInSidebar } = useCalendarPrefs();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -428,7 +602,7 @@ export default function ProfilePage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("display_name, theme_preferences")
+        .select("display_name, avatar_url, theme_preferences")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -437,6 +611,7 @@ export default function ProfilePage() {
       if (profile?.display_name) {
         setDisplayName(profile.display_name);
       }
+      setAvatarUrl(profile?.avatar_url ?? null);
 
       const theme = profile?.theme_preferences as
         | { favorite_color?: string; pronouns?: string; birthday?: string }
@@ -448,19 +623,25 @@ export default function ProfilePage() {
       // Load groups the user belongs to
       const { data: memberRows } = await supabase
         .from("group_members")
-        .select("group_id, groups(id, name)")
+        .select("group_id, groups(*)")
         .eq("user_id", user.id);
 
       if (!mounted) return;
 
       const loadedGroups = (memberRows ?? [])
         .map((row) => {
-          const g = row.groups as { id: string; name: string } | null;
-          return g ? { id: g.id, name: g.name } : null;
+          const g = row.groups as Group | null;
+          return g;
         })
-        .filter((g): g is { id: string; name: string } => g !== null);
+        .filter((g): g is Group => g !== null);
 
       setGroups(loadedGroups);
+      const storedGroupId = window.localStorage.getItem(ACTIVE_GROUP_KEY);
+      setActiveGroupId(
+        loadedGroups.some((group) => group.id === storedGroupId)
+          ? storedGroupId
+          : loadedGroups[0]?.id ?? null,
+      );
     }
 
     void loadUser();
@@ -473,30 +654,71 @@ export default function ProfilePage() {
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setAvatarFile(file);
     const url = URL.createObjectURL(file);
     setAvatarUrl(url);
   }
 
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
+    setSaved(false);
+    setProfileError(null);
+    if (!/^#[0-9a-f]{6}$/i.test(favoriteColor)) {
+      setProfileError("Enter a six-digit hex color, such as #6366f1.");
+      return;
+    }
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setProfileError("Please sign in again to save your profile.");
+      return;
+    }
+
+    const { data: profile, error: readError } = await supabase
+      .from("profiles").select("theme_preferences").eq("id", user.id).single();
+    if (readError) {
+      setProfileError(readError.message);
+      return;
+    }
+    const existing = profile.theme_preferences;
 
     const theme_preferences = {
+      ...(existing && typeof existing === "object" && !Array.isArray(existing) ? existing : {}),
       favorite_color: favoriteColor,
       pronouns,
       birthday,
     };
 
-    const { error } = await supabase.from("profiles").upsert({
-      id: user.id,
+    let nextAvatarUrl = avatarUrl;
+    if (avatarFile) {
+      const extension = avatarFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/avatar.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
+      if (uploadError) {
+        setProfileError(uploadError.message);
+        return;
+      }
+      const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(path);
+      nextAvatarUrl = `${publicUrl.publicUrl}?v=${Date.now()}`;
+    }
+
+    const { error } = await supabase.from("profiles").update({
       display_name: displayName.trim() || null,
+      avatar_url: nextAvatarUrl,
       theme_preferences,
-    });
+    }).eq("id", user.id).select("id").single();
+
+    if (error) {
+      setProfileError(error.message);
+      return;
+    }
 
     if (!error) {
+      setAvatarUrl(nextAvatarUrl);
+      setAvatarFile(null);
       await supabase.auth.updateUser({
         data: { display_name: displayName.trim() || undefined },
       });
@@ -532,6 +754,41 @@ export default function ProfilePage() {
       .eq("group_id", groupId)
       .eq("user_id", user.id);
     setGroups((prev) => prev.filter((g) => g.id !== groupId));
+  }
+
+  async function reloadGroups() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data } = await supabase
+      .from("group_members")
+      .select("group_id, groups(*)")
+      .eq("user_id", user.id);
+    const nextGroups = (data ?? [])
+      .map((row) => row.groups as Group | null)
+      .filter((group): group is Group => group !== null);
+    setGroups(nextGroups);
+    return nextGroups;
+  }
+
+  async function handleCreateGroup(name: string) {
+    const { data, error } = await supabase.rpc("create_group", { p_name: name });
+    if (error) throw new Error(error.message);
+    await reloadGroups();
+    if (data?.id) handleSelectGroup(data.id);
+  }
+
+  async function handleJoinGroup(inviteCode: string) {
+    const { data, error } = await supabase.rpc("join_group_by_invite", {
+      p_invite_code: inviteCode,
+    });
+    if (error) throw new Error(error.message);
+    await reloadGroups();
+    if (data?.id) handleSelectGroup(data.id);
+  }
+
+  function handleSelectGroup(groupId: string) {
+    setActiveGroupId(groupId);
+    window.localStorage.setItem(ACTIVE_GROUP_KEY, groupId);
   }
 
   const initials = displayName
@@ -663,7 +920,7 @@ export default function ProfilePage() {
                 {avatarUrl && (
                   <button
                     type="button"
-                    onClick={() => setAvatarUrl(null)}
+                    onClick={() => { setAvatarUrl(null); setAvatarFile(null); }}
                     className="text-xs underline"
                     style={{ color: "#dc2626" }}
                   >
@@ -726,12 +983,17 @@ export default function ProfilePage() {
                   />
                 </div>
                 <p className="mt-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
-                  Used to personalize your app theme.
+                  Identifies you as the creator of shared-calendar events.
                 </p>
               </div>
             </div>
 
             {/* Save button */}
+            {profileError && (
+              <p role="alert" className="text-sm" style={{ color: "var(--color-danger)" }}>
+                {profileError}
+              </p>
+            )}
             <div className="flex items-center justify-end gap-3">
               {saved && (
                 <span
@@ -877,6 +1139,36 @@ export default function ProfilePage() {
             ))}
           </div>
         </SectionCard>
+
+        <SectionCard
+          icon={
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="3" />
+              <path d="M3 9h18M8 3v4M16 3v4" />
+            </svg>
+          }
+          title="Shared Calendars"
+          description="Choose your active calendar and manage shared access"
+        >
+          <SharedWorkspace
+            variant="settings"
+            groups={groups}
+            activeGroupId={activeGroupId}
+            onSelectGroup={handleSelectGroup}
+            onCreateGroup={handleCreateGroup}
+            onJoinGroup={handleJoinGroup}
+          />
+          <SettingRow
+            id="pref-workspace-in-sidebar"
+            label="Show shared calendars in sidebar"
+            description="Keep workspace controls available from the calendar"
+            checked={prefs.showWorkspaceInSidebar}
+            onChange={setShowWorkspaceInSidebar}
+          />
+        </SectionCard>
+
+        {/* ── Calendar Settings ───────────────────────────── */}
+        <CalendarSettingsSection />
 
         {/* ── Danger Zone ────────────────────────────────── */}
         <SectionCard

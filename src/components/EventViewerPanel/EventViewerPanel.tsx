@@ -1,4 +1,5 @@
 "use client";
+import { EventCreatorBadge } from "@/components/EventCreatorBadge";
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -237,7 +238,7 @@ function EventRow({
             className="truncate text-sm font-semibold"
             style={{ color: "var(--foreground)", letterSpacing: "-0.01em" }}
           >
-            {event.title}
+            <EventCreatorBadge event={event} /> {event.title}
           </span>
           {isRecurring && (
             <svg

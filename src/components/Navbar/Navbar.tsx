@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CalendarMode, ScreenView } from "@/lib/calendar";
 import { createClient } from "@/lib/supabase/client";
@@ -168,7 +168,123 @@ function ScreenSwitcher({
   );
 }
 
+// ─── Snapshot Button ──────────────────────────────────────────────────────────
+
+type SnapshotState = "idle" | "capturing" | "done";
+
+function SnapshotButton({ label }: { label: string }) {
+  const [state, setState] = useState<SnapshotState>("idle");
+
+  const handleCapture = useCallback(async () => {
+    if (state !== "idle") return;
+    setState("capturing");
+    try {
+      const target = document.querySelector<HTMLElement>("[data-snapshot-target]");
+      if (!target) { setState("idle"); return; }
+
+      // Lazy-load html2canvas-pro to keep initial bundle light.
+      // (The -pro fork understands oklch()/color-mix(), which Tailwind v4 emits.)
+      const { default: html2canvas } = await import("html2canvas-pro");
+      const canvas = await html2canvas(target, {
+        useCORS: true,
+        scale: window.devicePixelRatio ?? 2,
+        backgroundColor: null,
+        logging: false,
+      });
+
+      const slug = label.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
+      const date = new Date().toISOString().slice(0, 10);
+      const filename = `wecalendar-${slug}-${date}.png`;
+
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+
+      setState("done");
+      setTimeout(() => setState("idle"), 2000);
+    } catch (err) {
+      console.error("Calendar snapshot failed:", err);
+      setState("idle");
+    }
+  }, [state, label]);
+
+  return (
+    <button
+      type="button"
+      onClick={() => void handleCapture()}
+      aria-label="Download calendar snapshot"
+      title={state === "done" ? "Saved!" : "Download snapshot"}
+      disabled={state === "capturing"}
+      className="pressable flex h-8 w-8 items-center justify-center"
+      style={{
+        borderRadius: "var(--radius-md)",
+        background: "var(--surface-2)",
+        boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+        color: state === "done" ? "var(--color-success)" : "var(--text-secondary)",
+        transition: "color var(--duration-fast) var(--ease-out)",
+      }}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {state === "capturing" ? (
+          <motion.svg
+            key="spinner"
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1, rotate: 360 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ rotate: { repeat: Infinity, duration: 0.8, ease: "linear" }, opacity: { duration: 0.15 } }}
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </motion.svg>
+        ) : state === "done" ? (
+          <motion.svg
+            key="check"
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ type: "spring", bounce: 0.4, duration: 0.35 }}
+          >
+            <path d="M20 6L9 17l-5-5" />
+          </motion.svg>
+        ) : (
+          <motion.svg
+            key="camera"
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ duration: 0.15 }}
+          >
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </motion.svg>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
+
 // ─── Dark mode toggle ─────────────────────────────────────────────────────────
+
 
 function ThemeToggle({ isDark, onToggle }: { isDark: boolean; onToggle: () => void }) {
   return (
@@ -507,8 +623,9 @@ function ProfileMenu({
                 className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm font-medium transition-colors hover:bg-[var(--accent-muted)]"
                 style={{ color: "var(--foreground)", letterSpacing: "-0.004em" }}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 opacity-60" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 opacity-70" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.09a2 2 0 0 1 1 1.74v.5a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z" />
+                  <circle cx="12" cy="12" r="3" />
                 </svg>
                 Settings
               </Link>
@@ -783,6 +900,8 @@ export function Navbar({
         />
 
         <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+
+        <SnapshotButton label={monthLabel} />
 
         <ProfileMenu
           userInitials={userInitials}

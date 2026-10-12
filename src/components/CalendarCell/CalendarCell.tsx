@@ -1,4 +1,5 @@
 import React from "react";
+import { EventCreatorBadge } from "@/components/EventCreatorBadge";
 import type { CalendarDay } from "@/lib/calendar";
 import {
   eventsForDay,
@@ -9,7 +10,8 @@ import {
   type CalendarEvent,
   type SpanPosition,
 } from "@/lib/events";
-import { colorForEvent, type EventTag, type Tag } from "@/lib/tags";
+import { colorsForEvent, type EventTag, type Tag } from "@/lib/tags";
+import { EventTagStripes } from "@/components/EventTagStripes";
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 /** Top padding of the cell (matches `p-2` = 8px). */
@@ -208,11 +210,14 @@ export function CalendarCell({
       {visibleBars.map((event) => {
         const slot  = multiDaySlots.get(event.id) ?? 0;
         const pos   = getSeriesSpanPosition(event, events, day.date, dayOfWeek);
-        const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+        const tagColors = colorsForEvent(event.id, eventTags, tags);
+        const color = tagColors[0] ?? "var(--accent)";
         const { left, right } = barEdges(pos);
         const showLabel = pos === "solo" || pos === "start";
         const warn =
           showConflictHighlights && Boolean(conflictIds?.has(event.id));
+
+        const leftPad = 10;
 
         return (
           <button
@@ -232,7 +237,7 @@ export function CalendarCell({
               background:   color,
               color:        "#fff",
               borderRadius: barRadius(pos),
-              padding:      "0 5px",
+              padding:      showLabel && (pos === "solo" || pos === "start") ? `0 5px 0 ${leftPad}px` : "0 5px",
               fontSize:     "10px",
               fontWeight:   600,
               lineHeight:   1,
@@ -241,10 +246,16 @@ export function CalendarCell({
               boxShadow:    conflictBarShadow(warn, pos),
             }}
           >
+            {showLabel && (pos === "solo" || pos === "start") && (
+              <EventTagStripes event={event} colors={tagColors} width={`${leftPad + 7}px`} radius="4px" />
+            )}
             {showLabel && (
-              <span style={{ overflow: "hidden", flexShrink: 1, minWidth: 0 }}>
+              <span className="flex min-w-0 items-center gap-1">
+                <EventCreatorBadge event={event} />
+                <span className="truncate">
                 {`${formatEventTime(event.starts_at)} `}
                 {event.title}
+                </span>
               </span>
             )}
           </button>
@@ -258,14 +269,16 @@ export function CalendarCell({
 
       <div className="space-y-1">
         {visibleSingle.map((event) => {
-          const color = colorForEvent(event.id, eventTags, tags) ?? "var(--accent)";
+          const tagColors = colorsForEvent(event.id, eventTags, tags);
+          const color = tagColors[0] ?? "var(--accent)";
           const warn =
             showConflictHighlights && Boolean(conflictIds?.has(event.id));
+          const leftPad = 14;
           return (
             <button
               key={event.id}
               type="button"
-              className="block w-full truncate px-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
+              className="relative flex w-full items-center gap-1 overflow-hidden pr-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight"
               title={`${event.title} · ${formatEventTime(event.starts_at)}`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -275,12 +288,15 @@ export function CalendarCell({
                 borderRadius: "var(--radius-sm)",
                 background:   color,
                 color:        "#fff",
+                paddingLeft:  `${leftPad}px`,
                 boxShadow:    conflictOutline(warn),
                 letterSpacing: "-0.01em",
                 opacity: 0.92,
               }}
             >
-              {formatEventTime(event.starts_at)} {event.title}
+              <EventTagStripes event={event} colors={tagColors} width={`${leftPad + 7}px`} />
+              <EventCreatorBadge event={event} />
+              <span className="truncate">{formatEventTime(event.starts_at)} {event.title}</span>
             </button>
           );
         })}

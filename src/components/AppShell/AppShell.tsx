@@ -30,13 +30,16 @@ import {
 import { colorForEvent, tagIdsForEvent, type EventTag, type Tag } from "@/lib/tags";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables, Json } from "@/types/database";
+import { useCalendarPrefs } from "@/lib/calendarPrefs";
 
 type Group = Tables<"groups">;
+type EventCreator = NonNullable<CalendarEvent["creator"]>;
 
 const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
 
 export function AppShell() {
   const { mode: themeMode, accent, toggleMode: toggleTheme, setAccentColor } = useTheme();
+  const { prefs } = useCalendarPrefs();
   const [viewDate, setViewDate] = useState(() => startOfDay(new Date()));
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [screenView, setScreenView] = useState<ScreenView>("calendar");
@@ -112,7 +115,7 @@ export function AppShell() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data: eventData, error } = await supabase
         .from("events")
         .select("*")
         .eq("group_id", groupId)
@@ -123,7 +126,40 @@ export function AppShell() {
         return;
       }
 
-      const nextEvents = data ?? [];
+      const creatorIds = [...new Set((eventData ?? []).map((event) => event.created_by))];
+      const creatorsById = new Map<string, EventCreator>();
+
+      if (creatorIds.length > 0) {
+        const { data: profilesWithAvatars, error: profileError } = await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url, theme_preferences")
+          .in("id", creatorIds);
+
+        if (profileError) {
+          // Existing deployments can load events before the avatar migration is applied.
+          const { data: profiles, error: fallbackError } = await supabase
+            .from("profiles")
+            .select("id, display_name, theme_preferences")
+            .in("id", creatorIds);
+
+          if (fallbackError) {
+            console.warn("loadEventCreators", fallbackError);
+          } else {
+            (profiles ?? []).forEach((profile) => {
+              creatorsById.set(profile.id, { ...profile, avatar_url: null });
+            });
+          }
+        } else {
+          (profilesWithAvatars ?? []).forEach((profile) => {
+            creatorsById.set(profile.id, profile);
+          });
+        }
+      }
+
+      const nextEvents: CalendarEvent[] = (eventData ?? []).map((event) => ({
+        ...event,
+        creator: creatorsById.get(event.created_by) ?? null,
+      }));
       setEvents(nextEvents);
       setSelectedEvent((current) => {
         if (!current) return current;
@@ -342,7 +378,16 @@ export function AppShell() {
     [notes, activeTagIds, eventTags],
   );
 
-  const conflictGroups = useMemo(() => conflictingEventGroups(events), [events]);
+  const conflictGroups = useMemo(() => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayMs = startOfToday.getTime();
+    // When the pref is enabled, ignore events whose day has fully passed.
+    const eventsToCheck = prefs.hidePastConflicts
+      ? events.filter((e) => new Date(e.ends_at).getTime() > todayMs)
+      : events;
+    return conflictingEventGroups(eventsToCheck);
+  }, [events, prefs.hidePastConflicts]);
   const conflictFp = useMemo(
     () => conflictFingerprint(conflictGroups.map((g) => g.key)),
     [conflictGroups],
@@ -930,6 +975,7 @@ export function AppShell() {
           onSelectGroup={setActiveGroupId}
           onCreateGroup={handleCreateGroup}
           onJoinGroup={handleJoinGroup}
+          showWorkspace={prefs.showWorkspaceInSidebar}
           notesFilter={notesFilter}
           noteFolders={noteFolders}
           onNotesFilterChange={handleNotesFilterChange}
@@ -970,7 +1016,7 @@ export function AppShell() {
           />
         ) : (
           <>
-            <main className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
+            <main data-snapshot-target className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
               {!activeGroupId && (
                 <div
                   className="mb-3 rounded-xl px-4 py-3 text-sm"
@@ -1037,6 +1083,8 @@ export function AppShell() {
         linkedNotes={eventLinkedNotes}
         onOpenNote={openNotesForEvent}
         onCreateNoteForEvent={handleCreateNoteForEvent}
+        currentUserId={user?.id}
+        confirmDeleteOthers={prefs.confirmDeleteOthers}
       />
     </div>
   );

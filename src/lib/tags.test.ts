@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { colorForEvent, tagIdsForEvent, TAG_PALETTE } from "./tags";
+import { colorForEvent, colorsForEvent, tagsForEvent, tagIdsForEvent, TAG_PALETTE } from "./tags";
 import type { EventTag, Tag } from "./tags";
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -100,5 +100,48 @@ describe("tagIdsForEvent", () => {
   it("returns an empty array when eventTags list is empty", () => {
     const ids = tagIdsForEvent("event-1", []);
     expect(ids).toEqual([]);
+  });
+});
+
+// ── colorsForEvent ───────────────────────────────────────────────────────────
+
+describe("colorsForEvent", () => {
+  it("returns all tag colours in attachment order", () => {
+    const colors = colorsForEvent("event-1", eventTags, [tagA, tagB]);
+    expect(colors).toEqual([tagA.color, tagB.color]);
+  });
+
+  it("returns single colour for event with one tag", () => {
+    const colors = colorsForEvent("event-2", eventTags, [tagA, tagB]);
+    expect(colors).toEqual([tagB.color]);
+  });
+
+  it("returns empty array for event with no tags", () => {
+    const colors = colorsForEvent("event-99", eventTags, [tagA, tagB]);
+    expect(colors).toEqual([]);
+  });
+
+  it("returns empty array when eventTags is empty", () => {
+    const colors = colorsForEvent("event-1", [], [tagA, tagB]);
+    expect(colors).toEqual([]);
+  });
+
+  it("omits deleted tags whose definitions no longer exist", () => {
+    const colors = colorsForEvent("event-1", eventTags, [tagA]);
+    expect(colors).toEqual([tagA.color]);
+  });
+});
+
+// ── tagsForEvent ─────────────────────────────────────────────────────────────
+
+describe("tagsForEvent", () => {
+  it("returns all Tag objects in attachment order", () => {
+    const eventTagObjs = tagsForEvent("event-1", eventTags, [tagA, tagB]);
+    expect(eventTagObjs).toEqual([tagA, tagB]);
+  });
+
+  it("returns empty array when event has no tags", () => {
+    const eventTagObjs = tagsForEvent("event-99", eventTags, [tagA, tagB]);
+    expect(eventTagObjs).toEqual([]);
   });
 });
