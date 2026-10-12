@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { EventCreatorAccent, EventCreatorBadge } from "@/components/EventCreatorBadge";
+import { EventCreatorBadge } from "@/components/EventCreatorBadge";
 
 import {
   DAY_HOURS,
@@ -166,7 +166,6 @@ export function TimeGrid({
                         const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
                         const tagColors = colorsForEvent(event.id, eventTags, tags);
                         const color = tagColors[0] ?? "var(--accent)";
-                        const secondaryColors = tagColors.slice(1, 5);
                         const warn =
                           showConflictHighlights && Boolean(conflictIds?.has(event.id));
 
@@ -174,8 +173,7 @@ export function TimeGrid({
                         const GAP = 2; // px gap between sub-columns
                         const widthPct = 100 / totalColumns;
                         const leftPct = column * widthPct;
-                        const leftPad = secondaryColors.length > 0 ? Math.max(14, 10 + secondaryColors.length * 4) : 14;
-                        const creatorAccentWidth = `${leftPad + 7}px`;
+                        const leftPad = 14;
 
                         return (
                           <button
@@ -199,8 +197,7 @@ export function TimeGrid({
                                 : "var(--shadow-sm)",
                             }}
                           >
-                            <EventTagStripes colors={tagColors} />
-                            <EventCreatorAccent event={event} width={creatorAccentWidth} />
+                            <EventTagStripes event={event} colors={tagColors} width={`${leftPad + 7}px`} />
                             <div className="flex items-center gap-1">
                               <EventCreatorBadge event={event} />
                               <span className="truncate">{event.title}</span>

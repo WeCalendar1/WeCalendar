@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import type { CalendarMode } from "@/lib/calendar";
 
 // ─── Storage keys ─────────────────────────────────────────────────────────────
@@ -12,6 +12,7 @@ const KEYS = {
   showDeclinedEvents: "wecalendar.pref.showDeclinedEvents",
   showWorkspaceInSidebar: "wecalendar.pref.showWorkspaceInSidebar",
   confirmDeleteOthers: "wecalendar.pref.confirmDeleteOthers",
+  creatorColorAccent: "wecalendar.pref.creatorColorAccent",
 } as const;
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -23,6 +24,7 @@ const DEFAULTS = {
   showDeclinedEvents: false,
   showWorkspaceInSidebar: false,
   confirmDeleteOthers: true,
+  creatorColorAccent: false,
 };
 
 // ─── Loader helpers ───────────────────────────────────────────────────────────
@@ -56,6 +58,29 @@ export interface CalendarPrefs {
   showWorkspaceInSidebar: boolean;
   /** Require an extra confirmation step before deleting another user's event. */
   confirmDeleteOthers: boolean;
+  /** Colour the left block of event chips with the creator's favourite colour instead of tags. */
+  creatorColorAccent: boolean;
+}
+
+// Same-tab change notification (the native "storage" event only fires cross-tab).
+const PREF_EVENT = "wecalendar:pref-change";
+
+function subscribePrefs(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(PREF_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(PREF_EVENT, callback);
+  };
+}
+
+/** Hydration-safe read of the creator-colour accent setting, for event chips. */
+export function useCreatorColorAccent(): boolean {
+  return useSyncExternalStore(
+    subscribePrefs,
+    () => loadBool(KEYS.creatorColorAccent, DEFAULTS.creatorColorAccent),
+    () => DEFAULTS.creatorColorAccent,
+  );
 }
 
 export function useCalendarPrefs() {
@@ -77,6 +102,17 @@ export function useCalendarPrefs() {
   const [showWorkspaceInSidebar, _setShowWorkspaceInSidebar] = useState<boolean>(() =>
     loadBool(KEYS.showWorkspaceInSidebar, DEFAULTS.showWorkspaceInSidebar),
   );
+  const [creatorColorAccent, _setCreatorColorAccent] = useState<boolean>(() =>
+    loadBool(KEYS.creatorColorAccent, DEFAULTS.creatorColorAccent),
+  );
+
+  const setCreatorColorAccent = useCallback((v: boolean) => {
+    _setCreatorColorAccent(v);
+    try {
+      localStorage.setItem(KEYS.creatorColorAccent, String(v));
+      window.dispatchEvent(new Event(PREF_EVENT));
+    } catch { /* ignore */ }
+  }, []);
 
   const setHidePastConflicts = useCallback((v: boolean) => {
     _setHidePastConflicts(v);
@@ -109,12 +145,13 @@ export function useCalendarPrefs() {
   }, []);
 
   return {
-    prefs: { hidePastConflicts, weekStartsOnMonday, defaultView, showDeclinedEvents, showWorkspaceInSidebar, confirmDeleteOthers },
+    prefs: { hidePastConflicts, weekStartsOnMonday, defaultView, showDeclinedEvents, showWorkspaceInSidebar, confirmDeleteOthers, creatorColorAccent },
     setHidePastConflicts,
     setWeekStartsOnMonday,
     setDefaultView,
     setShowDeclinedEvents,
     setShowWorkspaceInSidebar,
     setConfirmDeleteOthers,
+    setCreatorColorAccent,
   };
 }

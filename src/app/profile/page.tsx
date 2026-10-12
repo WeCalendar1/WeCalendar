@@ -350,7 +350,7 @@ const CALENDAR_VIEWS: { id: CalendarMode; label: string }[] = [
 ];
 
 function CalendarSettingsSection() {
-  const { prefs, setHidePastConflicts, setWeekStartsOnMonday, setDefaultView, setShowDeclinedEvents, setConfirmDeleteOthers } =
+  const { prefs, setHidePastConflicts, setWeekStartsOnMonday, setDefaultView, setShowDeclinedEvents, setConfirmDeleteOthers, setCreatorColorAccent } =
     useCalendarPrefs();
 
   return (
@@ -393,6 +393,13 @@ function CalendarSettingsSection() {
           description="Show an extra warning when you try to delete an event created by another person"
           checked={prefs.confirmDeleteOthers}
           onChange={setConfirmDeleteOthers}
+        />
+        <SettingRow
+          id="pref-creator-color-accent"
+          label="Show creator colour on events"
+          description="Colour the left edge of each event with its creator's favourite colour instead of the secondary tag"
+          checked={prefs.creatorColorAccent}
+          onChange={setCreatorColorAccent}
         />
 
         {/* Default view — segmented control */}

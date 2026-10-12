@@ -11,28 +11,6 @@ export function getEventCreatorColor(event: CalendarEvent): string {
     : "#64748b";
 }
 
-export function EventCreatorAccent({
-  event,
-  width,
-  radius = "var(--radius-sm)",
-}: {
-  event: CalendarEvent;
-  width: string;
-  radius?: string;
-}) {
-  return (
-    <span
-      aria-hidden
-      className="pointer-events-none absolute inset-y-0 left-0 z-0"
-      style={{
-        width,
-        background: getEventCreatorColor(event),
-        borderRadius: `${radius} 0 0 ${radius}`,
-      }}
-    />
-  );
-}
-
 export function EventCreatorBadge({ event }: { event: CalendarEvent }) {
   const [imageFailed, setImageFailed] = useState(false);
   const name = event.creator?.display_name?.trim() || "Unknown creator";

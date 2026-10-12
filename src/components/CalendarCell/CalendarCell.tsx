@@ -1,5 +1,5 @@
 import React from "react";
-import { EventCreatorAccent, EventCreatorBadge } from "@/components/EventCreatorBadge";
+import { EventCreatorBadge } from "@/components/EventCreatorBadge";
 import type { CalendarDay } from "@/lib/calendar";
 import {
   eventsForDay,
@@ -212,19 +212,12 @@ export function CalendarCell({
         const pos   = getSeriesSpanPosition(event, events, day.date, dayOfWeek);
         const tagColors = colorsForEvent(event.id, eventTags, tags);
         const color = tagColors[0] ?? "var(--accent)";
-        const secondaryColors = tagColors.slice(1, 5);
         const { left, right } = barEdges(pos);
         const showLabel = pos === "solo" || pos === "start";
         const warn =
           showConflictHighlights && Boolean(conflictIds?.has(event.id));
 
-        const baseLeftPad = 10;
-        const leftPad =
-          showLabel && (pos === "solo" || pos === "start")
-            ? secondaryColors.length > 0
-              ? Math.max(baseLeftPad, 8 + secondaryColors.length * 4)
-              : baseLeftPad
-            : 5;
+        const leftPad = 10;
 
         return (
           <button
@@ -254,10 +247,7 @@ export function CalendarCell({
             }}
           >
             {showLabel && (pos === "solo" || pos === "start") && (
-              <>
-                <EventTagStripes colors={tagColors} />
-                <EventCreatorAccent event={event} width={`${leftPad + 7}px`} radius="4px" />
-              </>
+              <EventTagStripes event={event} colors={tagColors} width={`${leftPad + 7}px`} radius="4px" />
             )}
             {showLabel && (
               <span className="flex min-w-0 items-center gap-1">
@@ -281,11 +271,9 @@ export function CalendarCell({
         {visibleSingle.map((event) => {
           const tagColors = colorsForEvent(event.id, eventTags, tags);
           const color = tagColors[0] ?? "var(--accent)";
-          const secondaryColors = tagColors.slice(1, 5);
           const warn =
             showConflictHighlights && Boolean(conflictIds?.has(event.id));
-          const leftPad = secondaryColors.length > 0 ? Math.max(14, 10 + secondaryColors.length * 4) : 14;
-          const creatorAccentWidth = `${leftPad + 7}px`;
+          const leftPad = 14;
           return (
             <button
               key={event.id}
@@ -306,8 +294,7 @@ export function CalendarCell({
                 opacity: 0.92,
               }}
             >
-              <EventTagStripes colors={tagColors} />
-              <EventCreatorAccent event={event} width={creatorAccentWidth} />
+              <EventTagStripes event={event} colors={tagColors} width={`${leftPad + 7}px`} />
               <EventCreatorBadge event={event} />
               <span className="truncate">{formatEventTime(event.starts_at)} {event.title}</span>
             </button>
