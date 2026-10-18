@@ -10,6 +10,7 @@ import { EventViewerPanel } from "@/components/EventViewerPanel";
 import { Navbar } from "@/components/Navbar";
 import { NotesApp, type NoteDraftContext } from "@/components/Notes";
 import { RightPanel } from "@/components/RightPanel";
+import { PanelResizeHandle, usePanelWidth } from "@/components/PanelResizeHandle";
 import { Sidebar } from "@/components/Sidebar";
 import { getInitials } from "@/lib/auth";
 import {
@@ -71,6 +72,8 @@ export function AppShell() {
   const [hiddenConflictKeys, setHiddenConflictKeys] = useState<Set<string>>(() => new Set());
   const [draggingNoteIds, setDraggingNoteIds] = useState<string[]>([]);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const { width: panelWidth, setWidth: setPanelWidth } = usePanelWidth();
+  const [panelResizing, setPanelResizing] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
   const selectedNoteIdRef = useRef<string | null>(null);
@@ -1048,6 +1051,14 @@ export function AppShell() {
               />
             </main>
 
+            {(eventViewerOpen || showRightPanel) && (
+              <PanelResizeHandle
+                width={panelWidth}
+                onResize={setPanelWidth}
+                onDraggingChange={setPanelResizing}
+              />
+            )}
+
             <EventViewerPanel
               visible={eventViewerOpen}
               events={filteredEvents}
@@ -1056,9 +1067,11 @@ export function AppShell() {
               searchQuery={searchQuery}
               todayJumpKey={todayJumpKey}
               onSelectEvent={openEventDetails}
+              width={panelWidth}
+              resizing={panelResizing}
             />
 
-            <RightPanel visible={showRightPanel} />
+            <RightPanel visible={showRightPanel} width={panelWidth} />
           </>
         )}
       </div>

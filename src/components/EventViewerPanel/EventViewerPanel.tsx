@@ -317,6 +317,10 @@ export type EventViewerPanelProps = {
   searchQuery: string;
   todayJumpKey?: number;
   onSelectEvent: (event: CalendarEvent) => void;
+  /** Panel width in px (controlled by the resize handle). */
+  width?: number;
+  /** True while the user is dragging the resize handle — skips the spring so it tracks the cursor. */
+  resizing?: boolean;
 };
 
 export function EventViewerPanel({
@@ -326,6 +330,8 @@ export function EventViewerPanel({
   eventTags,
   todayJumpKey,
   onSelectEvent,
+  width = 380,
+  resizing = false,
 }: EventViewerPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -345,9 +351,9 @@ export function EventViewerPanel({
         <motion.aside
           key="event-viewer"
           initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 380, opacity: 1 }}
+          animate={{ width, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
-          transition={{ type: "spring", bounce: 0, duration: 0.35 }}
+          transition={resizing ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.35 }}
           className="shrink-0 overflow-hidden"
           style={{
             borderLeft: "none",
@@ -356,8 +362,8 @@ export function EventViewerPanel({
         >
           <div
             ref={scrollRef}
-            className="flex h-full w-[380px] flex-col overflow-y-auto"
-            style={{ background: "var(--background)" }}
+            className="flex h-full flex-col overflow-y-auto"
+            style={{ background: "var(--background)", width }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3">
