@@ -3,6 +3,7 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  buildDraftInterval,
   expandEventDateKeys,
   groupConsecutiveDateKeys,
   validateDraftDateGroups,
@@ -292,17 +293,17 @@ function CreateEventModalContent({
     const excludeIds = new Set(seriesEvents.map((e) => e.id));
     if (event) excludeIds.add(event.id);
 
-    const [sh, sm] = startTime.split(":").map(Number);
-    const [eh, em] = endTime.split(":").map(Number);
     const titles = new Set<string>();
 
     for (const grp of groupConsecutiveDateKeys(selectedDates)) {
-      const [sy, smo, sd] = grp[0]!.split("-").map(Number);
-      const [ey, emo, ed] = grp[grp.length - 1]!.split("-").map(Number);
-      const startsAt = new Date(sy!, smo! - 1, sd!, sh!, sm!, 0);
-      const endsAt = new Date(ey!, emo! - 1, ed!, eh!, em!, 0);
-      if (endsAt <= startsAt) continue;
-      const result = draftOverlapsExisting(startsAt, endsAt, existingEvents, excludeIds);
+      const interval = buildDraftInterval(grp[0]!, grp[grp.length - 1]!, startTime, endTime);
+      if (!interval) continue;
+      const result = draftOverlapsExisting(
+        interval.startsAt,
+        interval.endsAt,
+        existingEvents,
+        excludeIds,
+      );
       for (const t of result.titles) titles.add(t);
     }
 
@@ -333,31 +334,21 @@ function CreateEventModalContent({
     offsetDays = 0,
     offsetMonths = 0,
   ): EventDraft | null {
-    const [sh, sm] = startTime.split(":").map(Number);
-    const [eh, em] = endTime.split(":").map(Number);
-
-    const [sy, smo, sd] = startDateStr.split("-").map(Number);
-    const startsAt = new Date(sy!, smo! - 1, sd!, sh!, sm!, 0);
-
-    const [ey, emo, ed] = endDateStr.split("-").map(Number);
-    const endsAt = new Date(ey!, emo! - 1, ed!, eh!, em!, 0);
-
-    if (offsetMonths !== 0) {
-      startsAt.setMonth(startsAt.getMonth() + offsetMonths);
-      endsAt.setMonth(endsAt.getMonth() + offsetMonths);
-    }
-    if (offsetDays !== 0) {
-      startsAt.setDate(startsAt.getDate() + offsetDays);
-      endsAt.setDate(endsAt.getDate() + offsetDays);
-    }
-
-    if (endsAt <= startsAt) return null;
+    const interval = buildDraftInterval(
+      startDateStr,
+      endDateStr,
+      startTime,
+      endTime,
+      offsetDays,
+      offsetMonths,
+    );
+    if (!interval) return null;
 
     return {
       title: title.trim(),
       description: description.trim(),
-      startsAt,
-      endsAt,
+      startsAt: interval.startsAt,
+      endsAt: interval.endsAt,
       tagIds: selectedTagIds,
     };
   }

@@ -30,3 +30,4 @@ describe("bucketEvents weekStartsOnMonday", () => {
     expect(monStart.thisWeek.map((e) => e.id)).toEqual(["sun"]);
   });
 });
+

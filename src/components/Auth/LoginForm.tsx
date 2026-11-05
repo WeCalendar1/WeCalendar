@@ -114,72 +114,65 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-sm space-y-6">
       <div
-        className="grid grid-cols-2 gap-1 p-1 text-sm font-medium"
-        style={{
-          borderRadius: "var(--radius-lg)",
-          background: "var(--surface-3)",
-          boxShadow: "inset 0 0 0 0.5px var(--hairline)",
-        }}
+        className="segmented w-full"
+        style={{ borderRadius: "var(--radius-xl)", display: "flex", width: "100%" }}
       >
-        {(["signup", "signin"] as const).map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => {
-              setMode(item);
-              setError(null);
-              setMessage(null);
-            }}
-            className="pressable py-2 font-semibold"
-            style={{
-              borderRadius: "calc(var(--radius-lg) - 3px)",
-              background: mode === item ? "var(--surface)" : "transparent",
-              color: mode === item ? "var(--foreground)" : "var(--text-secondary)",
-              boxShadow: mode === item ? "var(--shadow-sm)" : "none",
-              letterSpacing: "-0.008em",
-            }}
-          >
-            {item === "signup" ? "Create account" : "Sign in"}
-          </button>
-        ))}
+        {(
+          [
+            { id: "signup", label: "Create account" },
+            { id: "signin", label: "Sign in" },
+          ] as const
+        ).map((tab) => {
+          const active = mode === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setMode(tab.id);
+                setError(null);
+                setMessage(null);
+              }}
+              className="segmented-item pressable flex-1"
+              data-active={active}
+              style={{ padding: "0.5rem 0.75rem" }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {mode === "signup" && (
-          <label className="block space-y-1.5 text-sm">
-            <span className="font-semibold" style={{ color: "var(--foreground)" }}>
+          <div className="space-y-1.5">
+            <label htmlFor="display-name" className="text-sm font-semibold">
               Display name
-            </span>
+            </label>
             <input
+              id="display-name"
               type="text"
               autoComplete="name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Alex"
+              placeholder="Alex Rivera"
+              maxLength={48}
               className="w-full px-3.5 py-2.5 text-sm outline-none"
               style={{
                 borderRadius: "var(--radius-lg)",
-                border: "none",
-                boxShadow: "inset 0 0 0 0.5px var(--border-strong)",
-                background: "var(--surface)",
-                color: "var(--foreground)",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-muted)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.boxShadow = "inset 0 0 0 0.5px var(--border-strong)";
+                background: "var(--surface-2)",
+                boxShadow: "inset 0 0 0 0.5px var(--hairline)",
               }}
             />
-          </label>
+          </div>
         )}
 
-        <label className="block space-y-1.5 text-sm">
-          <span className="font-semibold" style={{ color: "var(--foreground)" }}>
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="text-sm font-semibold">
             Email
-          </span>
+          </label>
           <input
+            id="email"
             type="email"
             required
             autoComplete="email"
@@ -189,57 +182,45 @@ export function LoginForm() {
             className="w-full px-3.5 py-2.5 text-sm outline-none"
             style={{
               borderRadius: "var(--radius-lg)",
-              border: "none",
-              boxShadow: "inset 0 0 0 0.5px var(--border-strong)",
-              background: "var(--surface)",
-              color: "var(--foreground)",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.boxShadow =
-                "inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-muted)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.boxShadow = "inset 0 0 0 0.5px var(--border-strong)";
+              background: "var(--surface-2)",
+              boxShadow: "inset 0 0 0 0.5px var(--hairline)",
             }}
           />
-        </label>
+        </div>
 
-        <div className="space-y-1.5 text-sm">
-          <label htmlFor="auth-password" className="block font-semibold" style={{ color: "var(--foreground)" }}>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="text-sm font-semibold">
             Password
           </label>
           <div className="relative">
             <input
-              id="auth-password"
+              id="password"
               type={showPassword ? "text" : "password"}
               required
               minLength={8}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={mode === "signup" ? "8+ chars, A-Z, 0-9, symbol" : "••••••••"}
-              className="w-full py-2.5 pl-3.5 pr-10 text-sm outline-none"
+              placeholder={mode === "signup" ? "Min. 8 characters" : "Password"}
+              className="w-full py-2.5 pr-11 pl-3.5 text-sm outline-none"
               style={{
                 borderRadius: "var(--radius-lg)",
-                border: "none",
-                boxShadow: "inset 0 0 0 0.5px var(--border-strong)",
-                background: "var(--surface)",
-                color: "var(--foreground)",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-muted)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.boxShadow = "inset 0 0 0 0.5px var(--border-strong)";
+                background: "var(--surface-2)",
+                boxShadow: `inset 0 0 0 0.5px ${
+                  mode === "signup" && password.length > 0 && pwAllValid
+                    ? "var(--color-success)"
+                    : "var(--hairline)"
+                }`,
+                transition: "box-shadow var(--duration-fast) var(--ease-out)",
               }}
             />
             <button
               type="button"
-              onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer p-1"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer p-0.5 transition-opacity duration-150 hover:opacity-70"
               style={{ color: "var(--text-muted)" }}
+              tabIndex={-1}
             >
               {showPassword ? (
                 <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

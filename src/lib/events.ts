@@ -5,6 +5,34 @@ export type CalendarEvent = Tables<"events"> & {
   creator?: Pick<Tables<"profiles">, "display_name" | "avatar_url" | "theme_preferences"> | null;
 };
 
+/**
+ * Returns the last local calendar day (`00:00`) occupied by `[startsAt, endsAt]`.
+ * An event ending at exact `00:00:00.000` with `endsAt > startsAt` ends at the
+ * boundary of the previous day rather than spilling onto the new day.
+ */
+export function effectiveEventEndDay(
+  startsAt: Date | string,
+  endsAt: Date | string,
+): Date {
+  const start = typeof startsAt === "string" ? new Date(startsAt) : startsAt;
+  const end = typeof endsAt === "string" ? new Date(endsAt) : endsAt;
+  const startDay = startOfDay(start);
+  const endDay = startOfDay(end);
+
+  if (
+    end.getTime() > start.getTime() &&
+    end.getHours() === 0 &&
+    end.getMinutes() === 0 &&
+    end.getSeconds() === 0 &&
+    end.getMilliseconds() === 0 &&
+    endDay.getTime() > startDay.getTime()
+  ) {
+    return startOfDay(addDays(endDay, -1));
+  }
+
+  return endDay.getTime() >= startDay.getTime() ? endDay : startDay;
+}
+
 /** Single-day events that start on `day`, sorted by start time. */
 export function eventsForDay(events: CalendarEvent[], day: Date): CalendarEvent[] {
   return events
@@ -36,13 +64,16 @@ export function eventsForTimeGridDay(events: CalendarEvent[], day: Date): Calend
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 }
 
-/** True if an event spans more than one calendar day. */
+/** True if an event occupies more than one calendar day. */
 export function isMultiDayEvent(event: CalendarEvent): boolean {
-  return !isSameDay(new Date(event.starts_at), new Date(event.ends_at));
+  return !isSameDay(
+    new Date(event.starts_at),
+    effectiveEventEndDay(event.starts_at, event.ends_at),
+  );
 }
 
 /**
- * All events whose span includes `day` (starts_at day ≤ day ≤ ends_at day).
+ * All events whose occupied day span includes `day`.
  * Sorted by start time. Use this for multi-day bar rendering in the month grid.
  */
 export function eventsSpanningDay(events: CalendarEvent[], day: Date): CalendarEvent[] {
@@ -50,7 +81,7 @@ export function eventsSpanningDay(events: CalendarEvent[], day: Date): CalendarE
   return events
     .filter((event) => {
       const s = startOfDay(new Date(event.starts_at));
-      const e = startOfDay(new Date(event.ends_at));
+      const e = effectiveEventEndDay(event.starts_at, event.ends_at);
       return s <= d && d <= e;
     })
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
@@ -72,7 +103,7 @@ export function getSpanPosition(
 ): SpanPosition {
   const d = startOfDay(day);
   const s = startOfDay(new Date(event.starts_at));
-  const en = startOfDay(new Date(event.ends_at));
+  const en = effectiveEventEndDay(event.starts_at, event.ends_at);
 
   const isEventStart = s.getTime() === d.getTime();
   const isEventEnd = en.getTime() === d.getTime();
@@ -299,21 +330,8 @@ function parseLocalDateKey(key: string): Date {
  * Excludes a trailing exact-midnight (00:00:00.000) end day when ends_at > starts_at.
  */
 export function expandEventDateKeys(startsAtIso: string, endsAtIso: string): string[] {
-  const start = new Date(startsAtIso);
-  const end = new Date(endsAtIso);
-  const firstDay = startOfDay(start);
-  let lastDay = startOfDay(end);
-
-  if (
-    end.getTime() > start.getTime() &&
-    end.getHours() === 0 &&
-    end.getMinutes() === 0 &&
-    end.getSeconds() === 0 &&
-    end.getMilliseconds() === 0 &&
-    lastDay.getTime() > firstDay.getTime()
-  ) {
-    lastDay = startOfDay(addDays(lastDay, -1));
-  }
+  const firstDay = startOfDay(new Date(startsAtIso));
+  const lastDay = effectiveEventEndDay(startsAtIso, endsAtIso);
 
   const keys: string[] = [];
   let cursor = firstDay;
@@ -341,6 +359,45 @@ export function groupConsecutiveDateKeys(dates: Iterable<string>): string[][] {
   return groups;
 }
 
+/**
+ * Builds local `[startsAt, endsAt]` Date objects from a contiguous date range
+ * and `"HH:MM"` time strings. Treats `endTime === "00:00"` as `24:00` (end-of-day
+ * midnight on `endDateStr`, i.e. `00:00` of the following day), matching
+ * `expandEventDateKeys`.
+ */
+export function buildDraftInterval(
+  startDateStr: string,
+  endDateStr: string,
+  startTime: string,
+  endTime: string,
+  offsetDays = 0,
+  offsetMonths = 0,
+): { startsAt: Date; endsAt: Date } | null {
+  const [sh, sm] = startTime.split(":").map(Number);
+  const [eh, em] = endTime.split(":").map(Number);
+
+  const [sy, smo, sd] = startDateStr.split("-").map(Number);
+  const startsAt = new Date(sy!, smo! - 1, sd!, sh ?? 0, sm ?? 0, 0);
+
+  const [ey, emo, ed] = endDateStr.split("-").map(Number);
+  const endsAt = new Date(ey!, emo! - 1, ed!, eh ?? 0, em ?? 0, 0);
+
+  if (offsetMonths !== 0) {
+    startsAt.setMonth(startsAt.getMonth() + offsetMonths);
+    endsAt.setMonth(endsAt.getMonth() + offsetMonths);
+  }
+  if (offsetDays !== 0) {
+    startsAt.setDate(startsAt.getDate() + offsetDays);
+    endsAt.setDate(endsAt.getDate() + offsetDays);
+  }
+  if ((eh ?? 0) === 0 && (em ?? 0) === 0) {
+    endsAt.setDate(endsAt.getDate() + 1);
+  }
+
+  if (endsAt <= startsAt) return null;
+  return { startsAt, endsAt };
+}
+
 export function validateDraftDateGroups(
   groups: string[][],
   startTime: string,
@@ -357,7 +414,7 @@ export function validateDraftDateGroups(
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
   const startMinutes = (sh ?? 0) * 60 + (sm ?? 0);
-  const endMinutes = (eh ?? 0) * 60 + (em ?? 0);
+  const endMinutes = (eh ?? 0) === 0 && (em ?? 0) === 0 ? 1440 : (eh ?? 0) * 60 + (em ?? 0);
 
   if (groups.some((g) => g.length === 1) && endMinutes <= startMinutes) {
     return "End time must be after start time.";

@@ -65,3 +65,4 @@ describe("calendarPrefs store", () => {
     expect(dispatchEvent.mock.calls[0]?.[0]?.type).toBe(PREF_EVENT);
   });
 });
+

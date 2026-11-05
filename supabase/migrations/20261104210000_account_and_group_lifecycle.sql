@@ -65,6 +65,13 @@ begin
     raise exception 'Not authenticated';
   end if;
 
+  -- Serialize concurrent leaves on the same workspace so the last two members
+  -- leaving simultaneously cannot strand an empty group row.
+  perform 1
+  from public.groups
+  where id = p_group_id
+  for update;
+
   if not exists (
     select 1
     from public.group_members
@@ -177,11 +184,24 @@ begin
 
   perform public.leave_all_groups();
 
+  -- Also purge any lingering private notes/folders from groups left prior to Phase 1
+  delete from public.notes
+  where visibility = 'private'
+    and created_by = v_uid;
+
+  delete from public.note_folders
+  where visibility = 'private'
+    and created_by = v_uid;
+
   delete from auth.users where id = v_uid;
 end;
 $$;
 
 alter function public.delete_own_account() owner to postgres;
+
+revoke all on function public.leave_group(uuid) from public, anon;
+revoke all on function public.leave_all_groups() from public, anon;
+revoke all on function public.delete_own_account() from public, anon;
 
 grant execute on function public.leave_group(uuid) to authenticated;
 grant execute on function public.leave_all_groups() to authenticated;

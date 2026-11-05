@@ -454,18 +454,21 @@ function CalendarSettingsSection() {
 function LeaveGroupRow({
   groups,
   onLeave,
+  disabled = false,
 }: {
   groups: { id: string; name: string }[];
   onLeave: (groupId: string) => void;
+  disabled?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState("");
   const [confirming, setConfirming] = useState(false);
 
-  const selectedGroup = groups.find((g) => g.id === selectedId);
+  const effectiveSelectedId = groups.some((g) => g.id === selectedId) ? selectedId : "";
+  const selectedGroup = groups.find((g) => g.id === effectiveSelectedId);
 
   function handleConfirm() {
-    if (!selectedId) return;
-    onLeave(selectedId);
+    if (!effectiveSelectedId || disabled) return;
+    onLeave(effectiveSelectedId);
     setSelectedId("");
     setConfirming(false);
   }
@@ -498,10 +501,10 @@ function LeaveGroupRow({
       <div className="flex shrink-0 items-center gap-2">
         <select
           id="leave-group-select"
-          value={selectedId}
+          value={effectiveSelectedId}
           onChange={(e) => { setSelectedId(e.target.value); setConfirming(false); }}
-          disabled={groups.length === 0}
-          className="cursor-pointer py-1.5 pl-2.5 pr-7 text-xs font-semibold outline-none"
+          disabled={disabled || groups.length === 0}
+          className="cursor-pointer py-1.5 pl-2.5 pr-7 text-xs font-semibold outline-none disabled:cursor-not-allowed disabled:opacity-50"
           style={{
             borderRadius: "var(--radius-full)",
             border: "1.5px solid #fca5a5",
@@ -524,13 +527,14 @@ function LeaveGroupRow({
           ))}
         </select>
 
-        {confirming ? (
+        {confirming && effectiveSelectedId ? (
           <>
             <button
               id="leave-group-confirm-btn"
               type="button"
+              disabled={disabled}
               onClick={handleConfirm}
-              className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold text-white"
+              className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
               style={{
                 borderRadius: "var(--radius-full)",
                 background: "#dc2626",
@@ -542,8 +546,9 @@ function LeaveGroupRow({
             <button
               id="leave-group-cancel-btn"
               type="button"
+              disabled={disabled}
               onClick={() => setConfirming(false)}
-              className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold"
+              className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
               style={{
                 borderRadius: "var(--radius-full)",
                 border: "1.5px solid var(--border)",
@@ -558,7 +563,7 @@ function LeaveGroupRow({
           <button
             id="leave-group-btn"
             type="button"
-            disabled={!selectedId}
+            disabled={disabled || !effectiveSelectedId}
             onClick={() => setConfirming(true)}
             className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
             style={{
@@ -1452,7 +1457,7 @@ export default function ProfilePage() {
               confirmLabel="Unsync"
             />
             {/* ── Leave a specific group (selector) ── */}
-            <LeaveGroupRow groups={groups} onLeave={(id) => { void handleLeaveGroup(id); }} />
+            <LeaveGroupRow disabled={dangerBusy} groups={groups} onLeave={(id) => { void handleLeaveGroup(id); }} />
 
             <DangerButton
               id="leave-all-groups-btn"

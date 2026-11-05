@@ -30,3 +30,4 @@ describe("validatePasswordRules", () => {
     expect(getInitials("alex@example.com")).toBe("A");
   });
 });
+

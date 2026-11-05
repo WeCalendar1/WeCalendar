@@ -939,6 +939,10 @@ export function AppShell() {
       ? [selectedEvent]
       : [];
 
+  const consumeWorkspaceModalRequest = useCallback(() => {
+    setWorkspaceModalRequestKey(0);
+  }, []);
+
   function openWorkspaceOnboarding() {
     setSidebarOpen(true);
     setWorkspaceModalRequestKey((k) => k + 1);
@@ -957,12 +961,10 @@ export function AppShell() {
         isDark={themeMode === "dark"}
         accent={accent}
         isTodayDisabled={isDateInView(startOfDay(new Date()), viewDate, calendarMode, prefs.weekStartsOnMonday)}
-        onToggleSidebar={() =>
-          setSidebarOpen((open) => {
-            if (open) setWorkspaceModalRequestKey(0);
-            return !open;
-          })
-        }
+        onToggleSidebar={() => {
+          if (sidebarOpen) setWorkspaceModalRequestKey(0);
+          setSidebarOpen((open) => !open);
+        }}
         onToday={() => {
           setViewDate(startOfDay(new Date()));
           setTodayJumpKey((k) => k + 1);
@@ -1034,6 +1036,7 @@ export function AppShell() {
           weekStartsOnMonday={prefs.weekStartsOnMonday}
           onSelectDate={setViewDate}
           workspaceModalRequestKey={workspaceModalRequestKey}
+          onConsumeWorkspaceModalRequest={consumeWorkspaceModalRequest}
           notesFilter={notesFilter}
           noteFolders={noteFolders}
           onNotesFilterChange={handleNotesFilterChange}

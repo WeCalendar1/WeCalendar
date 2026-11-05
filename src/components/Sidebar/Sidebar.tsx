@@ -34,6 +34,7 @@ type SidebarProps = {
   weekStartsOnMonday?: boolean;
   onSelectDate?: (date: Date) => void;
   workspaceModalRequestKey?: number;
+  onConsumeWorkspaceModalRequest?: () => void;
   // Notes-specific (consumed when screenView === "notes")
   notesFilter?: NotesFilter;
   noteFolders?: NoteFolder[];
@@ -67,6 +68,7 @@ export function Sidebar({
   weekStartsOnMonday = false,
   onSelectDate,
   workspaceModalRequestKey,
+  onConsumeWorkspaceModalRequest,
   notesFilter,
   noteFolders = [],
   onNotesFilterChange,
@@ -142,6 +144,7 @@ export function Sidebar({
                 onCreateGroup={onCreateGroup}
                 onJoinGroup={onJoinGroup}
                 openModalRequestKey={workspaceModalRequestKey}
+                onConsumeModalRequest={onConsumeWorkspaceModalRequest}
               />
             )}
 

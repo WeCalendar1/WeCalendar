@@ -1,6 +1,6 @@
 import { CalendarCell } from "@/components/CalendarCell";
 import { getMonthGrid, getWeekdayLabels, startOfDay } from "@/lib/calendar";
-import { isMultiDayEvent, type CalendarEvent } from "@/lib/events";
+import { effectiveEventEndDay, isMultiDayEvent, type CalendarEvent } from "@/lib/events";
 import type { EventTag, Tag } from "@/lib/tags";
 
 type CalendarGridProps = {
@@ -42,18 +42,18 @@ function computeMultiDaySlots(events: CalendarEvent[]): Map<string, number> {
   for (const group of seriesGroups.values()) {
     if (group.length === 1 && !isMultiDayEvent(group[0]!)) continue;
 
-    let minS = new Date(group[0]!.starts_at);
-    let maxE = new Date(group[0]!.ends_at);
+    let minS = startOfDay(new Date(group[0]!.starts_at));
+    let maxE = effectiveEventEndDay(group[0]!.starts_at, group[0]!.ends_at);
     for (const e of group) {
-      const s = new Date(e.starts_at);
-      const en = new Date(e.ends_at);
+      const s = startOfDay(new Date(e.starts_at));
+      const en = effectiveEventEndDay(e.starts_at, e.ends_at);
       if (s < minS) minS = s;
       if (en > maxE) maxE = en;
     }
     spans.push({
       eventIds: group.map((e) => e.id),
-      start: startOfDay(minS),
-      end: startOfDay(maxE),
+      start: minS,
+      end: maxE,
     });
   }
 
@@ -61,7 +61,7 @@ function computeMultiDaySlots(events: CalendarEvent[]): Map<string, number> {
     spans.push({
       eventIds: [event.id],
       start: startOfDay(new Date(event.starts_at)),
-      end: startOfDay(new Date(event.ends_at)),
+      end: effectiveEventEndDay(event.starts_at, event.ends_at),
     });
   }
 

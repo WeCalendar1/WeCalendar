@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
+  buildDraftInterval,
+  effectiveEventEndDay,
   eventsForDay,
   eventsForTimeGridDay,
   eventPosition,
@@ -360,5 +362,70 @@ describe("multi-day modal date helpers", () => {
     expect(
       validateDraftDateGroups(splitDays, "09:00", "11:00", { isSingleEventEdit: true }),
     ).toBe("Select consecutive dates when editing a single event.");
+  });
+
+  it("round-trips exact-midnight 00:00 endpoints without validation failure or 24-hour truncation", () => {
+    // 1-day event ending at midnight: Fri Nov 6 22:00 -> Sat Nov 7 00:00
+    const singleKeys = expandEventDateKeys(
+      new Date(2026, 10, 6, 22, 0).toISOString(),
+      new Date(2026, 10, 7, 0, 0).toISOString(),
+    );
+    expect(singleKeys).toEqual(["2026-11-06"]);
+    const singleGroups = groupConsecutiveDateKeys(singleKeys);
+    expect(validateDraftDateGroups(singleGroups, "22:00", "00:00")).toBeNull();
+    const singleInterval = buildDraftInterval(
+      singleGroups[0]![0]!,
+      singleGroups[0]![singleGroups[0]!.length - 1]!,
+      "22:00",
+      "00:00",
+    );
+    expect(singleInterval).toEqual({
+      startsAt: new Date(2026, 10, 6, 22, 0, 0),
+      endsAt: new Date(2026, 10, 7, 0, 0, 0),
+    });
+
+    // Multi-day event ending at midnight: Fri Nov 6 18:00 -> Sun Nov 8 00:00
+    const multiKeys = expandEventDateKeys(
+      new Date(2026, 10, 6, 18, 0).toISOString(),
+      new Date(2026, 10, 8, 0, 0).toISOString(),
+    );
+    expect(multiKeys).toEqual(["2026-11-06", "2026-11-07"]);
+    const multiGroups = groupConsecutiveDateKeys(multiKeys);
+    expect(validateDraftDateGroups(multiGroups, "18:00", "00:00")).toBeNull();
+    const multiInterval = buildDraftInterval(
+      multiGroups[0]![0]!,
+      multiGroups[0]![multiGroups[0]!.length - 1]!,
+      "18:00",
+      "00:00",
+    );
+    expect(multiInterval).toEqual({
+      startsAt: new Date(2026, 10, 6, 18, 0, 0),
+      endsAt: new Date(2026, 10, 8, 0, 0, 0),
+    });
+  });
+
+  it("keeps Month-view spanning helpers consistent with TimeGrid on exact-midnight 00:00 endpoints", () => {
+    const lateShow = makeEvent({
+      id: "late",
+      starts_at: new Date(2026, 10, 6, 22, 0).toISOString(), // Fri 22:00
+      ends_at: new Date(2026, 10, 7, 0, 0).toISOString(),    // Sat 00:00
+    });
+    expect(effectiveEventEndDay(lateShow.starts_at, lateShow.ends_at)).toEqual(
+      new Date(2026, 10, 6),
+    );
+    expect(isMultiDayEvent(lateShow)).toBe(false);
+    expect(eventsSpanningDay([lateShow], new Date(2026, 10, 6)).map((e) => e.id)).toEqual(["late"]);
+    expect(eventsSpanningDay([lateShow], new Date(2026, 10, 7))).toEqual([]);
+
+    const twoDayMidnight = makeEvent({
+      id: "two-day",
+      starts_at: new Date(2026, 10, 6, 18, 0).toISOString(), // Fri 18:00
+      ends_at: new Date(2026, 10, 8, 0, 0).toISOString(),    // Sun 00:00
+    });
+    expect(isMultiDayEvent(twoDayMidnight)).toBe(true);
+    expect(eventsSpanningDay([twoDayMidnight], new Date(2026, 10, 7)).map((e) => e.id)).toEqual(["two-day"]);
+    expect(eventsSpanningDay([twoDayMidnight], new Date(2026, 10, 8))).toEqual([]);
+    expect(getSpanPosition(twoDayMidnight, new Date(2026, 10, 6), 5, true)).toBe("start");
+    expect(getSpanPosition(twoDayMidnight, new Date(2026, 10, 7), 6, true)).toBe("end");
   });
 });
