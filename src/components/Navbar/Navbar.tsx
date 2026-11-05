@@ -377,10 +377,12 @@ function loadRecentColors(): string[] {
 
 function ProfileMenu({
   userInitials,
+  userAvatarUrl,
   accent = "#007AFF",
   onSelectAccent,
 }: {
   userInitials: string;
+  userAvatarUrl?: string | null;
   accent?: string;
   onSelectAccent?: (color: string) => void;
 }) {
@@ -391,6 +393,8 @@ function ProfileMenu({
   const [hexInput, setHexInput] = useState(accent);
   const [recentColors, setRecentColors] = useState<string[]>(loadRecentColors);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
+  const showAvatar = Boolean(userAvatarUrl && failedAvatarUrl !== userAvatarUrl);
 
   function pushRecentColor(color: string) {
     if (!/^#[0-9a-fA-F]{6}$/.test(color)) return;
@@ -449,7 +453,7 @@ function ProfileMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         title="Account"
-        className="pressable flex h-8 w-8 items-center justify-center text-sm font-semibold"
+        className="pressable flex h-8 w-8 items-center justify-center overflow-hidden text-sm font-semibold"
         style={{
           borderRadius: "var(--radius-full)",
           background: "var(--accent)",
@@ -457,7 +461,17 @@ function ProfileMenu({
           letterSpacing: "-0.01em",
         }}
       >
-        {userInitials}
+        {showAvatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={userAvatarUrl!}
+            alt=""
+            onError={() => setFailedAvatarUrl(userAvatarUrl ?? null)}
+            className="h-full w-full rounded-full object-cover"
+          />
+        ) : (
+          userInitials
+        )}
       </button>
 
       <AnimatePresence>
@@ -662,6 +676,7 @@ export type NavbarProps = {
   sidebarOpen: boolean;
   searchQuery: string;
   userInitials: string;
+  userAvatarUrl?: string | null;
   isDark: boolean;
   accent?: string;
   eventViewerOpen?: boolean;
@@ -688,6 +703,7 @@ export function Navbar({
   sidebarOpen,
   searchQuery,
   userInitials,
+  userAvatarUrl,
   isDark,
   accent,
   eventViewerOpen,
@@ -905,6 +921,7 @@ export function Navbar({
 
         <ProfileMenu
           userInitials={userInitials}
+          userAvatarUrl={userAvatarUrl}
           accent={accent}
           onSelectAccent={onSelectAccent}
         />

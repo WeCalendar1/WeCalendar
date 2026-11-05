@@ -42,7 +42,15 @@ export function AppShell() {
   const { mode: themeMode, accent, toggleMode: toggleTheme, setAccentColor } = useTheme();
   const { prefs } = useCalendarPrefs();
   const [viewDate, setViewDate] = useState(() => startOfDay(new Date()));
-  const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>(prefs.defaultView);
+  const [prevDefaultView, setPrevDefaultView] = useState<CalendarMode>(prefs.defaultView);
+  if (prefs.defaultView !== prevDefaultView) {
+    setPrevDefaultView(prefs.defaultView);
+    setCalendarMode(prefs.defaultView);
+  }
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
+  const [workspaceModalRequestKey, setWorkspaceModalRequestKey] = useState(0);
   const [screenView, setScreenView] = useState<ScreenView>("calendar");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [eventViewerOpen, setEventViewerOpen] = useState(false);
@@ -302,10 +310,37 @@ export function AppShell() {
       setEventTags([]);
       setNoteFolders([]);
       setNotes([]);
+      setUserAvatarUrl(null);
+      setProfileDisplayName(null);
       return;
     }
     void loadGroups();
-  }, [user, loadGroups]);
+    let active = true;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!active) return;
+      if (error) {
+        const { data: fallback } = await supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (!active) return;
+        setProfileDisplayName(fallback?.display_name ?? null);
+        setUserAvatarUrl(null);
+        return;
+      }
+      setProfileDisplayName(data?.display_name ?? null);
+      setUserAvatarUrl(data?.avatar_url ?? null);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user, loadGroups, supabase]);
 
   useEffect(() => {
     if (activeGroupId) {
@@ -890,7 +925,7 @@ export function AppShell() {
     : [];
 
   const userInitials = getInitials(
-    (user?.user_metadata?.display_name as string | undefined) || user?.email,
+    profileDisplayName || (user?.user_metadata?.display_name as string | undefined) || user?.email,
   );
 
   // Tag IDs on the currently-selected event (for the modal)
@@ -904,19 +939,30 @@ export function AppShell() {
       ? [selectedEvent]
       : [];
 
+  function openWorkspaceOnboarding() {
+    setSidebarOpen(true);
+    setWorkspaceModalRequestKey((k) => k + 1);
+  }
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <Navbar
-        monthLabel={formatViewLabel(viewDate, calendarMode)}
+        monthLabel={formatViewLabel(viewDate, calendarMode, prefs.weekStartsOnMonday)}
         calendarMode={calendarMode}
         screenView={screenView}
         sidebarOpen={sidebarOpen}
         searchQuery={screenView === "notes" ? notesSearchQuery : searchQuery}
         userInitials={userInitials}
+        userAvatarUrl={userAvatarUrl}
         isDark={themeMode === "dark"}
         accent={accent}
-        isTodayDisabled={isDateInView(startOfDay(new Date()), viewDate, calendarMode)}
-        onToggleSidebar={() => setSidebarOpen((open) => !open)}
+        isTodayDisabled={isDateInView(startOfDay(new Date()), viewDate, calendarMode, prefs.weekStartsOnMonday)}
+        onToggleSidebar={() =>
+          setSidebarOpen((open) => {
+            if (open) setWorkspaceModalRequestKey(0);
+            return !open;
+          })
+        }
         onToday={() => {
           setViewDate(startOfDay(new Date()));
           setTodayJumpKey((k) => k + 1);
@@ -984,7 +1030,10 @@ export function AppShell() {
           onSelectGroup={setActiveGroupId}
           onCreateGroup={handleCreateGroup}
           onJoinGroup={handleJoinGroup}
-          showWorkspace={prefs.showWorkspaceInSidebar}
+          showWorkspace={prefs.showWorkspaceInSidebar || groups.length === 0}
+          weekStartsOnMonday={prefs.weekStartsOnMonday}
+          onSelectDate={setViewDate}
+          workspaceModalRequestKey={workspaceModalRequestKey}
           notesFilter={notesFilter}
           noteFolders={noteFolders}
           onNotesFilterChange={handleNotesFilterChange}
@@ -1022,13 +1071,14 @@ export function AppShell() {
             draggingNoteIds={draggingNoteIds}
             onDraggingNoteIds={setDraggingNoteIds}
             onDragOverTarget={setDragOverTarget}
+            onOpenWorkspaceModal={openWorkspaceOnboarding}
           />
         ) : (
           <>
             <main data-snapshot-target className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
               {!activeGroupId && (
                 <div
-                  className="mb-3 rounded-xl px-4 py-3 text-sm"
+                  className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm"
                   style={{
                     background: "var(--accent-muted)",
                     color: "var(--accent-text)",
@@ -1036,8 +1086,21 @@ export function AppShell() {
                     letterSpacing: "-0.004em",
                   }}
                 >
-                  Create a shared workspace or join with an invite code to sync calendars
-                  between accounts.
+                  <span>
+                    Create a shared workspace or join with an invite code to sync calendars between accounts.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={openWorkspaceOnboarding}
+                    className="pressable shrink-0 cursor-pointer px-3.5 py-1.5 text-xs font-semibold text-white"
+                    style={{
+                      borderRadius: "var(--radius-full)",
+                      background: "var(--accent)",
+                    }}
+                  >
+                    Create or join calendar
+                  </button>
+
                 </div>
               )}
               <Calendar
@@ -1049,6 +1112,7 @@ export function AppShell() {
                 eventTags={eventTags}
                 conflictIds={highlightConflictIds}
                 showConflictHighlights={showConflictHighlights}
+                weekStartsOnMonday={prefs.weekStartsOnMonday}
                 todayJumpKey={todayJumpKey}
                 onViewDateChange={setViewDate}
                 onCalendarModeChange={setCalendarMode}
@@ -1071,6 +1135,7 @@ export function AppShell() {
               tags={tags}
               eventTags={eventTags}
               searchQuery={searchQuery}
+              weekStartsOnMonday={prefs.weekStartsOnMonday}
               todayJumpKey={todayJumpKey}
               onSelectEvent={openEventDetails}
               width={panelWidth}
@@ -1104,6 +1169,7 @@ export function AppShell() {
         onCreateNoteForEvent={handleCreateNoteForEvent}
         currentUserId={user?.id}
         confirmDeleteOthers={prefs.confirmDeleteOthers}
+        weekStartsOnMonday={prefs.weekStartsOnMonday}
       />
     </div>
   );

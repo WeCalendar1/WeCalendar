@@ -66,6 +66,7 @@ export function Sidebar({
   showWorkspace = false,
   weekStartsOnMonday = false,
   onSelectDate,
+  workspaceModalRequestKey,
   notesFilter,
   noteFolders = [],
   onNotesFilterChange,
@@ -140,6 +141,7 @@ export function Sidebar({
                 onSelectGroup={onSelectGroup}
                 onCreateGroup={onCreateGroup}
                 onJoinGroup={onJoinGroup}
+                openModalRequestKey={workspaceModalRequestKey}
               />
             )}
 
