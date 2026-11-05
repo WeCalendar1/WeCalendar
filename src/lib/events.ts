@@ -1,4 +1,4 @@
-import { isSameDay, startOfDay } from "@/lib/calendar";
+import { addDays, isSameDay, startOfDay } from "@/lib/calendar";
 import type { Tables } from "@/types/database";
 
 export type CalendarEvent = Tables<"events"> & {
@@ -13,6 +13,27 @@ export function eventsForDay(events: CalendarEvent[], day: Date): CalendarEvent[
       (a, b) =>
         new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
     );
+}
+
+/**
+ * Events that occupy time on `day` in Day/Week TimeGrid views.
+ * Includes multi-day events spanning `day`, while excluding events that end
+ * at exact 00:00 midnight at the start of `day`.
+ */
+export function eventsForTimeGridDay(events: CalendarEvent[], day: Date): CalendarEvent[] {
+  const dayStart = startOfDay(day).getTime();
+  const dayEnd = startOfDay(addDays(day, 1)).getTime();
+
+  return events
+    .filter((event) => {
+      const s = new Date(event.starts_at);
+      const e = new Date(event.ends_at);
+      const st = s.getTime();
+      const et = e.getTime();
+      if (et <= st) return isSameDay(s, day);
+      return st < dayEnd && et > dayStart;
+    })
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 }
 
 /** True if an event spans more than one calendar day. */
@@ -37,8 +58,8 @@ export function eventsSpanningDay(events: CalendarEvent[], day: Date): CalendarE
 
 /**
  * Visual position of a multi-day event bar within a month-grid cell.
- * Week-row boundaries are respected: Sunday always starts a new visual bar
- * (even if the event started earlier) and Saturday always ends the bar.
+ * Week-row boundaries are respected: row start (Sunday or Monday) always starts
+ * a new visual bar and row end (Saturday or Sunday) always ends the bar.
  */
 export type SpanPosition = "solo" | "start" | "middle" | "end";
 
@@ -47,6 +68,7 @@ export function getSpanPosition(
   day: Date,
   /** 0 = Sunday … 6 = Saturday */
   dayOfWeek: number,
+  weekStartsOnMonday = false,
 ): SpanPosition {
   const d = startOfDay(day);
   const s = startOfDay(new Date(event.starts_at));
@@ -54,8 +76,8 @@ export function getSpanPosition(
 
   const isEventStart = s.getTime() === d.getTime();
   const isEventEnd = en.getTime() === d.getTime();
-  const isRowStart = dayOfWeek === 0; // Sunday
-  const isRowEnd = dayOfWeek === 6;   // Saturday
+  const isRowStart = dayOfWeek === (weekStartsOnMonday ? 1 : 0);
+  const isRowEnd = dayOfWeek === (weekStartsOnMonday ? 0 : 6);
 
   const isVisualStart = isEventStart || isRowStart;
   const isVisualEnd = isEventEnd || isRowEnd;
@@ -71,27 +93,30 @@ export function getSeriesSpanPosition(
   allEvents: CalendarEvent[],
   day: Date,
   dayOfWeek: number,
+  weekStartsOnMonday = false,
 ): SpanPosition {
-  if (isMultiDayEvent(event)) return getSpanPosition(event, day, dayOfWeek);
+  if (isMultiDayEvent(event)) {
+    return getSpanPosition(event, day, dayOfWeek, weekStartsOnMonday);
+  }
 
   if (!event.recurrence_group_id) return "solo";
 
-  const prevDay = startOfDay(new Date(day.getTime() - 86400000));
-  const nextDay = startOfDay(new Date(day.getTime() + 86400000));
+  const prevDay = startOfDay(addDays(day, -1));
+  const nextDay = startOfDay(addDays(day, 1));
 
   const hasPrev = allEvents.some(
     (e) =>
       e.recurrence_group_id === event.recurrence_group_id &&
-      isSameDay(new Date(e.starts_at), prevDay)
+      isSameDay(new Date(e.starts_at), prevDay),
   );
   const hasNext = allEvents.some(
     (e) =>
       e.recurrence_group_id === event.recurrence_group_id &&
-      isSameDay(new Date(e.starts_at), nextDay)
+      isSameDay(new Date(e.starts_at), nextDay),
   );
 
-  const isRowStart = dayOfWeek === 0; // Sunday
-  const isRowEnd = dayOfWeek === 6;   // Saturday
+  const isRowStart = dayOfWeek === (weekStartsOnMonday ? 1 : 0);
+  const isRowEnd = dayOfWeek === (weekStartsOnMonday ? 0 : 6);
 
   const isVisualStart = !hasPrev || isRowStart;
   const isVisualEnd = !hasNext || isRowEnd;
@@ -102,17 +127,49 @@ export function getSeriesSpanPosition(
   return "middle";
 }
 
+function daySegmentMinutes(
+  event: CalendarEvent,
+  day?: Date,
+): { startMinutes: number; endMinutes: number } {
+  const start = new Date(event.starts_at);
+  const end = new Date(event.ends_at);
+
+  if (!day) {
+    const startMinutes = start.getHours() * 60 + start.getMinutes();
+    const endMinutes = Math.max(
+      end.getHours() * 60 + end.getMinutes(),
+      startMinutes + 30,
+    );
+    return { startMinutes, endMinutes };
+  }
+
+  const dayStart = startOfDay(day);
+  const dayEnd = startOfDay(addDays(dayStart, 1));
+
+  const startMinutes =
+    start.getTime() <= dayStart.getTime()
+      ? 0
+      : start.getHours() * 60 + start.getMinutes();
+
+  const rawEndMinutes =
+    end.getTime() >= dayEnd.getTime()
+      ? 1440
+      : end.getHours() * 60 + end.getMinutes();
+
+  const endMinutes =
+    startMinutes <= 1410
+      ? Math.min(1440, Math.max(rawEndMinutes, startMinutes + 30))
+      : Math.max(rawEndMinutes, startMinutes + 30);
+
+  return { startMinutes, endMinutes };
+}
+
 export function eventPosition(
   event: CalendarEvent,
   hourHeightPx: number,
+  day?: Date,
 ): { top: number; height: number } {
-  const start = new Date(event.starts_at);
-  const end = new Date(event.ends_at);
-  const startMinutes = start.getHours() * 60 + start.getMinutes();
-  const endMinutes = Math.max(
-    end.getHours() * 60 + end.getMinutes(),
-    startMinutes + 30,
-  );
+  const { startMinutes, endMinutes } = daySegmentMinutes(event, day);
   const duration = endMinutes - startMinutes;
 
   return {
@@ -138,34 +195,26 @@ export type EventLayout = {
  *  3. Make a second pass to widen events whose rightmost column in their
  *     overlap cluster is unoccupied (so they expand to fill free space).
  */
-export function layoutOverlappingEvents(events: CalendarEvent[]): EventLayout[] {
+export function layoutOverlappingEvents(
+  events: CalendarEvent[],
+  day?: Date,
+): EventLayout[] {
   if (events.length === 0) return [];
 
-  // Sort by start time, then by end time descending (longer events first)
+  // Sort by segment start time, then by segment end time descending (longer events first)
   const sorted = [...events].sort((a, b) => {
-    const startDiff =
-      new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
-    if (startDiff !== 0) return startDiff;
-    // Longer events get lower columns
-    return new Date(b.ends_at).getTime() - new Date(a.ends_at).getTime();
+    const segA = daySegmentMinutes(a, day);
+    const segB = daySegmentMinutes(b, day);
+    if (segA.startMinutes !== segB.startMinutes) {
+      return segA.startMinutes - segB.startMinutes;
+    }
+    return segB.endMinutes - segA.endMinutes;
   });
 
-  /** Returns end-time in minutes-since-midnight (clamped to min 30min duration) */
-  function endMin(e: CalendarEvent): number {
-    const s = new Date(e.starts_at);
-    const en = new Date(e.ends_at);
-    const startM = s.getHours() * 60 + s.getMinutes();
-    const endM = en.getHours() * 60 + en.getMinutes();
-    return Math.max(endM, startM + 30);
-  }
-
-  function startMin(e: CalendarEvent): number {
-    const s = new Date(e.starts_at);
-    return s.getHours() * 60 + s.getMinutes();
-  }
-
   function overlaps(a: CalendarEvent, b: CalendarEvent): boolean {
-    return startMin(a) < endMin(b) && startMin(b) < endMin(a);
+    const segA = daySegmentMinutes(a, day);
+    const segB = daySegmentMinutes(b, day);
+    return segA.startMinutes < segB.endMinutes && segB.startMinutes < segA.endMinutes;
   }
 
   // Assign columns greedily
@@ -177,15 +226,15 @@ export function layoutOverlappingEvents(events: CalendarEvent[]): EventLayout[] 
     // Find overlapping events that already have a column assigned
     const usedCols = new Set<number>();
     for (let j = 0; j < i; j++) {
-      if (overlaps(sorted[i], sorted[j])) {
-        usedCols.add(columns[j]);
+      if (overlaps(sorted[i]!, sorted[j]!)) {
+        usedCols.add(columns[j]!);
       }
     }
     // Pick the lowest free column
     let col = 0;
     while (usedCols.has(col)) col++;
     columns[i] = col;
-    colEnds[col] = endMin(sorted[i]);
+    colEnds[col] = daySegmentMinutes(sorted[i]!, day).endMinutes;
   }
 
   // Compute total columns per overlap cluster
@@ -200,7 +249,7 @@ export function layoutOverlappingEvents(events: CalendarEvent[]): EventLayout[] 
     while (queue.length > 0) {
       const cur = queue.shift()!;
       for (let j = 0; j < sorted.length; j++) {
-        if (clusterOf[j] === -1 && overlaps(sorted[cur], sorted[j])) {
+        if (clusterOf[j] === -1 && overlaps(sorted[cur]!, sorted[j]!)) {
           clusterOf[j] = clusterCount;
           queue.push(j);
         }
@@ -212,16 +261,16 @@ export function layoutOverlappingEvents(events: CalendarEvent[]): EventLayout[] 
   // Max column per cluster → totalColumns for that cluster
   const clusterMaxCol: number[] = new Array(clusterCount).fill(0);
   for (let i = 0; i < sorted.length; i++) {
-    clusterMaxCol[clusterOf[i]] = Math.max(
-      clusterMaxCol[clusterOf[i]],
-      columns[i],
+    clusterMaxCol[clusterOf[i]!] = Math.max(
+      clusterMaxCol[clusterOf[i]!]!,
+      columns[i]!,
     );
   }
 
   return sorted.map((event, i) => ({
     event,
-    column: columns[i],
-    totalColumns: clusterMaxCol[clusterOf[i]] + 1,
+    column: columns[i]!,
+    totalColumns: clusterMaxCol[clusterOf[i]!]! + 1,
   }));
 }
 

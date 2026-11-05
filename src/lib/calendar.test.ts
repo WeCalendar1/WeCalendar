@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   startOfDay,
   startOfMonth,
@@ -9,9 +9,12 @@ import {
   isSameDay,
   isSameMonth,
   formatHourLabel,
+  formatViewLabel,
   getMonthGrid,
   getWeekDays,
+  getWeekdayLabels,
   getMinutesSinceMidnight,
+  isDateInView,
   shiftViewDate,
   DAY_HOURS,
 } from "./calendar";
@@ -219,5 +222,32 @@ describe("shiftViewDate", () => {
   it("shifts backward with -1 direction", () => {
     const prev = shiftViewDate(BASE, "day", -1);
     expect(prev.getDate()).toBe(14);
+  });
+});
+
+
+describe("weekStartsOnMonday support", () => {
+  it("returns Sunday-first vs Monday-first weekday labels across all styles", () => {
+    expect(getWeekdayLabels(false, "short")).toEqual(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
+    expect(getWeekdayLabels(true, "short")).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+    expect(getWeekdayLabels(true, "narrow")).toEqual(["M", "T", "W", "T", "F", "S", "S"]);
+    expect(getWeekdayLabels(true, "two")).toEqual(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]);
+  });
+
+  it("places Sunday at index 6 of the previous Monday week when weekStartsOnMonday is true", () => {
+    const sunday = new Date(2026, 10, 8, 15, 30); // Sun Nov 8, 2026
+    expect(startOfWeek(sunday, false)).toEqual(new Date(2026, 10, 8));
+    expect(startOfWeek(sunday, true)).toEqual(new Date(2026, 10, 2));
+
+    const grid = getMonthGrid(new Date(2026, 10, 1), new Date(2026, 10, 8), true); // Nov 1 2026 = Sunday
+    expect(grid[0]?.date).toEqual(new Date(2026, 9, 26)); // Mon Oct 26
+    expect(grid[6]?.date).toEqual(new Date(2026, 10, 1)); // Sun Nov 1 at col 6
+
+    const weekDays = getWeekDays(sunday, sunday, true);
+    expect(weekDays[0]?.date).toEqual(new Date(2026, 10, 2));
+    expect(weekDays[6]?.date).toEqual(new Date(2026, 10, 8));
+    expect(isDateInView(new Date(2026, 10, 2), sunday, "week", true)).toBe(true);
+    expect(isDateInView(new Date(2026, 10, 1), sunday, "week", true)).toBe(false);
+    expect(formatViewLabel(sunday, "week", true)).toBe("Nov 2 - 8, 2026");
   });
 });

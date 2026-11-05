@@ -1,5 +1,15 @@
-﻿import { describe, it, expect } from "vitest";
-import { eventsForDay, eventPosition, formatEventTime, isMultiDayEvent, eventsSpanningDay, getSpanPosition } from "./events";
+import { describe, it, expect } from "vitest";
+import {
+  eventsForDay,
+  eventsForTimeGridDay,
+  eventPosition,
+  formatEventTime,
+  isMultiDayEvent,
+  eventsSpanningDay,
+  getSpanPosition,
+  getSeriesSpanPosition,
+  layoutOverlappingEvents,
+} from "./events";
 import type { CalendarEvent } from "./events";
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -14,6 +24,7 @@ function makeEvent(overrides: Partial<CalendarEvent>): CalendarEvent {
     ends_at: "2025-06-15T10:00:00Z",
     created_by: "user-1",
     has_conflict: false,
+    recurrence_group_id: null,
     created_at: "2025-06-01T00:00:00Z",
     updated_at: "2025-06-01T00:00:00Z",
     ...overrides,
@@ -263,3 +274,54 @@ describe("getSpanPosition", () => {
   });
 });
 
+
+
+describe("Monday row-wrapping & TimeGrid multi-day clipping", () => {
+  it("wraps multi-day and series spans at Sunday->Monday when weekStartsOnMonday is true", () => {
+    // Fri Nov 6 18:00 -> Tue Nov 10 11:00, 2026
+    const trip = makeEvent({
+      id: "trip",
+      recurrence_group_id: "rg-1",
+      starts_at: new Date(2026, 10, 6, 18, 0).toISOString(),
+      ends_at: new Date(2026, 10, 10, 11, 0).toISOString(),
+    });
+
+    // Saturday Nov 7 (dayOfWeek = 6): middle when Monday-first, end when Sunday-first
+    expect(getSpanPosition(trip, new Date(2026, 10, 7), 6, false)).toBe("end");
+    expect(getSpanPosition(trip, new Date(2026, 10, 7), 6, true)).toBe("middle");
+    // Sunday Nov 8 (dayOfWeek = 0): start when Sunday-first, end when Monday-first
+    expect(getSeriesSpanPosition(trip, [trip], new Date(2026, 10, 8), 0, true)).toBe("end");
+    // Monday Nov 9 (dayOfWeek = 1): middle when Sunday-first, start when Monday-first
+    expect(getSeriesSpanPosition(trip, [trip], new Date(2026, 10, 9), 1, true)).toBe("start");
+  });
+
+  it("clips multi-day events with endTime <= startTime across Fri/Sat/Sun in TimeGrid", () => {
+    const retreat = makeEvent({
+      id: "retreat",
+      starts_at: new Date(2026, 10, 6, 18, 0).toISOString(), // Fri 6 PM
+      ends_at: new Date(2026, 10, 8, 11, 0).toISOString(),   // Sun 11 AM
+    });
+    const sundayBrunch = makeEvent({
+      id: "brunch",
+      starts_at: new Date(2026, 10, 8, 10, 0).toISOString(), // Sun 10 AM
+      ends_at: new Date(2026, 10, 8, 12, 0).toISOString(),   // Sun 12 PM
+    });
+
+    expect(eventPosition(retreat, 60, new Date(2026, 10, 6))).toEqual({ top: 18 * 60, height: 6 * 60 });
+    expect(eventPosition(retreat, 60, new Date(2026, 10, 7))).toEqual({ top: 0, height: 24 * 60 });
+    expect(eventPosition(retreat, 60, new Date(2026, 10, 8))).toEqual({ top: 0, height: 11 * 60 });
+
+    const sundayLayout = layoutOverlappingEvents([retreat, sundayBrunch], new Date(2026, 10, 8));
+    expect(sundayLayout.map((l) => l.totalColumns)).toEqual([2, 2]);
+  });
+
+  it("excludes trailing exact-midnight 00:00 endpoints from the next day's TimeGrid", () => {
+    const lateShow = makeEvent({
+      id: "late",
+      starts_at: new Date(2026, 10, 6, 22, 0).toISOString(),
+      ends_at: new Date(2026, 10, 7, 0, 0).toISOString(),
+    });
+    expect(eventsForTimeGridDay([lateShow], new Date(2026, 10, 6)).map((e) => e.id)).toEqual(["late"]);
+    expect(eventsForTimeGridDay([lateShow], new Date(2026, 10, 7))).toEqual([]);
+  });
+});
