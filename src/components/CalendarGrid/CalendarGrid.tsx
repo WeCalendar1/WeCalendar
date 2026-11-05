@@ -1,9 +1,7 @@
 import { CalendarCell } from "@/components/CalendarCell";
-import { getMonthGrid, startOfDay } from "@/lib/calendar";
+import { getMonthGrid, getWeekdayLabels, startOfDay } from "@/lib/calendar";
 import { isMultiDayEvent, type CalendarEvent } from "@/lib/events";
 import type { EventTag, Tag } from "@/lib/tags";
-
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 type CalendarGridProps = {
   viewDate: Date;
@@ -13,6 +11,7 @@ type CalendarGridProps = {
   eventTags: EventTag[];
   conflictIds?: ReadonlySet<string>;
   showConflictHighlights?: boolean;
+  weekStartsOnMonday?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
   todayJumpKey?: number;
@@ -42,7 +41,7 @@ function computeMultiDaySlots(events: CalendarEvent[]): Map<string, number> {
 
   for (const group of seriesGroups.values()) {
     if (group.length === 1 && !isMultiDayEvent(group[0]!)) continue;
-    
+
     let minS = new Date(group[0]!.starts_at);
     let maxE = new Date(group[0]!.ends_at);
     for (const e of group) {
@@ -102,11 +101,13 @@ export function CalendarGrid({
   eventTags,
   conflictIds,
   showConflictHighlights,
+  weekStartsOnMonday = false,
   todayJumpKey,
   onSelectEvent,
   onDayDoubleClick,
 }: CalendarGridProps) {
-  const days = getMonthGrid(viewDate);
+  const days = getMonthGrid(viewDate, new Date(), weekStartsOnMonday);
+  const weekdays = getWeekdayLabels(weekStartsOnMonday, "short");
   const multiDaySlots = computeMultiDaySlots(events);
 
   return (
@@ -125,7 +126,7 @@ export function CalendarGrid({
           background: "var(--surface-2)",
         }}
       >
-        {WEEKDAYS.map((day) => (
+        {weekdays.map((day) => (
           <div
             key={day}
             className="px-2 py-2.5 text-center text-xs font-semibold uppercase"
@@ -148,6 +149,7 @@ export function CalendarGrid({
             multiDaySlots={multiDaySlots}
             conflictIds={conflictIds}
             showConflictHighlights={showConflictHighlights}
+            weekStartsOnMonday={weekStartsOnMonday}
             todayJumpKey={todayJumpKey}
             onSelectEvent={onSelectEvent}
             onDoubleClick={onDayDoubleClick}

@@ -69,6 +69,7 @@ type CalendarCellProps = {
   multiDaySlots: Map<string, number>;
   conflictIds?: ReadonlySet<string>;
   showConflictHighlights?: boolean;
+  weekStartsOnMonday?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDoubleClick?: (date: Date) => void;
   todayJumpKey?: number;
@@ -106,6 +107,7 @@ export function CalendarCell({
   multiDaySlots,
   conflictIds,
   showConflictHighlights = false,
+  weekStartsOnMonday = false,
   todayJumpKey,
   onSelectEvent,
   onDoubleClick,
@@ -115,12 +117,12 @@ export function CalendarCell({
   // ── Multi-day & Connected Series events ──────────────────────────────────────
   // Get true multi-day events
   const trueMultiDay = eventsSpanningDay(events, day.date).filter(isMultiDayEvent);
-  
+
   // Get single-day events that are part of a series and connect visually on this day
   const cellSingleDayEvents = eventsForDay(events, day.date).filter((e) => !isMultiDayEvent(e));
-  
+
   const connectedSeriesEvents = cellSingleDayEvents.filter((e) => {
-    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek);
+    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek, weekStartsOnMonday);
     return pos !== "solo";
   });
 
@@ -139,10 +141,10 @@ export function CalendarCell({
 
   // ── Solo Single-day events ──────────────────────────────────────────────────
   const singleDay = cellSingleDayEvents.filter((e) => {
-    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek);
+    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek, weekStartsOnMonday);
     return pos === "solo";
   });
-  
+
   const visibleSingle = singleDay.slice(0, 3);
   const extraSingle   = Math.max(singleDay.length - 3, 0);
   const totalExtra    = extraSingle + hiddenBars.length;
@@ -209,7 +211,7 @@ export function CalendarCell({
       {/* ── Multi-day bars (absolutely positioned) ─────────────────────────── */}
       {visibleBars.map((event) => {
         const slot  = multiDaySlots.get(event.id) ?? 0;
-        const pos   = getSeriesSpanPosition(event, events, day.date, dayOfWeek);
+        const pos   = getSeriesSpanPosition(event, events, day.date, dayOfWeek, weekStartsOnMonday);
         const tagColors = colorsForEvent(event.id, eventTags, tags);
         const color = tagColors[0] ?? "var(--accent)";
         const { left, right } = barEdges(pos);

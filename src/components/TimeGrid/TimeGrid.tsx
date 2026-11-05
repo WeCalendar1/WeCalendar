@@ -12,7 +12,7 @@ import {
 } from "@/lib/calendar";
 import {
   eventPosition,
-  eventsForDay,
+  eventsForTimeGridDay,
   formatEventTime,
   layoutOverlappingEvents,
   type CalendarEvent,
@@ -159,11 +159,14 @@ export function TimeGrid({
               style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}
             >
               {days.map((day) => {
-                  const layouts = layoutOverlappingEvents(eventsForDay(events, day.date));
+                  const layouts = layoutOverlappingEvents(
+                    eventsForTimeGridDay(events, day.date),
+                    day.date,
+                  );
                   return (
                     <div key={day.date.toISOString()} className="relative">
                       {layouts.map(({ event, column, totalColumns }) => {
-                        const { top, height } = eventPosition(event, HOUR_HEIGHT_PX);
+                        const { top, height } = eventPosition(event, HOUR_HEIGHT_PX, day.date);
                         const tagColors = colorsForEvent(event.id, eventTags, tags);
                         const color = tagColors[0] ?? "var(--accent)";
                         const warn =

@@ -38,16 +38,17 @@ const BUCKET_ORDER: TimeBucket[] = [
 
 // ─── Bucketing ────────────────────────────────────────────────────────────────
 
-function bucketEvents(
+export function bucketEvents(
   events: CalendarEvent[],
+  now: Date = new Date(),
+  weekStartsOnMonday = false,
 ): Record<TimeBucket, CalendarEvent[]> {
-  const now = new Date();
   const todayStart = startOfDay(now);
   const tomorrowStart = addDays(todayStart, 1);
   const dayAfterTomorrow = addDays(todayStart, 2);
 
-  // "This Week" = rest of the Sun-Sat week after tomorrow
-  const weekStart = startOfWeek(todayStart);
+  // "This Week" = rest of the current week after tomorrow
+  const weekStart = startOfWeek(todayStart, weekStartsOnMonday);
   const nextWeekStart = addDays(weekStart, 7);
   const weekAfterNextStart = addDays(weekStart, 14);
 
@@ -315,6 +316,7 @@ export type EventViewerPanelProps = {
   tags: Tag[];
   eventTags: EventTag[];
   searchQuery: string;
+  weekStartsOnMonday?: boolean;
   todayJumpKey?: number;
   onSelectEvent: (event: CalendarEvent) => void;
   /** Panel width in px (controlled by the resize handle). */
@@ -328,6 +330,7 @@ export function EventViewerPanel({
   events,
   tags,
   eventTags,
+  weekStartsOnMonday = false,
   todayJumpKey,
   onSelectEvent,
   width = 380,
@@ -341,7 +344,10 @@ export function EventViewerPanel({
     }
   }, [todayJumpKey]);
 
-  const buckets = useMemo(() => bucketEvents(events), [events]);
+  const buckets = useMemo(
+    () => bucketEvents(events, new Date(), weekStartsOnMonday),
+    [events, weekStartsOnMonday],
+  );
 
   const hasAnyEvents = events.length > 0;
 
