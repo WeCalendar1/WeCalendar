@@ -129,7 +129,13 @@ export function AppShell() {
         return;
       }
 
-      const creatorIds = [...new Set((eventData ?? []).map((event) => event.created_by))];
+      const creatorIds = [
+        ...new Set(
+          (eventData ?? [])
+            .map((event) => event.created_by)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
       const creatorsById = new Map<string, EventCreator>();
 
       if (creatorIds.length > 0) {
@@ -161,7 +167,7 @@ export function AppShell() {
 
       const nextEvents: CalendarEvent[] = (eventData ?? []).map((event) => ({
         ...event,
-        creator: creatorsById.get(event.created_by) ?? null,
+        creator: event.created_by ? (creatorsById.get(event.created_by) ?? null) : null,
       }));
       setEvents(nextEvents);
       setSelectedEvent((current) => {

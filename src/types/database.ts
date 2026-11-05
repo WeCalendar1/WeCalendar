@@ -41,7 +41,7 @@ export type Database = {
           id: string;
           name: string;
           invite_code: string;
-          created_by: string;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -57,7 +57,7 @@ export type Database = {
           id?: string;
           name?: string;
           invite_code?: string;
-          created_by?: string;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -118,7 +118,7 @@ export type Database = {
           description: string | null;
           starts_at: string;
           ends_at: string;
-          created_by: string;
+          created_by: string | null;
           has_conflict: boolean;
           recurrence_group_id: string | null;
           created_at: string;
@@ -144,7 +144,7 @@ export type Database = {
           description?: string | null;
           starts_at?: string;
           ends_at?: string;
-          created_by?: string;
+          created_by?: string | null;
           has_conflict?: boolean;
           recurrence_group_id?: string | null;
           created_at?: string;
@@ -173,7 +173,7 @@ export type Database = {
           group_id: string;
           name: string;
           category: "grocery" | "todo" | "wishlist" | "custom";
-          created_by: string;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -191,7 +191,7 @@ export type Database = {
           group_id?: string;
           name?: string;
           category?: "grocery" | "todo" | "wishlist" | "custom";
-          created_by?: string;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -219,7 +219,7 @@ export type Database = {
           content: string;
           is_checked: boolean;
           sort_order: number;
-          created_by: string;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -239,7 +239,7 @@ export type Database = {
           content?: string;
           is_checked?: boolean;
           sort_order?: number;
-          created_by?: string;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -266,7 +266,7 @@ export type Database = {
           group_id: string;
           name: string;
           color: string;
-          created_by: string;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -284,7 +284,7 @@ export type Database = {
           group_id?: string;
           name?: string;
           color?: string;
-          created_by?: string;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -313,7 +313,7 @@ export type Database = {
           color: string;
           visibility: "shared" | "private";
           sort_order: number;
-          created_by: string;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -335,7 +335,7 @@ export type Database = {
           color?: string;
           visibility?: "shared" | "private";
           sort_order?: number;
-          created_by?: string;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -369,7 +369,7 @@ export type Database = {
           visibility: "shared" | "private";
           is_pinned: boolean;
           sort_order: number;
-          created_by: string;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
@@ -403,7 +403,7 @@ export type Database = {
           visibility?: "shared" | "private";
           is_pinned?: boolean;
           sort_order?: number;
-          created_by?: string;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
@@ -479,6 +479,18 @@ export type Database = {
       join_group_by_invite: {
         Args: { p_invite_code: string };
         Returns: Database["public"]["Tables"]["groups"]["Row"];
+      };
+      leave_group: {
+        Args: { p_group_id: string };
+        Returns: undefined;
+      };
+      leave_all_groups: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      delete_own_account: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
       };
       is_group_member: {
         Args: { p_group_id: string };
