@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import type { CalendarMode } from "@/lib/calendar";
 
 // ─── Storage keys ─────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ const KEYS = {
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
-const DEFAULTS = {
+const DEFAULTS: CalendarPrefs = Object.freeze({
   hidePastConflicts: true,
   weekStartsOnMonday: false,
   defaultView: "month" as CalendarMode,
@@ -25,25 +25,36 @@ const DEFAULTS = {
   showWorkspaceInSidebar: false,
   confirmDeleteOthers: true,
   creatorColorAccent: false,
-};
+});
+
+const ALLOWED_VIEWS = ["day", "week", "month", "year"] as const;
 
 // ─── Loader helpers ───────────────────────────────────────────────────────────
 
 function loadBool(key: string, fallback: boolean): boolean {
   if (typeof window === "undefined") return fallback;
-  const v = localStorage.getItem(key);
-  if (v === null) return fallback;
-  return v === "true";
+  try {
+    const v = localStorage.getItem(key);
+    if (v === "true") return true;
+    if (v === "false") return false;
+    return fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function loadStr<T extends string>(key: string, fallback: T, allowed: readonly T[]): T {
   if (typeof window === "undefined") return fallback;
-  const v = localStorage.getItem(key) as T | null;
-  if (v && (allowed as readonly string[]).includes(v)) return v;
-  return fallback;
+  try {
+    const v = localStorage.getItem(key) as T | null;
+    if (v && (allowed as readonly string[]).includes(v)) return v;
+    return fallback;
+  } catch {
+    return fallback;
+  }
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+// ─── Hook & External Store ────────────────────────────────────────────────────
 
 export interface CalendarPrefs {
   /** Don't surface conflict alerts / highlights for events fully in the past. */
@@ -63,7 +74,46 @@ export interface CalendarPrefs {
 }
 
 // Same-tab change notification (the native "storage" event only fires cross-tab).
-const PREF_EVENT = "wecalendar:pref-change";
+export const PREF_EVENT = "wecalendar:pref-change";
+
+let cachedKey: string | null = null;
+let cachedSnapshot: CalendarPrefs = DEFAULTS;
+
+export function getServerPrefsSnapshot(): CalendarPrefs {
+  return DEFAULTS;
+}
+
+export function getPrefsSnapshot(): CalendarPrefs {
+  if (typeof window === "undefined") return DEFAULTS;
+
+  const next: CalendarPrefs = {
+    hidePastConflicts: loadBool(KEYS.hidePastConflicts, DEFAULTS.hidePastConflicts),
+    weekStartsOnMonday: loadBool(KEYS.weekStartsOnMonday, DEFAULTS.weekStartsOnMonday),
+    defaultView: loadStr(KEYS.defaultView, DEFAULTS.defaultView, ALLOWED_VIEWS),
+    showDeclinedEvents: loadBool(KEYS.showDeclinedEvents, DEFAULTS.showDeclinedEvents),
+    showWorkspaceInSidebar: loadBool(KEYS.showWorkspaceInSidebar, DEFAULTS.showWorkspaceInSidebar),
+    confirmDeleteOthers: loadBool(KEYS.confirmDeleteOthers, DEFAULTS.confirmDeleteOthers),
+    creatorColorAccent: loadBool(KEYS.creatorColorAccent, DEFAULTS.creatorColorAccent),
+  };
+
+  const key = JSON.stringify(next);
+  if (key === cachedKey) return cachedSnapshot;
+  cachedKey = key;
+  cachedSnapshot = next;
+  return next;
+}
+
+export function setCalendarPref<K extends keyof CalendarPrefs>(
+  key: K,
+  value: CalendarPrefs[K],
+): void {
+  try {
+    localStorage.setItem(KEYS[key], String(value));
+    window.dispatchEvent(new Event(PREF_EVENT));
+  } catch {
+    /* ignore */
+  }
+}
 
 function subscribePrefs(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -84,68 +134,43 @@ export function useCreatorColorAccent(): boolean {
 }
 
 export function useCalendarPrefs() {
-  const [hidePastConflicts, _setHidePastConflicts] = useState<boolean>(() =>
-    loadBool(KEYS.hidePastConflicts, DEFAULTS.hidePastConflicts),
-  );
-  const [weekStartsOnMonday, _setWeekStartsOnMonday] = useState<boolean>(() =>
-    loadBool(KEYS.weekStartsOnMonday, DEFAULTS.weekStartsOnMonday),
-  );
-  const [defaultView, _setDefaultView] = useState<CalendarMode>(() =>
-    loadStr(KEYS.defaultView, DEFAULTS.defaultView, ["day", "week", "month", "year"]),
-  );
-  const [showDeclinedEvents, _setShowDeclinedEvents] = useState<boolean>(() =>
-    loadBool(KEYS.showDeclinedEvents, DEFAULTS.showDeclinedEvents),
-  );
-  const [confirmDeleteOthers, _setConfirmDeleteOthers] = useState<boolean>(() =>
-    loadBool(KEYS.confirmDeleteOthers, DEFAULTS.confirmDeleteOthers),
-  );
-  const [showWorkspaceInSidebar, _setShowWorkspaceInSidebar] = useState<boolean>(() =>
-    loadBool(KEYS.showWorkspaceInSidebar, DEFAULTS.showWorkspaceInSidebar),
-  );
-  const [creatorColorAccent, _setCreatorColorAccent] = useState<boolean>(() =>
-    loadBool(KEYS.creatorColorAccent, DEFAULTS.creatorColorAccent),
+  const prefs = useSyncExternalStore(
+    subscribePrefs,
+    getPrefsSnapshot,
+    getServerPrefsSnapshot,
   );
 
-  const setCreatorColorAccent = useCallback((v: boolean) => {
-    _setCreatorColorAccent(v);
-    try {
-      localStorage.setItem(KEYS.creatorColorAccent, String(v));
-      window.dispatchEvent(new Event(PREF_EVENT));
-    } catch { /* ignore */ }
-  }, []);
-
-  const setHidePastConflicts = useCallback((v: boolean) => {
-    _setHidePastConflicts(v);
-    try { localStorage.setItem(KEYS.hidePastConflicts, String(v)); } catch { /* ignore */ }
-  }, []);
-
-  const setWeekStartsOnMonday = useCallback((v: boolean) => {
-    _setWeekStartsOnMonday(v);
-    try { localStorage.setItem(KEYS.weekStartsOnMonday, String(v)); } catch { /* ignore */ }
-  }, []);
-
-  const setDefaultView = useCallback((v: CalendarMode) => {
-    _setDefaultView(v);
-    try { localStorage.setItem(KEYS.defaultView, v); } catch { /* ignore */ }
-  }, []);
-
-  const setShowDeclinedEvents = useCallback((v: boolean) => {
-    _setShowDeclinedEvents(v);
-    try { localStorage.setItem(KEYS.showDeclinedEvents, String(v)); } catch { /* ignore */ }
-  }, []);
-
-  const setConfirmDeleteOthers = useCallback((v: boolean) => {
-    _setConfirmDeleteOthers(v);
-    try { localStorage.setItem(KEYS.confirmDeleteOthers, String(v)); } catch { /* ignore */ }
-  }, []);
-
-  const setShowWorkspaceInSidebar = useCallback((v: boolean) => {
-    _setShowWorkspaceInSidebar(v);
-    try { localStorage.setItem(KEYS.showWorkspaceInSidebar, String(v)); } catch { /* ignore */ }
-  }, []);
+  const setHidePastConflicts = useCallback(
+    (v: boolean) => setCalendarPref("hidePastConflicts", v),
+    [],
+  );
+  const setWeekStartsOnMonday = useCallback(
+    (v: boolean) => setCalendarPref("weekStartsOnMonday", v),
+    [],
+  );
+  const setDefaultView = useCallback(
+    (v: CalendarMode) => setCalendarPref("defaultView", v),
+    [],
+  );
+  const setShowDeclinedEvents = useCallback(
+    (v: boolean) => setCalendarPref("showDeclinedEvents", v),
+    [],
+  );
+  const setShowWorkspaceInSidebar = useCallback(
+    (v: boolean) => setCalendarPref("showWorkspaceInSidebar", v),
+    [],
+  );
+  const setConfirmDeleteOthers = useCallback(
+    (v: boolean) => setCalendarPref("confirmDeleteOthers", v),
+    [],
+  );
+  const setCreatorColorAccent = useCallback(
+    (v: boolean) => setCalendarPref("creatorColorAccent", v),
+    [],
+  );
 
   return {
-    prefs: { hidePastConflicts, weekStartsOnMonday, defaultView, showDeclinedEvents, showWorkspaceInSidebar, confirmDeleteOthers, creatorColorAccent },
+    prefs,
     setHidePastConflicts,
     setWeekStartsOnMonday,
     setDefaultView,
