@@ -2,10 +2,15 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { CalendarEvent } from "@/lib/events";
+import {
+  expandEventDateKeys,
+  groupConsecutiveDateKeys,
+  validateDraftDateGroups,
+  type CalendarEvent,
+} from "@/lib/events";
 import { TagCreatorInline } from "@/components/TagCreatorInline";
 import type { Tag } from "@/lib/tags";
-import { getMonthGrid, addMonths, formatMonthYear } from "@/lib/calendar";
+import { addDays, addMonths, formatMonthYear, getMonthGrid, getWeekdayLabels } from "@/lib/calendar";
 import { draftOverlapsExisting } from "@/lib/scheduling";
 import { noteTitle, type Note } from "@/lib/notes";
 
@@ -44,6 +49,8 @@ type CreateEventModalProps = {
   currentUserId?: string | null;
   /** When true, deleting another user's event requires an extra confirmation */
   confirmDeleteOthers?: boolean;
+  /** When true, DayPicker columns start on Monday instead of Sunday */
+  weekStartsOnMonday?: boolean;
 };
 
 function toDateInput(date: Date): string {
@@ -59,46 +66,25 @@ function toTimeInput(date: Date): string {
   return `${h}:${m}`;
 }
 
-// ─── Consecutive-group helper ────────────────────────────────────────────────
-
-function groupConsecutiveDates(dates: Set<string>): string[][] {
-  if (dates.size === 0) return [];
-  const sorted = [...dates].sort();
-  const groups: string[][] = [[sorted[0]!]];
-
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1]! + "T00:00:00");
-    const curr = new Date(sorted[i]! + "T00:00:00");
-    const diffDays = Math.round((curr.getTime() - prev.getTime()) / 86_400_000);
-    if (diffDays === 1) {
-      groups[groups.length - 1]!.push(sorted[i]!);
-    } else {
-      groups.push([sorted[i]!]);
-    }
-  }
-
-  return groups;
-}
-
 // ─── Day picker ──────────────────────────────────────────────────────────────
-
-const PICKER_DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 type DayPickerProps = {
   selectedDates: Set<string>;
   onToggle: (dateStr: string) => void;
+  weekStartsOnMonday?: boolean;
 };
 
-function DayPicker({ selectedDates, onToggle }: DayPickerProps) {
+function DayPicker({ selectedDates, onToggle, weekStartsOnMonday = false }: DayPickerProps) {
   const [pickerMonth, setPickerMonth] = useState<Date>(() => {
     const first = [...selectedDates].sort()[0];
     const base = first ? new Date(first + "T00:00:00") : new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
   });
 
-  const days = getMonthGrid(pickerMonth);
+  const days = getMonthGrid(pickerMonth, new Date(), weekStartsOnMonday);
+  const pickerDays = getWeekdayLabels(weekStartsOnMonday, "two");
   const today = toDateInput(new Date());
-  const groups = groupConsecutiveDates(selectedDates);
+  const groups = groupConsecutiveDateKeys(selectedDates);
   const eventCount = groups.length;
 
   function buildHint(): string {
@@ -149,7 +135,7 @@ function DayPicker({ selectedDates, onToggle }: DayPickerProps) {
 
       {/* Weekday headers */}
       <div className="grid grid-cols-7 px-1 pt-1">
-        {PICKER_DAYS.map((d) => (
+        {pickerDays.map((d) => (
           <div
             key={d}
             className="py-1 text-center text-[10px] font-semibold uppercase"
@@ -167,8 +153,8 @@ function DayPicker({ selectedDates, onToggle }: DayPickerProps) {
           const selected = selectedDates.has(dateStr);
           const isToday = dateStr === today;
 
-          const prevStr = toDateInput(new Date(day.date.getTime() - 86_400_000));
-          const nextStr = toDateInput(new Date(day.date.getTime() + 86_400_000));
+          const prevStr = toDateInput(addDays(day.date, -1));
+          const nextStr = toDateInput(addDays(day.date, 1));
           const prevSel = selectedDates.has(prevStr);
           const nextSel = selectedDates.has(nextStr);
 
@@ -267,6 +253,7 @@ function CreateEventModalContent({
   onCreateNoteForEvent,
   currentUserId,
   confirmDeleteOthers = true,
+  weekStartsOnMonday = false,
 }: CreateEventModalProps) {
   const isEditing = Boolean(event);
 
@@ -275,10 +262,12 @@ function CreateEventModalContent({
   const [selectedDates, setSelectedDates] = useState<Set<string>>(() => {
     if (seriesEvents.length > 0) {
       const dates = new Set<string>();
-      for (const e of seriesEvents) dates.add(toDateInput(new Date(e.starts_at)));
+      for (const e of seriesEvents) {
+        for (const k of expandEventDateKeys(e.starts_at, e.ends_at)) dates.add(k);
+      }
       return dates;
     }
-    if (event) return new Set([toDateInput(new Date(event.starts_at))]);
+    if (event) return new Set(expandEventDateKeys(event.starts_at, event.ends_at));
     return new Set([toDateInput(defaultDate)]);
   });
   const [startTime, setStartTime] = useState(() =>
@@ -307,10 +296,11 @@ function CreateEventModalContent({
     const [eh, em] = endTime.split(":").map(Number);
     const titles = new Set<string>();
 
-    for (const dateStr of selectedDates) {
-      const [y, mo, d] = dateStr.split("-").map(Number);
-      const startsAt = new Date(y!, mo! - 1, d!, sh!, sm!, 0);
-      const endsAt = new Date(y!, mo! - 1, d!, eh!, em!, 0);
+    for (const grp of groupConsecutiveDateKeys(selectedDates)) {
+      const [sy, smo, sd] = grp[0]!.split("-").map(Number);
+      const [ey, emo, ed] = grp[grp.length - 1]!.split("-").map(Number);
+      const startsAt = new Date(sy!, smo! - 1, sd!, sh!, sm!, 0);
+      const endsAt = new Date(ey!, emo! - 1, ed!, eh!, em!, 0);
       if (endsAt <= startsAt) continue;
       const result = draftOverlapsExisting(startsAt, endsAt, existingEvents, excludeIds);
       for (const t of result.titles) titles.add(t);
@@ -376,16 +366,15 @@ function CreateEventModalContent({
     e.preventDefault();
     if (!title.trim()) return;
 
-    const [sh, sm] = startTime.split(":").map(Number);
-    const [eh, em] = endTime.split(":").map(Number);
-    if (eh! < sh! || (eh === sh && em! <= sm!)) {
-      setError("End time must be after start time.");
-      return;
-    }
-
-    const groups = groupConsecutiveDates(selectedDates);
-    if (groups.length === 0) {
-      setError("Please select at least one date.");
+    const groups = groupConsecutiveDateKeys(selectedDates);
+    const isSeriesEdit = Boolean(
+      isEditing && event && seriesEvents.length > 1 && onUpdateSeries && event.recurrence_group_id,
+    );
+    const validationError = validateDraftDateGroups(groups, startTime, endTime, {
+      isSingleEventEdit: Boolean(isEditing && event && !isSeriesEdit),
+    });
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -462,7 +451,7 @@ function CreateEventModalContent({
 
   // True when the event was created by someone other than the current user
   const isOthersEvent =
-    Boolean(event) &&
+    Boolean(event?.created_by) &&
     Boolean(currentUserId) &&
     event?.created_by !== currentUserId;
 
@@ -650,7 +639,7 @@ function CreateEventModalContent({
                         type="button"
                         onClick={() => {
                           if (event) {
-                            setSelectedDates(new Set([toDateInput(new Date(event.starts_at))]));
+                            setSelectedDates(new Set(expandEventDateKeys(event.starts_at, event.ends_at)));
                           }
                         }}
                         className="pressable text-[10px] font-semibold"
@@ -661,7 +650,11 @@ function CreateEventModalContent({
                     )}
                   </div>
 
-                  <DayPicker selectedDates={selectedDates} onToggle={toggleDay} />
+                  <DayPicker
+                    selectedDates={selectedDates}
+                    onToggle={toggleDay}
+                    weekStartsOnMonday={weekStartsOnMonday}
+                  />
                 </div>
 
                 {/* Times */}
@@ -967,7 +960,7 @@ function CreateEventModalContent({
                         : isEditing
                           ? "Save changes"
                           : (() => {
-                              const baseCount = selectedDates.size;
+                              const baseCount = groupConsecutiveDateKeys(selectedDates).length;
                               const totalCount = repeats ? baseCount * repeatCount : baseCount;
                               return totalCount > 1 ? `Save ${totalCount} events` : "Save event";
                             })()}

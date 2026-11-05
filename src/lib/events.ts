@@ -280,3 +280,88 @@ export function formatEventTime(iso: string): string {
     minute: "2-digit",
   });
 }
+
+
+function toLocalDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function parseLocalDateKey(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y!, m! - 1, d!);
+}
+
+/**
+ * Expands an event's [starts_at .. ends_at] into local YYYY-MM-DD keys.
+ * Excludes a trailing exact-midnight (00:00:00.000) end day when ends_at > starts_at.
+ */
+export function expandEventDateKeys(startsAtIso: string, endsAtIso: string): string[] {
+  const start = new Date(startsAtIso);
+  const end = new Date(endsAtIso);
+  const firstDay = startOfDay(start);
+  let lastDay = startOfDay(end);
+
+  if (
+    end.getTime() > start.getTime() &&
+    end.getHours() === 0 &&
+    end.getMinutes() === 0 &&
+    end.getSeconds() === 0 &&
+    end.getMilliseconds() === 0 &&
+    lastDay.getTime() > firstDay.getTime()
+  ) {
+    lastDay = startOfDay(addDays(lastDay, -1));
+  }
+
+  const keys: string[] = [];
+  let cursor = firstDay;
+  while (cursor.getTime() <= lastDay.getTime()) {
+    keys.push(toLocalDateKey(cursor));
+    cursor = startOfDay(addDays(cursor, 1));
+  }
+  return keys.length > 0 ? keys : [toLocalDateKey(firstDay)];
+}
+
+/** Groups sorted YYYY-MM-DD keys into contiguous calendar-day runs (DST-safe). */
+export function groupConsecutiveDateKeys(dates: Iterable<string>): string[][] {
+  const sorted = [...new Set(dates)].sort();
+  if (sorted.length === 0) return [];
+
+  const groups: string[][] = [[sorted[0]!]];
+  for (let i = 1; i < sorted.length; i++) {
+    const prevNextKey = toLocalDateKey(addDays(parseLocalDateKey(sorted[i - 1]!), 1));
+    if (sorted[i] === prevNextKey) {
+      groups[groups.length - 1]!.push(sorted[i]!);
+    } else {
+      groups.push([sorted[i]!]);
+    }
+  }
+  return groups;
+}
+
+export function validateDraftDateGroups(
+  groups: string[][],
+  startTime: string,
+  endTime: string,
+  options?: { isSingleEventEdit?: boolean },
+): string | null {
+  if (groups.length === 0) {
+    return "Please select at least one date.";
+  }
+  if (options?.isSingleEventEdit && groups.length > 1) {
+    return "Select consecutive dates when editing a single event.";
+  }
+
+  const [sh, sm] = startTime.split(":").map(Number);
+  const [eh, em] = endTime.split(":").map(Number);
+  const startMinutes = (sh ?? 0) * 60 + (sm ?? 0);
+  const endMinutes = (eh ?? 0) * 60 + (em ?? 0);
+
+  if (groups.some((g) => g.length === 1) && endMinutes <= startMinutes) {
+    return "End time must be after start time.";
+  }
+
+  return null;
+}

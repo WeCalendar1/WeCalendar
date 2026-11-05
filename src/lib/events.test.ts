@@ -3,12 +3,15 @@ import {
   eventsForDay,
   eventsForTimeGridDay,
   eventPosition,
+  expandEventDateKeys,
   formatEventTime,
+  groupConsecutiveDateKeys,
   isMultiDayEvent,
   eventsSpanningDay,
   getSpanPosition,
   getSeriesSpanPosition,
   layoutOverlappingEvents,
+  validateDraftDateGroups,
 } from "./events";
 import type { CalendarEvent } from "./events";
 
@@ -323,5 +326,39 @@ describe("Monday row-wrapping & TimeGrid multi-day clipping", () => {
     });
     expect(eventsForTimeGridDay([lateShow], new Date(2026, 10, 6)).map((e) => e.id)).toEqual(["late"]);
     expect(eventsForTimeGridDay([lateShow], new Date(2026, 10, 7))).toEqual([]);
+  });
+});
+
+
+describe("multi-day modal date helpers", () => {
+  it("expands multi-day spans into YYYY-MM-DD keys while ignoring exact-midnight trailing day", () => {
+    expect(
+      expandEventDateKeys(
+        new Date(2026, 10, 6, 18, 0).toISOString(),
+        new Date(2026, 10, 8, 11, 0).toISOString(),
+      ),
+    ).toEqual(["2026-11-06", "2026-11-07", "2026-11-08"]);
+
+    expect(
+      expandEventDateKeys(
+        new Date(2026, 10, 6, 22, 0).toISOString(),
+        new Date(2026, 10, 7, 0, 0).toISOString(),
+      ),
+    ).toEqual(["2026-11-06"]);
+  });
+
+  it("allows endTime <= startTime on multi-day groups, rejects it on single-day groups, and blocks split ranges on single-event edits", () => {
+    const multiDay = groupConsecutiveDateKeys(["2026-11-06", "2026-11-07", "2026-11-08"]);
+    expect(validateDraftDateGroups(multiDay, "18:00", "11:00")).toBeNull();
+
+    const singleDay = groupConsecutiveDateKeys(["2026-11-06"]);
+    expect(validateDraftDateGroups(singleDay, "18:00", "11:00")).toBe(
+      "End time must be after start time.",
+    );
+
+    const splitDays = groupConsecutiveDateKeys(["2026-11-06", "2026-11-08"]);
+    expect(
+      validateDraftDateGroups(splitDays, "09:00", "11:00", { isSingleEventEdit: true }),
+    ).toBe("Select consecutive dates when editing a single event.");
   });
 });
