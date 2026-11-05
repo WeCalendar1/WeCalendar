@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { isPasswordValid, validatePasswordRules } from "@/lib/auth";
+import {
+  fetchAccountExportBundle,
+  formatExportFilename,
+  serializeAccountExport,
+  triggerJsonDownload,
+} from "@/lib/accountExport";
 import { useCalendarPrefs } from "@/lib/calendarPrefs";
 import type { CalendarMode } from "@/lib/calendar";
 import { SharedWorkspace } from "@/components/SharedWorkspace";
@@ -197,6 +204,7 @@ function DangerButton({
   onClick,
   confirmLabel = "Confirm",
   buttonLabel,
+  disabled = false,
 }: {
   id: string;
   icon: React.ReactNode;
@@ -205,6 +213,7 @@ function DangerButton({
   onClick?: () => void;
   confirmLabel?: string;
   buttonLabel?: string;
+  disabled?: boolean;
 }) {
   const [confirming, setConfirming] = useState(false);
 
@@ -229,8 +238,9 @@ function DangerButton({
           <button
             id={`${id}-confirm`}
             type="button"
+            disabled={disabled}
             onClick={() => { setConfirming(false); onClick?.(); }}
-            className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold text-white"
+            className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
             style={{
               borderRadius: "var(--radius-full)",
               background: "#dc2626",
@@ -242,8 +252,9 @@ function DangerButton({
           <button
             id={`${id}-cancel`}
             type="button"
+            disabled={disabled}
             onClick={() => setConfirming(false)}
-            className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold"
+            className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
             style={{
               borderRadius: "var(--radius-full)",
               border: "1.5px solid var(--border)",
@@ -258,8 +269,9 @@ function DangerButton({
         <button
           id={id}
           type="button"
+          disabled={disabled}
           onClick={() => setConfirming(true)}
-          className="btn-bounce cursor-pointer shrink-0 px-3 py-1.5 text-xs font-semibold"
+          className="btn-bounce cursor-pointer shrink-0 px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
           style={{
             borderRadius: "var(--radius-full)",
             border: "1.5px solid #fca5a5",
@@ -584,6 +596,19 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+
+  const [dangerError, setDangerError] = useState<string | null>(null);
+  const [dangerNotice, setDangerNotice] = useState<string | null>(null);
+  const [dangerBusy, setDangerBusy] = useState(false);
+
+  const pwRules = validatePasswordRules(newPassword);
+  const pwAllValid = isPasswordValid(newPassword);
+  const canSubmitPassword = Boolean(
+    currentPassword && pwAllValid && newPassword === confirmPassword && !passwordBusy,
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -729,13 +754,52 @@ export default function ProfilePage() {
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (!newPassword || newPassword !== confirmPassword) return;
+    setPasswordError(null);
+    setPasswordSaved(false);
 
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (!error) {
+    if (!currentPassword) {
+      setPasswordError("Enter your current password.");
+      return;
+    }
+    if (!pwAllValid) {
+      setPasswordError("Please satisfy all password requirements.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords don't match.");
+      return;
+    }
+    if (!email) {
+      setPasswordError("Please sign in again to update your password.");
+      return;
+    }
+
+    setPasswordBusy(true);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      });
+      if (signInError) {
+        setPasswordError("Current password is incorrect.");
+        return;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (updateError) {
+        setPasswordError(updateError.message);
+        return;
+      }
+
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setPasswordSaved(true);
+      setTimeout(() => setPasswordSaved(false), 2500);
+    } finally {
+      setPasswordBusy(false);
     }
   }
 
@@ -746,14 +810,119 @@ export default function ProfilePage() {
   }
 
   async function handleLeaveGroup(groupId: string) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase
-      .from("group_members")
-      .delete()
-      .eq("group_id", groupId)
-      .eq("user_id", user.id);
-    setGroups((prev) => prev.filter((g) => g.id !== groupId));
+    setDangerError(null);
+    setDangerNotice(null);
+    setDangerBusy(true);
+    try {
+      const { error } = await supabase.rpc("leave_group", { p_group_id: groupId });
+      if (error) {
+        setDangerError(error.message);
+        return;
+      }
+      const nextGroups = await reloadGroups();
+      if (activeGroupId === groupId || !nextGroups.some((g) => g.id === activeGroupId)) {
+        const nextActive = nextGroups[0]?.id ?? null;
+        setActiveGroupId(nextActive);
+        if (nextActive) {
+          window.localStorage.setItem(ACTIVE_GROUP_KEY, nextActive);
+        } else {
+          window.localStorage.removeItem(ACTIVE_GROUP_KEY);
+        }
+      }
+      setDangerNotice("Left shared workspace.");
+    } finally {
+      setDangerBusy(false);
+    }
+  }
+
+  async function handleLeaveAllGroups() {
+    setDangerError(null);
+    setDangerNotice(null);
+    setDangerBusy(true);
+    try {
+      const { error } = await supabase.rpc("leave_all_groups");
+      if (error) {
+        setDangerError(error.message);
+        return;
+      }
+      setGroups([]);
+      setActiveGroupId(null);
+      window.localStorage.removeItem(ACTIVE_GROUP_KEY);
+      setDangerNotice("Left all shared workspaces.");
+    } finally {
+      setDangerBusy(false);
+    }
+  }
+
+  async function handleExportData() {
+    setDangerError(null);
+    setDangerNotice(null);
+    setDangerBusy(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setDangerError("Please sign in again to export your data.");
+        return;
+      }
+      const bundle = await fetchAccountExportBundle(supabase, user);
+      triggerJsonDownload(formatExportFilename(), serializeAccountExport(bundle));
+      setDangerNotice("Your data export has downloaded.");
+    } catch (err) {
+      setDangerError(err instanceof Error ? err.message : "Could not export your data.");
+    } finally {
+      setDangerBusy(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDangerError(null);
+    setDangerNotice(null);
+    setDangerBusy(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setDangerError("Please sign in again to delete your account.");
+        return;
+      }
+
+      try {
+        const { data: files } = await supabase.storage.from("avatars").list(user.id);
+        if (files && files.length > 0) {
+          await supabase.storage
+            .from("avatars")
+            .remove(files.map((f) => `${user.id}/${f.name}`));
+        }
+      } catch {
+        // Best-effort avatar cleanup before deleting the user row
+      }
+
+      const { error } = await supabase.rpc("delete_own_account");
+      if (error) {
+        setDangerError(error.message);
+        return;
+      }
+
+      try {
+        for (let i = window.localStorage.length - 1; i >= 0; i--) {
+          const key = window.localStorage.key(i);
+          if (key && key.startsWith("wecalendar")) {
+            window.localStorage.removeItem(key);
+          }
+        }
+      } catch {
+        // Ignore localStorage access errors
+      }
+
+      await supabase.auth.signOut();
+      router.replace("/login");
+      router.refresh();
+    } finally {
+      setDangerBusy(false);
+    }
   }
 
   async function reloadGroups() {
@@ -1042,7 +1211,10 @@ export default function ProfilePage() {
                 type="password"
                 placeholder="••••••••"
                 value={currentPassword}
-                onChange={setCurrentPassword}
+                onChange={(v) => {
+                  setCurrentPassword(v);
+                  setPasswordError(null);
+                }}
               />
             </div>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -1053,8 +1225,42 @@ export default function ProfilePage() {
                   type="password"
                   placeholder="••••••••"
                   value={newPassword}
-                  onChange={setNewPassword}
+                  onChange={(v) => {
+                    setNewPassword(v);
+                    setPasswordError(null);
+                  }}
                 />
+                {newPassword.length > 0 && (
+                  <ul
+                    className="mt-2 grid grid-cols-1 gap-y-1"
+                    aria-label="Password requirements"
+                  >
+                    {([
+                      { key: "length",    label: "At least 8 characters" },
+                      { key: "uppercase", label: "One uppercase letter (A–Z)" },
+                      { key: "number",    label: "One number (0–9)" },
+                      { key: "symbol",    label: "One symbol (!@#$…)" },
+                    ] as const).map(({ key, label }) => {
+                      const met = pwRules[key];
+                      return (
+                        <li key={key} className="flex items-center gap-1.5 text-xs font-medium">
+                          {met ? (
+                            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                              <path d="M2.5 8l3.5 3.5 7-7" />
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                              <path d="M4 4l8 8M12 4l-8 8" />
+                            </svg>
+                          )}
+                          <span style={{ color: met ? "#10b981" : "var(--text-muted)" }}>
+                            {label}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </div>
               <div>
                 <FieldLabel htmlFor="confirm-password">Confirm new password</FieldLabel>
@@ -1063,7 +1269,10 @@ export default function ProfilePage() {
                   type="password"
                   placeholder="••••••••"
                   value={confirmPassword}
-                  onChange={setConfirmPassword}
+                  onChange={(v) => {
+                    setConfirmPassword(v);
+                    setPasswordError(null);
+                  }}
                 />
               </div>
             </div>
@@ -1072,31 +1281,39 @@ export default function ProfilePage() {
                 Passwords don&apos;t match.
               </p>
             )}
-            <div className="flex justify-end">
+            {passwordError && (
+              <p role="alert" className="text-sm font-medium" style={{ color: "var(--color-danger)" }}>
+                {passwordError}
+              </p>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              {passwordSaved && (
+                <span
+                  role="status"
+                  className="flex items-center gap-1.5 text-sm font-semibold animate-fade-in"
+                  style={{ color: "var(--color-success)" }}
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  Password updated!
+                </span>
+              )}
               <button
                 type="submit"
                 id="change-password-btn"
-                disabled={!currentPassword || !newPassword || newPassword !== confirmPassword}
+                disabled={!canSubmitPassword}
                 className="btn-bounce cursor-pointer px-5 py-2.5 text-sm font-semibold"
                 style={{
                   borderRadius: "var(--radius-full)",
-                  background:
-                    !currentPassword || !newPassword || newPassword !== confirmPassword
-                      ? "var(--border)"
-                      : "var(--accent)",
-                  color:
-                    !currentPassword || !newPassword || newPassword !== confirmPassword
-                      ? "var(--text-muted)"
-                      : "#fff",
+                  background: !canSubmitPassword ? "var(--border)" : "var(--accent)",
+                  color: !canSubmitPassword ? "var(--text-muted)" : "#fff",
                   boxShadow: "var(--shadow-sm)",
                   transition: "all var(--transition-base)",
-                  cursor:
-                    !currentPassword || !newPassword || newPassword !== confirmPassword
-                      ? "not-allowed"
-                      : "pointer",
+                  cursor: !canSubmitPassword ? "not-allowed" : "pointer",
                 }}
               >
-                Update password
+                {passwordBusy ? "Updating…" : "Update password"}
               </button>
             </div>
           </form>
@@ -1185,8 +1402,27 @@ export default function ProfilePage() {
           description="Irreversible and destructive actions - proceed carefully"
         >
           <div>
+            {dangerError && (
+              <div
+                role="alert"
+                className="px-6 py-3 text-xs font-semibold"
+                style={{ background: "#fee2e2", color: "#991b1b", borderBottom: "1px solid #fecaca" }}
+              >
+                {dangerError}
+              </div>
+            )}
+            {dangerNotice && (
+              <div
+                role="status"
+                className="px-6 py-3 text-xs font-semibold"
+                style={{ background: "#ecfdf5", color: "#065f46", borderBottom: "1px solid #fecaca" }}
+              >
+                {dangerNotice}
+              </div>
+            )}
             <DangerButton
               id="sign-out-all-btn"
+              disabled={dangerBusy}
               icon={
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -1203,6 +1439,7 @@ export default function ProfilePage() {
             />
             <DangerButton
               id="unsync-calendar-btn"
+              disabled={dangerBusy}
               icon={
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -1220,6 +1457,7 @@ export default function ProfilePage() {
             <DangerButton
               id="leave-all-groups-btn"
               buttonLabel="Leave all"
+              disabled={dangerBusy || groups.length === 0}
               icon={
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -1230,9 +1468,13 @@ export default function ProfilePage() {
               title="Leave all groups"
               description="Remove yourself from every shared workspace you're a member of"
               confirmLabel="Leave all"
+              onClick={() => {
+                void handleLeaveAllGroups();
+              }}
             />
             <DangerButton
               id="export-data-btn"
+              disabled={dangerBusy}
               icon={
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -1243,9 +1485,13 @@ export default function ProfilePage() {
               title="Export your data"
               description="Download a copy of all your events, lists, and profile data as JSON"
               confirmLabel="Export"
+              onClick={() => {
+                void handleExportData();
+              }}
             />
             <DangerButton
               id="delete-account-btn"
+              disabled={dangerBusy}
               icon={
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="3 6 5 6 21 6" />
@@ -1257,6 +1503,9 @@ export default function ProfilePage() {
               title="Delete account"
               description="Permanently delete your account and all associated data - cannot be undone"
               confirmLabel="Delete forever"
+              onClick={() => {
+                void handleDeleteAccount();
+              }}
             />
           </div>
         </SectionCard>
