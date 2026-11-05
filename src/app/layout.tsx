@@ -12,7 +12,6 @@ const varelaRound = Varela_Round({
 const merriweather = Merriweather({
   variable: "--font-merriweather",
   subsets: ["latin"],
-  weight: ["400", "700"],
   style: ["normal", "italic"],
   display: "swap",
 });
@@ -20,14 +19,12 @@ const merriweather = Merriweather({
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
-  weight: ["400", "700"],
   display: "swap",
 });
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
   subsets: ["latin"],
-  weight: ["400", "700"],
   style: ["normal", "italic"],
   display: "swap",
 });
