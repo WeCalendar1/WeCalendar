@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Tables } from "@/types/database";
 
 type Group = Tables<"groups">;
@@ -12,6 +12,8 @@ type SharedWorkspaceProps = {
   onCreateGroup: (name: string) => Promise<void>;
   onJoinGroup: (inviteCode: string) => Promise<void>;
   variant?: "sidebar" | "settings";
+  openModalRequestKey?: number;
+  onConsumeModalRequest?: () => void;
 };
 
 export function SharedWorkspace({
@@ -21,6 +23,8 @@ export function SharedWorkspace({
   onCreateGroup,
   onJoinGroup,
   variant = "sidebar",
+  openModalRequestKey = 0,
+  onConsumeModalRequest,
 }: SharedWorkspaceProps) {
   const [groupName, setGroupName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -33,6 +37,17 @@ export function SharedWorkspace({
   const [codeVisible, setCodeVisible] = useState(false);
   /** Whether the create/join modal is open */
   const [modalOpen, setModalOpen] = useState(false);
+  const [handledRequestKey, setHandledRequestKey] = useState(0);
+  if (openModalRequestKey !== handledRequestKey) {
+    setHandledRequestKey(openModalRequestKey);
+    if (openModalRequestKey > 0) {
+      setCollapsed(false);
+      setModalOpen(true);
+    }
+  }
+  useEffect(() => {
+    if (openModalRequestKey > 0) onConsumeModalRequest?.();
+  }, [openModalRequestKey, onConsumeModalRequest]);
 
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
   const isSidebar = variant === "sidebar";

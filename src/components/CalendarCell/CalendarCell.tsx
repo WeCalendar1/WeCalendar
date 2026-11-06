@@ -69,6 +69,7 @@ type CalendarCellProps = {
   multiDaySlots: Map<string, number>;
   conflictIds?: ReadonlySet<string>;
   showConflictHighlights?: boolean;
+  weekStartsOnMonday?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDoubleClick?: (date: Date) => void;
   todayJumpKey?: number;
@@ -106,6 +107,7 @@ export function CalendarCell({
   multiDaySlots,
   conflictIds,
   showConflictHighlights = false,
+  weekStartsOnMonday = false,
   todayJumpKey,
   onSelectEvent,
   onDoubleClick,
@@ -115,12 +117,12 @@ export function CalendarCell({
   // ── Multi-day & Connected Series events ──────────────────────────────────────
   // Get true multi-day events
   const trueMultiDay = eventsSpanningDay(events, day.date).filter(isMultiDayEvent);
-  
+
   // Get single-day events that are part of a series and connect visually on this day
   const cellSingleDayEvents = eventsForDay(events, day.date).filter((e) => !isMultiDayEvent(e));
-  
+
   const connectedSeriesEvents = cellSingleDayEvents.filter((e) => {
-    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek);
+    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek, weekStartsOnMonday);
     return pos !== "solo";
   });
 
@@ -139,10 +141,10 @@ export function CalendarCell({
 
   // ── Solo Single-day events ──────────────────────────────────────────────────
   const singleDay = cellSingleDayEvents.filter((e) => {
-    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek);
+    const pos = getSeriesSpanPosition(e, events, day.date, dayOfWeek, weekStartsOnMonday);
     return pos === "solo";
   });
-  
+
   const visibleSingle = singleDay.slice(0, 3);
   const extraSingle   = Math.max(singleDay.length - 3, 0);
   const totalExtra    = extraSingle + hiddenBars.length;
@@ -209,13 +211,14 @@ export function CalendarCell({
       {/* ── Multi-day bars (absolutely positioned) ─────────────────────────── */}
       {visibleBars.map((event) => {
         const slot  = multiDaySlots.get(event.id) ?? 0;
-        const pos   = getSeriesSpanPosition(event, events, day.date, dayOfWeek);
+        const pos   = getSeriesSpanPosition(event, events, day.date, dayOfWeek, weekStartsOnMonday);
         const tagColors = colorsForEvent(event.id, eventTags, tags);
         const color = tagColors[0] ?? "var(--accent)";
         const { left, right } = barEdges(pos);
         const showLabel = pos === "solo" || pos === "start";
         const warn =
           showConflictHighlights && Boolean(conflictIds?.has(event.id));
+        const isDeclined = event.myRsvp === "declined";
 
         const leftPad = 10;
 
@@ -244,6 +247,7 @@ export function CalendarCell({
               zIndex:       1,
               whiteSpace:   "nowrap",
               boxShadow:    conflictBarShadow(warn, pos),
+              opacity:      isDeclined ? 0.45 : 1,
             }}
           >
             {showLabel && (pos === "solo" || pos === "start") && (
@@ -252,7 +256,7 @@ export function CalendarCell({
             {showLabel && (
               <span className="flex min-w-0 items-center gap-1">
                 <EventCreatorBadge event={event} />
-                <span className="truncate">
+                <span className={`truncate${isDeclined ? " line-through" : ""}`}>
                 {`${formatEventTime(event.starts_at)} `}
                 {event.title}
                 </span>
@@ -273,6 +277,7 @@ export function CalendarCell({
           const color = tagColors[0] ?? "var(--accent)";
           const warn =
             showConflictHighlights && Boolean(conflictIds?.has(event.id));
+          const isDeclined = event.myRsvp === "declined";
           const leftPad = 14;
           return (
             <button
@@ -291,12 +296,12 @@ export function CalendarCell({
                 paddingLeft:  `${leftPad}px`,
                 boxShadow:    conflictOutline(warn),
                 letterSpacing: "-0.01em",
-                opacity: 0.92,
+                opacity:      isDeclined ? 0.45 : 0.92,
               }}
             >
               <EventTagStripes event={event} colors={tagColors} width={`${leftPad + 7}px`} />
               <EventCreatorBadge event={event} />
-              <span className="truncate">{formatEventTime(event.starts_at)} {event.title}</span>
+              <span className={`truncate${isDeclined ? " line-through" : ""}`}>{formatEventTime(event.starts_at)} {event.title}</span>
             </button>
           );
         })}

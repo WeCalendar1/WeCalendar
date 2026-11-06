@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { type FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { isPasswordValid, validatePasswordRules } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "signin" | "signup";
@@ -36,13 +37,8 @@ export function LoginForm() {
   const supabase = useMemo(() => createClient(), []);
 
   // Password strength rules - derived from current value, no extra state needed
-  const pwRules = {
-    length:    password.length >= 8,
-    uppercase: /[A-Z]/.test(password),
-    number:    /[0-9]/.test(password),
-    symbol:    /[^A-Za-z0-9]/.test(password),
-  };
-  const pwAllValid = Object.values(pwRules).every(Boolean);
+  const pwRules = validatePasswordRules(password);
+  const pwAllValid = isPasswordValid(password);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

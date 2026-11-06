@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTheme } from "@/lib/theme";
 import type { User } from "@supabase/supabase-js";
 import { Calendar } from "@/components/Calendar";
@@ -10,6 +10,7 @@ import { EventViewerPanel } from "@/components/EventViewerPanel";
 import { Navbar } from "@/components/Navbar";
 import { NotesApp, type NoteDraftContext } from "@/components/Notes";
 import { RightPanel } from "@/components/RightPanel";
+import { PanelResizeHandle, usePanelWidth } from "@/components/PanelResizeHandle";
 import { Sidebar } from "@/components/Sidebar";
 import { getInitials } from "@/lib/auth";
 import {
@@ -22,7 +23,19 @@ import {
 } from "@/lib/calendar";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
 import { EMPTY_TIPTAP_DOC, isEmptyNotePatch, normalizeFolderColor, canMoveNoteToFolder, filterNotesByTags } from "@/lib/notes";
-import type { CalendarEvent } from "@/lib/events";
+import {
+  executeSeriesReconciliation,
+  prepareBulkEventInserts,
+  reconcileSeriesUpdate,
+  type CalendarEvent,
+} from "@/lib/events";
+import {
+  filterConflictCandidateEvents,
+  filterVisibleEvents,
+  rsvpMapForUser,
+  type EventRsvp,
+  type RsvpStatus,
+} from "@/lib/rsvps";
 import {
   conflictFingerprint,
   conflictingEventGroups,
@@ -36,12 +49,24 @@ type Group = Tables<"groups">;
 type EventCreator = NonNullable<CalendarEvent["creator"]>;
 
 const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
+const emptySubscribe = () => () => {};
 
 export function AppShell() {
   const { mode: themeMode, accent, toggleMode: toggleTheme, setAccentColor } = useTheme();
   const { prefs } = useCalendarPrefs();
+  const isHydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [viewDate, setViewDate] = useState(() => startOfDay(new Date()));
-  const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>(prefs.defaultView);
+  const [didInitDefaultView, setDidInitDefaultView] = useState(false);
+  if (isHydrated && !didInitDefaultView) {
+    setDidInitDefaultView(true);
+    if (calendarMode !== prefs.defaultView) {
+      setCalendarMode(prefs.defaultView);
+    }
+  }
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
+  const [workspaceModalRequestKey, setWorkspaceModalRequestKey] = useState(0);
   const [screenView, setScreenView] = useState<ScreenView>("calendar");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [eventViewerOpen, setEventViewerOpen] = useState(false);
@@ -52,6 +77,10 @@ export function AppShell() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [eventRsvps, setEventRsvps] = useState<EventRsvp[]>([]);
+  const [groupProfilesById, setGroupProfilesById] = useState<
+    Map<string, { display_name: string | null; avatar_url: string | null }>
+  >(() => new Map());
   const [tags, setTags] = useState<Tag[]>([]);
   const [eventTags, setEventTags] = useState<EventTag[]>([]);
   const [noteFolders, setNoteFolders] = useState<NoteFolder[]>([]);
@@ -71,6 +100,8 @@ export function AppShell() {
   const [hiddenConflictKeys, setHiddenConflictKeys] = useState<Set<string>>(() => new Set());
   const [draggingNoteIds, setDraggingNoteIds] = useState<string[]>([]);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const { width: panelWidth, setWidth: setPanelWidth } = usePanelWidth();
+  const [panelResizing, setPanelResizing] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
   const selectedNoteIdRef = useRef<string | null>(null);
@@ -126,7 +157,13 @@ export function AppShell() {
         return;
       }
 
-      const creatorIds = [...new Set((eventData ?? []).map((event) => event.created_by))];
+      const creatorIds = [
+        ...new Set(
+          (eventData ?? [])
+            .map((event) => event.created_by)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
       const creatorsById = new Map<string, EventCreator>();
 
       if (creatorIds.length > 0) {
@@ -158,7 +195,7 @@ export function AppShell() {
 
       const nextEvents: CalendarEvent[] = (eventData ?? []).map((event) => ({
         ...event,
-        creator: creatorsById.get(event.created_by) ?? null,
+        creator: event.created_by ? (creatorsById.get(event.created_by) ?? null) : null,
       }));
       setEvents(nextEvents);
       setSelectedEvent((current) => {
@@ -211,6 +248,78 @@ export function AppShell() {
       setEventTags(
         (data ?? []).map((row) => ({ event_id: row.event_id, tag_id: row.tag_id })),
       );
+    },
+    [supabase],
+  );
+
+  const loadEventRsvps = useCallback(
+    async (groupId: string | null) => {
+      if (!groupId) {
+        setEventRsvps([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("event_rsvps")
+        .select("event_id, group_id, user_id, status, updated_at")
+        .eq("group_id", groupId);
+
+      if (error) {
+        console.warn("loadEventRsvps", error);
+        setEventRsvps([]);
+        return;
+      }
+      setEventRsvps(data ?? []);
+    },
+    [supabase],
+  );
+
+  const loadGroupProfiles = useCallback(
+    async (groupId: string | null) => {
+      if (!groupId) {
+        setGroupProfilesById(new Map());
+        return;
+      }
+      const { data: memberRows, error: memberError } = await supabase
+        .from("group_members")
+        .select("user_id")
+        .eq("group_id", groupId);
+
+      if (memberError) {
+        console.warn("loadGroupProfiles.members", memberError);
+        setGroupProfilesById(new Map());
+        return;
+      }
+
+      const userIds = [...new Set((memberRows ?? []).map((row) => row.user_id))];
+      if (userIds.length === 0) {
+        setGroupProfilesById(new Map());
+        return;
+      }
+
+      const nextMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
+      const { data: profilesWithAvatars, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", userIds);
+
+      if (profileError) {
+        const { data: fallbackProfiles, error: fallbackError } = await supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", userIds);
+        if (fallbackError) {
+          console.warn("loadGroupProfiles.profiles", fallbackError);
+        } else {
+          (fallbackProfiles ?? []).forEach((p) => {
+            nextMap.set(p.id, { display_name: p.display_name, avatar_url: null });
+          });
+        }
+      } else {
+        (profilesWithAvatars ?? []).forEach((p) => {
+          nextMap.set(p.id, { display_name: p.display_name, avatar_url: p.avatar_url });
+        });
+      }
+      setGroupProfilesById(nextMap);
     },
     [supabase],
   );
@@ -289,14 +398,43 @@ export function AppShell() {
       setGroups([]);
       setActiveGroupId(null);
       setEvents([]);
+      setEventRsvps([]);
+      setGroupProfilesById(new Map());
       setTags([]);
       setEventTags([]);
       setNoteFolders([]);
       setNotes([]);
+      setUserAvatarUrl(null);
+      setProfileDisplayName(null);
       return;
     }
     void loadGroups();
-  }, [user, loadGroups]);
+    let active = true;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!active) return;
+      if (error) {
+        const { data: fallback } = await supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (!active) return;
+        setProfileDisplayName(fallback?.display_name ?? null);
+        setUserAvatarUrl(null);
+        return;
+      }
+      setProfileDisplayName(data?.display_name ?? null);
+      setUserAvatarUrl(data?.avatar_url ?? null);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user, loadGroups, supabase]);
 
   useEffect(() => {
     if (activeGroupId) {
@@ -306,8 +444,18 @@ export function AppShell() {
     void loadEvents(activeGroupId);
     void loadTags(activeGroupId);
     void loadEventTags(activeGroupId);
+    void loadEventRsvps(activeGroupId);
+    void loadGroupProfiles(activeGroupId);
     void loadNotes(activeGroupId);
-  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadNotes]);
+  }, [
+    activeGroupId,
+    loadEvents,
+    loadTags,
+    loadEventTags,
+    loadEventRsvps,
+    loadGroupProfiles,
+    loadNotes,
+  ]);
 
   // ─── Realtime subscriptions ───────────────────────────────────────────────
 
@@ -333,6 +481,16 @@ export function AppShell() {
       )
       .on(
         "postgres_changes",
+        { event: "*", schema: "public", table: "event_rsvps", filter: `group_id=eq.${activeGroupId}` },
+        () => { void loadEventRsvps(activeGroupId); },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "group_members", filter: `group_id=eq.${activeGroupId}` },
+        () => { void loadGroupProfiles(activeGroupId); },
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "note_folders", filter: `group_id=eq.${activeGroupId}` },
         () => { void loadNotes(activeGroupId); },
       )
@@ -344,12 +502,31 @@ export function AppShell() {
       .subscribe();
 
     return () => { void supabase.removeChannel(channel); };
-  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadNotes, supabase]);
+  }, [
+    activeGroupId,
+    loadEvents,
+    loadTags,
+    loadEventTags,
+    loadEventRsvps,
+    loadGroupProfiles,
+    loadNotes,
+    supabase,
+  ]);
 
   // ─── Filtered events ──────────────────────────────────────────────────────
 
+  const myRsvpByEventId = useMemo(
+    () => rsvpMapForUser(eventRsvps, user?.id),
+    [eventRsvps, user?.id],
+  );
+
+  const eventsWithRsvp = useMemo(
+    () => events.map((e) => ({ ...e, myRsvp: myRsvpByEventId.get(e.id) ?? null })),
+    [events, myRsvpByEventId],
+  );
+
   const filteredEvents = useMemo(() => {
-    let filtered = events;
+    let filtered = filterVisibleEvents(eventsWithRsvp, prefs.showDeclinedEvents);
 
     // Text search
     if (searchQuery.trim()) {
@@ -370,7 +547,7 @@ export function AppShell() {
     }
 
     return filtered;
-  }, [events, searchQuery, activeTagIds, eventTags]);
+  }, [eventsWithRsvp, prefs.showDeclinedEvents, searchQuery, activeTagIds, eventTags]);
 
   // Filter notes by active tags (via linked event's tags)
   const filteredNotes = useMemo(
@@ -379,15 +556,12 @@ export function AppShell() {
   );
 
   const conflictGroups = useMemo(() => {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const todayMs = startOfToday.getTime();
-    // When the pref is enabled, ignore events whose day has fully passed.
-    const eventsToCheck = prefs.hidePastConflicts
-      ? events.filter((e) => new Date(e.ends_at).getTime() > todayMs)
-      : events;
-    return conflictingEventGroups(eventsToCheck);
-  }, [events, prefs.hidePastConflicts]);
+    return conflictingEventGroups(
+      filterConflictCandidateEvents(eventsWithRsvp, {
+        hidePastConflicts: prefs.hidePastConflicts,
+      }),
+    );
+  }, [eventsWithRsvp, prefs.hidePastConflicts]);
   const conflictFp = useMemo(
     () => conflictFingerprint(conflictGroups.map((g) => g.key)),
     [conflictGroups],
@@ -505,43 +679,19 @@ export function AppShell() {
     }
     if (drafts.length === 0) return;
 
-    const recurrenceGroupId = explicitRecurrenceGroupId || crypto.randomUUID();
+    const { eventRows, tagRows } = prepareBulkEventInserts(drafts, {
+      groupId: activeGroupId,
+      userId: user.id,
+      recurrenceGroupId: explicitRecurrenceGroupId,
+    });
 
-    // 1. Bulk insert events
-    const { data: insertedEvents, error: eventsError } = await supabase
-      .from("events")
-      .insert(
-        drafts.map((input) => ({
-          group_id: activeGroupId,
-          title: input.title,
-          description: input.description || null,
-          starts_at: input.startsAt.toISOString(),
-          ends_at: input.endsAt.toISOString(),
-          created_by: user.id,
-          recurrence_group_id: drafts.length > 1 ? recurrenceGroupId : null,
-        }))
-      )
-      .select("id");
-
+    const { error: eventsError } = await supabase.from("events").insert(eventRows);
     if (eventsError) {
       throw new Error(eventsError.message);
     }
 
-    // 2. Bulk insert tags for all events
-    const tagInserts: { event_id: string; tag_id: string }[] = [];
-    if (insertedEvents) {
-      insertedEvents.forEach((ev, idx) => {
-        const input = drafts[idx];
-        if (input && input.tagIds.length > 0) {
-          input.tagIds.forEach((tagId) => {
-            tagInserts.push({ event_id: ev.id, tag_id: tagId });
-          });
-        }
-      });
-    }
-
-    if (tagInserts.length > 0) {
-      const { error: tagError } = await supabase.from("event_tags").insert(tagInserts);
+    if (tagRows.length > 0) {
+      const { error: tagError } = await supabase.from("event_tags").insert(tagRows);
       if (tagError) throw new Error(tagError.message);
     }
 
@@ -576,35 +726,133 @@ export function AppShell() {
       );
     }
 
-    await loadEvents(activeGroupId);
-    await loadEventTags(activeGroupId);
+    await Promise.all([
+      loadEvents(activeGroupId),
+      loadEventTags(activeGroupId),
+      loadEventRsvps(activeGroupId),
+    ]);
   }
 
   async function handleDeleteEvent(eventId: string) {
     const { error } = await supabase.from("events").delete().eq("id", eventId);
     if (error) throw new Error(error.message);
-    await loadEvents(activeGroupId);
-    await loadEventTags(activeGroupId);
+    await Promise.all([
+      loadEvents(activeGroupId),
+      loadEventTags(activeGroupId),
+      loadEventRsvps(activeGroupId),
+    ]);
   }
 
   async function handleUpdateSeries(recurrenceGroupId: string, drafts: EventDraft[]) {
-    if (!activeGroupId) throw new Error("Join or create a shared workspace first.");
+    if (!user || !activeGroupId) throw new Error("Join or create a shared workspace first.");
 
-    const { error: deleteError } = await supabase
-      .from("events")
-      .delete()
-      .eq("recurrence_group_id", recurrenceGroupId);
+    const existingSeries = events.filter((e) => e.recurrence_group_id === recurrenceGroupId);
+    const plan = reconcileSeriesUpdate(existingSeries, drafts, {
+      groupId: activeGroupId,
+      userId: user.id,
+      recurrenceGroupId,
+    });
 
-    if (deleteError) throw new Error(deleteError.message);
+    await executeSeriesReconciliation(plan, {
+      updateEvent: async (id, patch) => {
+        const { error } = await supabase.from("events").update(patch).eq("id", id);
+        if (error) throw new Error(error.message);
+      },
+      replaceUpdatedEventTags: async (eventIds, tagRows) => {
+        const { error: delTagError } = await supabase
+          .from("event_tags")
+          .delete()
+          .in("event_id", eventIds);
+        if (delTagError) throw new Error(delTagError.message);
 
-    await handleCreateMultipleEvents(drafts, recurrenceGroupId);
+        if (tagRows.length > 0) {
+          const { error: insTagError } = await supabase.from("event_tags").insert(tagRows);
+          if (insTagError) throw new Error(insTagError.message);
+        }
+      },
+      deleteEvents: async (ids) => {
+        const { error } = await supabase.from("events").delete().in("id", ids);
+        if (error) throw new Error(error.message);
+      },
+      insertEvents: async (eventRows, tagRows) => {
+        const { error: insertError } = await supabase.from("events").insert(eventRows);
+        if (insertError) throw new Error(insertError.message);
+
+        if (tagRows.length > 0) {
+          const { error: insertTagError } = await supabase.from("event_tags").insert(tagRows);
+          if (insertTagError) throw new Error(insertTagError.message);
+        }
+      },
+      reload: async () => {
+        await Promise.all([
+          loadEvents(activeGroupId),
+          loadEventTags(activeGroupId),
+          loadEventRsvps(activeGroupId),
+        ]);
+      },
+    });
   }
 
   async function handleDeleteSeries(recurrenceGroupId: string) {
     const { error } = await supabase.from("events").delete().eq("recurrence_group_id", recurrenceGroupId);
     if (error) throw new Error(error.message);
-    await loadEvents(activeGroupId);
-    await loadEventTags(activeGroupId);
+    await Promise.all([
+      loadEvents(activeGroupId),
+      loadEventTags(activeGroupId),
+      loadEventRsvps(activeGroupId),
+    ]);
+  }
+
+  async function handleSetEventRsvp(targetEventIds: string[], status: RsvpStatus | null) {
+    if (!user || !activeGroupId || targetEventIds.length === 0) return;
+
+    const uniqueIds = [...new Set(targetEventIds)];
+    const targetSet = new Set(uniqueIds);
+    const nowIso = new Date().toISOString();
+
+    setEventRsvps((prev) => {
+      const kept = prev.filter(
+        (row) => !(row.user_id === user.id && targetSet.has(row.event_id)),
+      );
+      if (status === null) return kept;
+      return [
+        ...kept,
+        ...uniqueIds.map((eventId) => ({
+          event_id: eventId,
+          group_id: activeGroupId,
+          user_id: user.id,
+          status,
+          updated_at: nowIso,
+        })),
+      ];
+    });
+
+    if (status === null) {
+      const { error } = await supabase
+        .from("event_rsvps")
+        .delete()
+        .eq("user_id", user.id)
+        .in("event_id", uniqueIds);
+      if (error) {
+        await loadEventRsvps(activeGroupId);
+        throw new Error(error.message);
+      }
+    } else {
+      const { error } = await supabase.from("event_rsvps").upsert(
+        uniqueIds.map((eventId) => ({
+          event_id: eventId,
+          group_id: activeGroupId,
+          user_id: user.id,
+          status,
+          updated_at: nowIso,
+        })),
+        { onConflict: "event_id,user_id" },
+      );
+      if (error) {
+        await loadEventRsvps(activeGroupId);
+        throw new Error(error.message);
+      }
+    }
   }
 
   function openCreateModal(date?: Date) {
@@ -881,33 +1129,54 @@ export function AppShell() {
     : [];
 
   const userInitials = getInitials(
-    (user?.user_metadata?.display_name as string | undefined) || user?.email,
+    profileDisplayName || (user?.user_metadata?.display_name as string | undefined) || user?.email,
+  );
+
+  const activeSelectedEvent = useMemo(
+    () =>
+      selectedEvent
+        ? eventsWithRsvp.find((e) => e.id === selectedEvent.id) ?? selectedEvent
+        : null,
+    [selectedEvent, eventsWithRsvp],
   );
 
   // Tag IDs on the currently-selected event (for the modal)
-  const selectedEventTagIds = selectedEvent
-    ? tagIdsForEvent(selectedEvent.id, eventTags)
+  const selectedEventTagIds = activeSelectedEvent
+    ? tagIdsForEvent(activeSelectedEvent.id, eventTags)
     : [];
 
-  const seriesEvents = selectedEvent?.recurrence_group_id
-    ? events.filter((e) => e.recurrence_group_id === selectedEvent.recurrence_group_id)
-    : selectedEvent
-      ? [selectedEvent]
+  const seriesEvents = activeSelectedEvent?.recurrence_group_id
+    ? eventsWithRsvp.filter((e) => e.recurrence_group_id === activeSelectedEvent.recurrence_group_id)
+    : activeSelectedEvent
+      ? [activeSelectedEvent]
       : [];
+
+  const consumeWorkspaceModalRequest = useCallback(() => {
+    setWorkspaceModalRequestKey(0);
+  }, []);
+
+  function openWorkspaceOnboarding() {
+    setSidebarOpen(true);
+    setWorkspaceModalRequestKey((k) => k + 1);
+  }
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <Navbar
-        monthLabel={formatViewLabel(viewDate, calendarMode)}
+        monthLabel={formatViewLabel(viewDate, calendarMode, prefs.weekStartsOnMonday)}
         calendarMode={calendarMode}
         screenView={screenView}
         sidebarOpen={sidebarOpen}
         searchQuery={screenView === "notes" ? notesSearchQuery : searchQuery}
         userInitials={userInitials}
+        userAvatarUrl={userAvatarUrl}
         isDark={themeMode === "dark"}
         accent={accent}
-        isTodayDisabled={isDateInView(startOfDay(new Date()), viewDate, calendarMode)}
-        onToggleSidebar={() => setSidebarOpen((open) => !open)}
+        isTodayDisabled={isDateInView(startOfDay(new Date()), viewDate, calendarMode, prefs.weekStartsOnMonday)}
+        onToggleSidebar={() => {
+          if (sidebarOpen) setWorkspaceModalRequestKey(0);
+          setSidebarOpen((open) => !open);
+        }}
         onToday={() => {
           setViewDate(startOfDay(new Date()));
           setTodayJumpKey((k) => k + 1);
@@ -975,7 +1244,11 @@ export function AppShell() {
           onSelectGroup={setActiveGroupId}
           onCreateGroup={handleCreateGroup}
           onJoinGroup={handleJoinGroup}
-          showWorkspace={prefs.showWorkspaceInSidebar}
+          showWorkspace={prefs.showWorkspaceInSidebar || groups.length === 0}
+          weekStartsOnMonday={prefs.weekStartsOnMonday}
+          onSelectDate={setViewDate}
+          workspaceModalRequestKey={workspaceModalRequestKey}
+          onConsumeWorkspaceModalRequest={consumeWorkspaceModalRequest}
           notesFilter={notesFilter}
           noteFolders={noteFolders}
           onNotesFilterChange={handleNotesFilterChange}
@@ -1013,13 +1286,14 @@ export function AppShell() {
             draggingNoteIds={draggingNoteIds}
             onDraggingNoteIds={setDraggingNoteIds}
             onDragOverTarget={setDragOverTarget}
+            onOpenWorkspaceModal={openWorkspaceOnboarding}
           />
         ) : (
           <>
             <main data-snapshot-target className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
               {!activeGroupId && (
                 <div
-                  className="mb-3 rounded-xl px-4 py-3 text-sm"
+                  className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm"
                   style={{
                     background: "var(--accent-muted)",
                     color: "var(--accent-text)",
@@ -1027,8 +1301,21 @@ export function AppShell() {
                     letterSpacing: "-0.004em",
                   }}
                 >
-                  Create a shared workspace or join with an invite code to sync calendars
-                  between accounts.
+                  <span>
+                    Create a shared workspace or join with an invite code to sync calendars between accounts.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={openWorkspaceOnboarding}
+                    className="pressable shrink-0 cursor-pointer px-3.5 py-1.5 text-xs font-semibold text-white"
+                    style={{
+                      borderRadius: "var(--radius-full)",
+                      background: "var(--accent)",
+                    }}
+                  >
+                    Create or join calendar
+                  </button>
+
                 </div>
               )}
               <Calendar
@@ -1040,6 +1327,7 @@ export function AppShell() {
                 eventTags={eventTags}
                 conflictIds={highlightConflictIds}
                 showConflictHighlights={showConflictHighlights}
+                weekStartsOnMonday={prefs.weekStartsOnMonday}
                 todayJumpKey={todayJumpKey}
                 onViewDateChange={setViewDate}
                 onCalendarModeChange={setCalendarMode}
@@ -1048,17 +1336,28 @@ export function AppShell() {
               />
             </main>
 
+            {(eventViewerOpen || showRightPanel) && (
+              <PanelResizeHandle
+                width={panelWidth}
+                onResize={setPanelWidth}
+                onDraggingChange={setPanelResizing}
+              />
+            )}
+
             <EventViewerPanel
               visible={eventViewerOpen}
               events={filteredEvents}
               tags={tags}
               eventTags={eventTags}
               searchQuery={searchQuery}
+              weekStartsOnMonday={prefs.weekStartsOnMonday}
               todayJumpKey={todayJumpKey}
               onSelectEvent={openEventDetails}
+              width={panelWidth}
+              resizing={panelResizing}
             />
 
-            <RightPanel visible={showRightPanel} />
+            <RightPanel visible={showRightPanel} width={panelWidth} />
           </>
         )}
       </div>
@@ -1067,9 +1366,9 @@ export function AppShell() {
         key="create-event-modal"
         open={modalOpen}
         defaultDate={modalDefaultDate}
-        event={selectedEvent}
+        event={activeSelectedEvent}
         seriesEvents={seriesEvents}
-        existingEvents={events}
+        existingEvents={eventsWithRsvp}
         tags={tags}
         initialTagIds={selectedEventTagIds}
         onClose={closeEventModal}
@@ -1084,7 +1383,11 @@ export function AppShell() {
         onOpenNote={openNotesForEvent}
         onCreateNoteForEvent={handleCreateNoteForEvent}
         currentUserId={user?.id}
+        eventRsvps={eventRsvps}
+        groupProfilesById={groupProfilesById}
+        onSetRsvp={handleSetEventRsvp}
         confirmDeleteOthers={prefs.confirmDeleteOthers}
+        weekStartsOnMonday={prefs.weekStartsOnMonday}
       />
     </div>
   );

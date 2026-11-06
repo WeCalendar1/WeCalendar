@@ -2,12 +2,23 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { CalendarEvent } from "@/lib/events";
+import {
+  buildDraftInterval,
+  expandEventDateKeys,
+  groupConsecutiveDateKeys,
+  validateDraftDateGroups,
+  type CalendarEvent,
+} from "@/lib/events";
 import { TagCreatorInline } from "@/components/TagCreatorInline";
 import type { Tag } from "@/lib/tags";
-import { getMonthGrid, addMonths, formatMonthYear } from "@/lib/calendar";
+import { addDays, addMonths, formatMonthYear, getMonthGrid, getWeekdayLabels } from "@/lib/calendar";
 import { draftOverlapsExisting } from "@/lib/scheduling";
 import { noteTitle, type Note } from "@/lib/notes";
+import {
+  summarizeEventRsvps,
+  type EventRsvp,
+  type RsvpStatus,
+} from "@/lib/rsvps";
 
 export type EventDraft = {
   title: string;
@@ -42,9 +53,23 @@ type CreateEventModalProps = {
   onCreateNoteForEvent?: (eventId: string) => Promise<void>;
   /** ID of the currently logged-in user (for ownership checks) */
   currentUserId?: string | null;
+  /** Group RSVP rows for events in the active workspace */
+  eventRsvps?: readonly EventRsvp[];
+  /** Group member profile map for rendering RSVP respondent names */
+  groupProfilesById?: ReadonlyMap<string, { display_name: string | null; avatar_url?: string | null }>;
+  /** Immediate RSVP handler (pass null status to clear response) */
+  onSetRsvp?: (eventIds: string[], status: RsvpStatus | null) => Promise<void>;
   /** When true, deleting another user's event requires an extra confirmation */
   confirmDeleteOthers?: boolean;
+  /** When true, DayPicker columns start on Monday instead of Sunday */
+  weekStartsOnMonday?: boolean;
 };
+
+const RSVP_OPTIONS: readonly { id: RsvpStatus; label: string; color: string }[] = [
+  { id: "going", label: "Going", color: "#10b981" },
+  { id: "maybe", label: "Maybe", color: "#f59e0b" },
+  { id: "declined", label: "Declined", color: "#ef4444" },
+];
 
 function toDateInput(date: Date): string {
   const y = date.getFullYear();
@@ -59,46 +84,25 @@ function toTimeInput(date: Date): string {
   return `${h}:${m}`;
 }
 
-// ─── Consecutive-group helper ────────────────────────────────────────────────
-
-function groupConsecutiveDates(dates: Set<string>): string[][] {
-  if (dates.size === 0) return [];
-  const sorted = [...dates].sort();
-  const groups: string[][] = [[sorted[0]!]];
-
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1]! + "T00:00:00");
-    const curr = new Date(sorted[i]! + "T00:00:00");
-    const diffDays = Math.round((curr.getTime() - prev.getTime()) / 86_400_000);
-    if (diffDays === 1) {
-      groups[groups.length - 1]!.push(sorted[i]!);
-    } else {
-      groups.push([sorted[i]!]);
-    }
-  }
-
-  return groups;
-}
-
 // ─── Day picker ──────────────────────────────────────────────────────────────
-
-const PICKER_DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 type DayPickerProps = {
   selectedDates: Set<string>;
   onToggle: (dateStr: string) => void;
+  weekStartsOnMonday?: boolean;
 };
 
-function DayPicker({ selectedDates, onToggle }: DayPickerProps) {
+function DayPicker({ selectedDates, onToggle, weekStartsOnMonday = false }: DayPickerProps) {
   const [pickerMonth, setPickerMonth] = useState<Date>(() => {
     const first = [...selectedDates].sort()[0];
     const base = first ? new Date(first + "T00:00:00") : new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
   });
 
-  const days = getMonthGrid(pickerMonth);
+  const days = getMonthGrid(pickerMonth, new Date(), weekStartsOnMonday);
+  const pickerDays = getWeekdayLabels(weekStartsOnMonday, "two");
   const today = toDateInput(new Date());
-  const groups = groupConsecutiveDates(selectedDates);
+  const groups = groupConsecutiveDateKeys(selectedDates);
   const eventCount = groups.length;
 
   function buildHint(): string {
@@ -149,7 +153,7 @@ function DayPicker({ selectedDates, onToggle }: DayPickerProps) {
 
       {/* Weekday headers */}
       <div className="grid grid-cols-7 px-1 pt-1">
-        {PICKER_DAYS.map((d) => (
+        {pickerDays.map((d) => (
           <div
             key={d}
             className="py-1 text-center text-[10px] font-semibold uppercase"
@@ -167,8 +171,8 @@ function DayPicker({ selectedDates, onToggle }: DayPickerProps) {
           const selected = selectedDates.has(dateStr);
           const isToday = dateStr === today;
 
-          const prevStr = toDateInput(new Date(day.date.getTime() - 86_400_000));
-          const nextStr = toDateInput(new Date(day.date.getTime() + 86_400_000));
+          const prevStr = toDateInput(addDays(day.date, -1));
+          const nextStr = toDateInput(addDays(day.date, 1));
           const prevSel = selectedDates.has(prevStr);
           const nextSel = selectedDates.has(nextStr);
 
@@ -266,7 +270,11 @@ function CreateEventModalContent({
   onOpenNote,
   onCreateNoteForEvent,
   currentUserId,
+  eventRsvps = [],
+  groupProfilesById,
+  onSetRsvp,
   confirmDeleteOthers = true,
+  weekStartsOnMonday = false,
 }: CreateEventModalProps) {
   const isEditing = Boolean(event);
 
@@ -275,10 +283,12 @@ function CreateEventModalContent({
   const [selectedDates, setSelectedDates] = useState<Set<string>>(() => {
     if (seriesEvents.length > 0) {
       const dates = new Set<string>();
-      for (const e of seriesEvents) dates.add(toDateInput(new Date(e.starts_at)));
+      for (const e of seriesEvents) {
+        for (const k of expandEventDateKeys(e.starts_at, e.ends_at)) dates.add(k);
+      }
       return dates;
     }
-    if (event) return new Set([toDateInput(new Date(event.starts_at))]);
+    if (event) return new Set(expandEventDateKeys(event.starts_at, event.ends_at));
     return new Set([toDateInput(defaultDate)]);
   });
   const [startTime, setStartTime] = useState(() =>
@@ -298,21 +308,68 @@ function CreateEventModalContent({
   const [repeats, setRepeats] = useState(false);
   const [repeatFreq, setRepeatFreq] = useState<"daily" | "weekly" | "monthly">("weekly");
   const [repeatCount, setRepeatCount] = useState(4);
+  const [applyRsvpToSeries, setApplyRsvpToSeries] = useState(false);
+  const [rsvpBusy, setRsvpBusy] = useState(false);
+
+  const emptyProfiles = useMemo(
+    () => new Map<string, { display_name: string | null; avatar_url?: string | null }>(),
+    [],
+  );
+  const rsvpSummary = useMemo(
+    () =>
+      event
+        ? summarizeEventRsvps(
+            event.id,
+            eventRsvps,
+            groupProfilesById ?? emptyProfiles,
+            currentUserId,
+          )
+        : null,
+    [event, eventRsvps, groupProfilesById, emptyProfiles, currentUserId],
+  );
+
+  async function handleRsvpSelect(option: RsvpStatus) {
+    if (!event || !onSetRsvp) return;
+    const nextStatus = rsvpSummary?.myStatus === option ? null : option;
+    const targetIds =
+      applyRsvpToSeries && seriesEvents.length > 1
+        ? seriesEvents.map((e) => e.id)
+        : [event.id];
+    setRsvpBusy(true);
+    setError(null);
+    try {
+      await onSetRsvp(targetIds, nextStatus);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update RSVP.");
+    } finally {
+      setRsvpBusy(false);
+    }
+  }
 
   const softOverlap = useMemo(() => {
+    if (
+      isEditing &&
+      event &&
+      (rsvpSummary?.myStatus === "declined" || event.myRsvp === "declined")
+    ) {
+      return { overlaps: false, titles: [] };
+    }
+
     const excludeIds = new Set(seriesEvents.map((e) => e.id));
     if (event) excludeIds.add(event.id);
+    const activeExisting = existingEvents.filter((e) => e.myRsvp !== "declined");
 
-    const [sh, sm] = startTime.split(":").map(Number);
-    const [eh, em] = endTime.split(":").map(Number);
     const titles = new Set<string>();
 
-    for (const dateStr of selectedDates) {
-      const [y, mo, d] = dateStr.split("-").map(Number);
-      const startsAt = new Date(y!, mo! - 1, d!, sh!, sm!, 0);
-      const endsAt = new Date(y!, mo! - 1, d!, eh!, em!, 0);
-      if (endsAt <= startsAt) continue;
-      const result = draftOverlapsExisting(startsAt, endsAt, existingEvents, excludeIds);
+    for (const grp of groupConsecutiveDateKeys(selectedDates)) {
+      const interval = buildDraftInterval(grp[0]!, grp[grp.length - 1]!, startTime, endTime);
+      if (!interval) continue;
+      const result = draftOverlapsExisting(
+        interval.startsAt,
+        interval.endsAt,
+        activeExisting,
+        excludeIds,
+      );
       for (const t of result.titles) titles.add(t);
     }
 
@@ -320,7 +377,16 @@ function CreateEventModalContent({
       overlaps: titles.size > 0,
       titles: [...titles],
     };
-  }, [selectedDates, startTime, endTime, existingEvents, event, seriesEvents]);
+  }, [
+    isEditing,
+    rsvpSummary,
+    selectedDates,
+    startTime,
+    endTime,
+    existingEvents,
+    event,
+    seriesEvents,
+  ]);
 
   function toggleTag(tagId: string) {
     setSelectedTagIds((prev) =>
@@ -343,31 +409,21 @@ function CreateEventModalContent({
     offsetDays = 0,
     offsetMonths = 0,
   ): EventDraft | null {
-    const [sh, sm] = startTime.split(":").map(Number);
-    const [eh, em] = endTime.split(":").map(Number);
-
-    const [sy, smo, sd] = startDateStr.split("-").map(Number);
-    const startsAt = new Date(sy!, smo! - 1, sd!, sh!, sm!, 0);
-
-    const [ey, emo, ed] = endDateStr.split("-").map(Number);
-    const endsAt = new Date(ey!, emo! - 1, ed!, eh!, em!, 0);
-
-    if (offsetMonths !== 0) {
-      startsAt.setMonth(startsAt.getMonth() + offsetMonths);
-      endsAt.setMonth(endsAt.getMonth() + offsetMonths);
-    }
-    if (offsetDays !== 0) {
-      startsAt.setDate(startsAt.getDate() + offsetDays);
-      endsAt.setDate(endsAt.getDate() + offsetDays);
-    }
-
-    if (endsAt <= startsAt) return null;
+    const interval = buildDraftInterval(
+      startDateStr,
+      endDateStr,
+      startTime,
+      endTime,
+      offsetDays,
+      offsetMonths,
+    );
+    if (!interval) return null;
 
     return {
       title: title.trim(),
       description: description.trim(),
-      startsAt,
-      endsAt,
+      startsAt: interval.startsAt,
+      endsAt: interval.endsAt,
       tagIds: selectedTagIds,
     };
   }
@@ -376,16 +432,15 @@ function CreateEventModalContent({
     e.preventDefault();
     if (!title.trim()) return;
 
-    const [sh, sm] = startTime.split(":").map(Number);
-    const [eh, em] = endTime.split(":").map(Number);
-    if (eh! < sh! || (eh === sh && em! <= sm!)) {
-      setError("End time must be after start time.");
-      return;
-    }
-
-    const groups = groupConsecutiveDates(selectedDates);
-    if (groups.length === 0) {
-      setError("Please select at least one date.");
+    const groups = groupConsecutiveDateKeys(selectedDates);
+    const isSeriesEdit = Boolean(
+      isEditing && event && seriesEvents.length > 1 && onUpdateSeries && event.recurrence_group_id,
+    );
+    const validationError = validateDraftDateGroups(groups, startTime, endTime, {
+      isSingleEventEdit: Boolean(isEditing && event && !isSeriesEdit),
+    });
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -462,7 +517,7 @@ function CreateEventModalContent({
 
   // True when the event was created by someone other than the current user
   const isOthersEvent =
-    Boolean(event) &&
+    Boolean(event?.created_by) &&
     Boolean(currentUserId) &&
     event?.created_by !== currentUserId;
 
@@ -650,7 +705,7 @@ function CreateEventModalContent({
                         type="button"
                         onClick={() => {
                           if (event) {
-                            setSelectedDates(new Set([toDateInput(new Date(event.starts_at))]));
+                            setSelectedDates(new Set(expandEventDateKeys(event.starts_at, event.ends_at)));
                           }
                         }}
                         className="pressable text-[10px] font-semibold"
@@ -661,7 +716,11 @@ function CreateEventModalContent({
                     )}
                   </div>
 
-                  <DayPicker selectedDates={selectedDates} onToggle={toggleDay} />
+                  <DayPicker
+                    selectedDates={selectedDates}
+                    onToggle={toggleDay}
+                    weekStartsOnMonday={weekStartsOnMonday}
+                  />
                 </div>
 
                 {/* Times */}
@@ -766,6 +825,110 @@ function CreateEventModalContent({
                         <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
                           {repeatFreq === "daily" ? "days" : repeatFreq === "weekly" ? "weeks" : "months"}
                         </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Attendance (RSVP) */}
+                {isEditing && event && onSetRsvp && rsvpSummary && (
+                  <div
+                    className="flex flex-col gap-2 rounded-xl p-3"
+                    style={{
+                      border: "1px solid var(--border)",
+                      background: "var(--surface-2)",
+                    }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                        Attendance
+                      </p>
+                      <div className="flex items-center gap-1.5" role="group" aria-label="Your RSVP">
+                        {RSVP_OPTIONS.map((opt) => {
+                          const active = rsvpSummary.myStatus === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              disabled={rsvpBusy || busy}
+                              aria-pressed={active}
+                              onClick={() => void handleRsvpSelect(opt.id)}
+                              className="pressable flex cursor-pointer items-center gap-1.5 px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                              style={{
+                                borderRadius: "var(--radius-full)",
+                                border: `1.5px solid ${active ? opt.color : "var(--border)"}`,
+                                background: active
+                                  ? `color-mix(in srgb, ${opt.color} 16%, var(--surface))`
+                                  : "var(--surface)",
+                                color: active ? opt.color : "var(--text-secondary)",
+                              }}
+                            >
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ background: opt.color }}
+                              />
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {seriesEvents.length > 1 && (
+                      <label
+                        className="flex cursor-pointer items-center gap-2 text-xs"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={applyRsvpToSeries}
+                          onChange={(e) => setApplyRsvpToSeries(e.target.checked)}
+                          className="h-3.5 w-3.5 rounded accent-[var(--accent)]"
+                        />
+                        Apply RSVP to all {seriesEvents.length} events in series
+                      </label>
+                    )}
+
+                    <div
+                      className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      <span>Going · {rsvpSummary.counts.going}</span>
+                      <span>Maybe · {rsvpSummary.counts.maybe}</span>
+                      <span>Declined · {rsvpSummary.counts.declined}</span>
+                    </div>
+
+                    {rsvpSummary.respondents.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {rsvpSummary.respondents.map((resp) => {
+                          const dotColor =
+                            resp.status === "going"
+                              ? "#10b981"
+                              : resp.status === "maybe"
+                                ? "#f59e0b"
+                                : "#ef4444";
+                          return (
+                            <span
+                              key={resp.userId}
+                              className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium"
+                              style={{
+                                borderRadius: "var(--radius-full)",
+                                background: "var(--surface)",
+                                border: "1px solid var(--border)",
+                                color: "var(--foreground)",
+                              }}
+                            >
+                              <span
+                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                style={{ background: dotColor }}
+                              />
+                              <span>{resp.displayName}</span>
+                              <span style={{ color: "var(--text-muted)" }}>
+                                ({resp.status})
+                              </span>
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -967,7 +1130,7 @@ function CreateEventModalContent({
                         : isEditing
                           ? "Save changes"
                           : (() => {
-                              const baseCount = selectedDates.size;
+                              const baseCount = groupConsecutiveDateKeys(selectedDates).length;
                               const totalCount = repeats ? baseCount * repeatCount : baseCount;
                               return totalCount > 1 ? `Save ${totalCount} events` : "Save event";
                             })()}

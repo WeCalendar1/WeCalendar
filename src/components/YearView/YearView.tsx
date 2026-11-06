@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import {
   getMonthGrid,
+  getWeekdayLabels,
   isSameDay,
   startOfMonth,
   type CalendarMode,
 } from "@/lib/calendar";
 
-const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
-
 type YearViewProps = {
   viewDate: Date;
+  weekStartsOnMonday?: boolean;
   onSelectMonth: (date: Date) => void;
   onSelectDay: (date: Date) => void;
   onModeChange: (mode: CalendarMode) => void;
@@ -20,19 +20,22 @@ type YearViewProps = {
 
 function MiniMonth({
   monthDate,
+  weekStartsOnMonday = false,
   onSelectMonth,
   onSelectDay,
   onModeChange,
   todayJumpKey,
 }: {
   monthDate: Date;
+  weekStartsOnMonday?: boolean;
   onSelectMonth: (date: Date) => void;
   onSelectDay: (date: Date) => void;
   onModeChange: (mode: CalendarMode) => void;
   todayJumpKey?: number;
 }) {
-  const days = getMonthGrid(monthDate);
   const today = new Date();
+  const days = getMonthGrid(monthDate, today, weekStartsOnMonday);
+  const weekdays = getWeekdayLabels(weekStartsOnMonday, "narrow");
   const label = monthDate.toLocaleDateString("en-US", { month: "long" });
 
   const [isFlashing, setIsFlashing] = useState(false);
@@ -72,7 +75,7 @@ function MiniMonth({
       </button>
 
       <div className="grid grid-cols-7 gap-y-0.5 text-center text-[10px]">
-        {WEEKDAYS.map((d, i) => (
+        {weekdays.map((d, i) => (
           <span key={`${d}-${i}`} className="py-1 font-semibold" style={{ color: "var(--text-muted)" }}>
             {d}
           </span>
@@ -90,10 +93,10 @@ function MiniMonth({
               }}
               className={`relative z-10 mx-auto flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-medium disabled:cursor-default ${isFlashing && isToday ? "animate-pop-bounce" : ""}`}
               style={{
-                background: (isFlashing && isToday) 
-                  ? "color-mix(in srgb, var(--accent) 70%, var(--background))" 
-                  : isToday 
-                    ? "var(--accent)" 
+                background: (isFlashing && isToday)
+                  ? "color-mix(in srgb, var(--accent) 70%, var(--background))"
+                  : isToday
+                    ? "var(--accent)"
                     : "transparent",
                 color: isToday
                   ? "#fff"
@@ -115,6 +118,7 @@ function MiniMonth({
 
 export function YearView({
   viewDate,
+  weekStartsOnMonday = false,
   onSelectMonth,
   onSelectDay,
   onModeChange,
@@ -137,6 +141,7 @@ export function YearView({
           <MiniMonth
             key={monthDate.toISOString()}
             monthDate={monthDate}
+            weekStartsOnMonday={weekStartsOnMonday}
             onSelectMonth={onSelectMonth}
             onSelectDay={onSelectDay}
             onModeChange={onModeChange}

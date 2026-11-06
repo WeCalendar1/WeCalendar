@@ -38,16 +38,17 @@ const BUCKET_ORDER: TimeBucket[] = [
 
 // ─── Bucketing ────────────────────────────────────────────────────────────────
 
-function bucketEvents(
+export function bucketEvents(
   events: CalendarEvent[],
+  now: Date = new Date(),
+  weekStartsOnMonday = false,
 ): Record<TimeBucket, CalendarEvent[]> {
-  const now = new Date();
   const todayStart = startOfDay(now);
   const tomorrowStart = addDays(todayStart, 1);
   const dayAfterTomorrow = addDays(todayStart, 2);
 
-  // "This Week" = rest of the Sun-Sat week after tomorrow
-  const weekStart = startOfWeek(todayStart);
+  // "This Week" = rest of the current week after tomorrow
+  const weekStart = startOfWeek(todayStart, weekStartsOnMonday);
   const nextWeekStart = addDays(weekStart, 7);
   const weekAfterNextStart = addDays(weekStart, 14);
 
@@ -217,13 +218,14 @@ function EventRow({
   });
 
   const isRecurring = Boolean(event.recurrence_group_id);
+  const isDeclined = event.myRsvp === "declined";
 
   return (
     <button
       type="button"
       onClick={onSelect}
       className="pressable flex w-full items-start gap-3 rounded-lg px-2.5 py-2 text-left transition-colors"
-      style={{ cursor: "pointer" }}
+      style={{ cursor: "pointer", opacity: isDeclined ? 0.5 : 1 }}
     >
       {/* Tag colour bar */}
       <div
@@ -238,7 +240,8 @@ function EventRow({
             className="truncate text-sm font-semibold"
             style={{ color: "var(--foreground)", letterSpacing: "-0.01em" }}
           >
-            <EventCreatorBadge event={event} /> {event.title}
+            <EventCreatorBadge event={event} />{" "}
+            <span className={isDeclined ? "line-through" : undefined}>{event.title}</span>
           </span>
           {isRecurring && (
             <svg
@@ -267,6 +270,17 @@ function EventRow({
               <span style={{ color: "var(--separator)" }}>·</span>
               <span>{dateLabel}</span>
             </>
+          )}
+          {isDeclined && (
+            <span
+              className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+              style={{
+                background: "var(--surface-2)",
+                color: "var(--text-muted)",
+              }}
+            >
+              Declined
+            </span>
           )}
         </div>
 
@@ -315,8 +329,13 @@ export type EventViewerPanelProps = {
   tags: Tag[];
   eventTags: EventTag[];
   searchQuery: string;
+  weekStartsOnMonday?: boolean;
   todayJumpKey?: number;
   onSelectEvent: (event: CalendarEvent) => void;
+  /** Panel width in px (controlled by the resize handle). */
+  width?: number;
+  /** True while the user is dragging the resize handle — skips the spring so it tracks the cursor. */
+  resizing?: boolean;
 };
 
 export function EventViewerPanel({
@@ -324,8 +343,11 @@ export function EventViewerPanel({
   events,
   tags,
   eventTags,
+  weekStartsOnMonday = false,
   todayJumpKey,
   onSelectEvent,
+  width = 380,
+  resizing = false,
 }: EventViewerPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -335,7 +357,10 @@ export function EventViewerPanel({
     }
   }, [todayJumpKey]);
 
-  const buckets = useMemo(() => bucketEvents(events), [events]);
+  const buckets = useMemo(
+    () => bucketEvents(events, new Date(), weekStartsOnMonday),
+    [events, weekStartsOnMonday],
+  );
 
   const hasAnyEvents = events.length > 0;
 
@@ -345,9 +370,9 @@ export function EventViewerPanel({
         <motion.aside
           key="event-viewer"
           initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 380, opacity: 1 }}
+          animate={{ width, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
-          transition={{ type: "spring", bounce: 0, duration: 0.35 }}
+          transition={resizing ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.35 }}
           className="shrink-0 overflow-hidden"
           style={{
             borderLeft: "none",
@@ -356,8 +381,8 @@ export function EventViewerPanel({
         >
           <div
             ref={scrollRef}
-            className="flex h-full w-[380px] flex-col overflow-y-auto"
-            style={{ background: "var(--background)" }}
+            className="flex h-full flex-col overflow-y-auto"
+            style={{ background: "var(--background)", width }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3">

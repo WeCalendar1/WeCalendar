@@ -10,6 +10,7 @@ type WeekViewProps = {
   eventTags: EventTag[];
   conflictIds?: ReadonlySet<string>;
   showConflictHighlights?: boolean;
+  weekStartsOnMonday?: boolean;
   onSelectEvent?: (event: CalendarEvent) => void;
   onDayDoubleClick?: (date: Date) => void;
   todayJumpKey?: number;
@@ -22,11 +23,12 @@ export function WeekView({
   eventTags,
   conflictIds,
   showConflictHighlights,
+  weekStartsOnMonday = false,
   todayJumpKey,
   onSelectEvent,
   onDayDoubleClick,
 }: WeekViewProps) {
-  const days = getWeekDays(viewDate);
+  const days = getWeekDays(viewDate, new Date(), weekStartsOnMonday);
 
   return (
     <div

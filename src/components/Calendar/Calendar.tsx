@@ -17,6 +17,7 @@ type CalendarProps = {
   eventTags: EventTag[];
   conflictIds?: ReadonlySet<string>;
   showConflictHighlights?: boolean;
+  weekStartsOnMonday?: boolean;
   todayJumpKey?: number;
   onViewDateChange: (date: Date) => void;
   onCalendarModeChange: (mode: CalendarMode) => void;
@@ -33,6 +34,7 @@ export function Calendar({
   eventTags,
   conflictIds,
   showConflictHighlights,
+  weekStartsOnMonday = false,
   todayJumpKey,
   onViewDateChange,
   onCalendarModeChange,
@@ -62,6 +64,7 @@ export function Calendar({
           eventTags={eventTags}
           conflictIds={conflictIds}
           showConflictHighlights={showConflictHighlights}
+          weekStartsOnMonday={weekStartsOnMonday}
           todayJumpKey={todayJumpKey}
           onSelectEvent={onSelectEvent}
           onDayDoubleClick={onDayDoubleClick}
@@ -76,6 +79,7 @@ export function Calendar({
           eventTags={eventTags}
           conflictIds={conflictIds}
           showConflictHighlights={showConflictHighlights}
+          weekStartsOnMonday={weekStartsOnMonday}
           todayJumpKey={todayJumpKey}
           onSelectEvent={onSelectEvent}
           onDayDoubleClick={onDayDoubleClick}
@@ -84,6 +88,7 @@ export function Calendar({
       {calendarMode === "year" && (
         <YearView
           viewDate={viewDate}
+          weekStartsOnMonday={weekStartsOnMonday}
           todayJumpKey={todayJumpKey}
           onSelectMonth={onViewDateChange}
           onSelectDay={onViewDateChange}

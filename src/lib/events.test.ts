@@ -1,5 +1,22 @@
-﻿import { describe, it, expect } from "vitest";
-import { eventsForDay, eventPosition, formatEventTime, isMultiDayEvent, eventsSpanningDay, getSpanPosition } from "./events";
+import { describe, it, expect } from "vitest";
+import {
+  buildDraftInterval,
+  effectiveEventEndDay,
+  eventsForDay,
+  eventsForTimeGridDay,
+  eventPosition,
+  expandEventDateKeys,
+  formatEventTime,
+  groupConsecutiveDateKeys,
+  isMultiDayEvent,
+  eventsSpanningDay,
+  getSpanPosition,
+  getSeriesSpanPosition,
+  layoutOverlappingEvents,
+  prepareBulkEventInserts,
+  reconcileSeriesUpdate,
+  validateDraftDateGroups,
+} from "./events";
 import type { CalendarEvent } from "./events";
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -14,6 +31,7 @@ function makeEvent(overrides: Partial<CalendarEvent>): CalendarEvent {
     ends_at: "2025-06-15T10:00:00Z",
     created_by: "user-1",
     has_conflict: false,
+    recurrence_group_id: null,
     created_at: "2025-06-01T00:00:00Z",
     updated_at: "2025-06-01T00:00:00Z",
     ...overrides,
@@ -263,3 +281,347 @@ describe("getSpanPosition", () => {
   });
 });
 
+
+
+describe("Monday row-wrapping & TimeGrid multi-day clipping", () => {
+  it("wraps multi-day and series spans at Sunday->Monday when weekStartsOnMonday is true", () => {
+    // Fri Nov 6 18:00 -> Tue Nov 10 11:00, 2026
+    const trip = makeEvent({
+      id: "trip",
+      recurrence_group_id: "rg-1",
+      starts_at: new Date(2026, 10, 6, 18, 0).toISOString(),
+      ends_at: new Date(2026, 10, 10, 11, 0).toISOString(),
+    });
+
+    // Saturday Nov 7 (dayOfWeek = 6): middle when Monday-first, end when Sunday-first
+    expect(getSpanPosition(trip, new Date(2026, 10, 7), 6, false)).toBe("end");
+    expect(getSpanPosition(trip, new Date(2026, 10, 7), 6, true)).toBe("middle");
+    // Sunday Nov 8 (dayOfWeek = 0): start when Sunday-first, end when Monday-first
+    expect(getSeriesSpanPosition(trip, [trip], new Date(2026, 10, 8), 0, true)).toBe("end");
+    // Monday Nov 9 (dayOfWeek = 1): middle when Sunday-first, start when Monday-first
+    expect(getSeriesSpanPosition(trip, [trip], new Date(2026, 10, 9), 1, true)).toBe("start");
+  });
+
+  it("clips multi-day events with endTime <= startTime across Fri/Sat/Sun in TimeGrid", () => {
+    const retreat = makeEvent({
+      id: "retreat",
+      starts_at: new Date(2026, 10, 6, 18, 0).toISOString(), // Fri 6 PM
+      ends_at: new Date(2026, 10, 8, 11, 0).toISOString(),   // Sun 11 AM
+    });
+    const sundayBrunch = makeEvent({
+      id: "brunch",
+      starts_at: new Date(2026, 10, 8, 10, 0).toISOString(), // Sun 10 AM
+      ends_at: new Date(2026, 10, 8, 12, 0).toISOString(),   // Sun 12 PM
+    });
+
+    expect(eventPosition(retreat, 60, new Date(2026, 10, 6))).toEqual({ top: 18 * 60, height: 6 * 60 });
+    expect(eventPosition(retreat, 60, new Date(2026, 10, 7))).toEqual({ top: 0, height: 24 * 60 });
+    expect(eventPosition(retreat, 60, new Date(2026, 10, 8))).toEqual({ top: 0, height: 11 * 60 });
+
+    const sundayLayout = layoutOverlappingEvents([retreat, sundayBrunch], new Date(2026, 10, 8));
+    expect(sundayLayout.map((l) => l.totalColumns)).toEqual([2, 2]);
+  });
+
+  it("excludes trailing exact-midnight 00:00 endpoints from the next day's TimeGrid", () => {
+    const lateShow = makeEvent({
+      id: "late",
+      starts_at: new Date(2026, 10, 6, 22, 0).toISOString(),
+      ends_at: new Date(2026, 10, 7, 0, 0).toISOString(),
+    });
+    expect(eventsForTimeGridDay([lateShow], new Date(2026, 10, 6)).map((e) => e.id)).toEqual(["late"]);
+    expect(eventsForTimeGridDay([lateShow], new Date(2026, 10, 7))).toEqual([]);
+  });
+});
+
+
+describe("multi-day modal date helpers", () => {
+  it("expands multi-day spans into YYYY-MM-DD keys while ignoring exact-midnight trailing day", () => {
+    expect(
+      expandEventDateKeys(
+        new Date(2026, 10, 6, 18, 0).toISOString(),
+        new Date(2026, 10, 8, 11, 0).toISOString(),
+      ),
+    ).toEqual(["2026-11-06", "2026-11-07", "2026-11-08"]);
+
+    expect(
+      expandEventDateKeys(
+        new Date(2026, 10, 6, 22, 0).toISOString(),
+        new Date(2026, 10, 7, 0, 0).toISOString(),
+      ),
+    ).toEqual(["2026-11-06"]);
+  });
+
+  it("allows endTime <= startTime on multi-day groups, rejects it on single-day groups, and blocks split ranges on single-event edits", () => {
+    const multiDay = groupConsecutiveDateKeys(["2026-11-06", "2026-11-07", "2026-11-08"]);
+    expect(validateDraftDateGroups(multiDay, "18:00", "11:00")).toBeNull();
+
+    const singleDay = groupConsecutiveDateKeys(["2026-11-06"]);
+    expect(validateDraftDateGroups(singleDay, "18:00", "11:00")).toBe(
+      "End time must be after start time.",
+    );
+
+    const splitDays = groupConsecutiveDateKeys(["2026-11-06", "2026-11-08"]);
+    expect(
+      validateDraftDateGroups(splitDays, "09:00", "11:00", { isSingleEventEdit: true }),
+    ).toBe("Select consecutive dates when editing a single event.");
+  });
+
+  it("round-trips exact-midnight 00:00 endpoints without validation failure or 24-hour truncation", () => {
+    // 1-day event ending at midnight: Fri Nov 6 22:00 -> Sat Nov 7 00:00
+    const singleKeys = expandEventDateKeys(
+      new Date(2026, 10, 6, 22, 0).toISOString(),
+      new Date(2026, 10, 7, 0, 0).toISOString(),
+    );
+    expect(singleKeys).toEqual(["2026-11-06"]);
+    const singleGroups = groupConsecutiveDateKeys(singleKeys);
+    expect(validateDraftDateGroups(singleGroups, "22:00", "00:00")).toBeNull();
+    const singleInterval = buildDraftInterval(
+      singleGroups[0]![0]!,
+      singleGroups[0]![singleGroups[0]!.length - 1]!,
+      "22:00",
+      "00:00",
+    );
+    expect(singleInterval).toEqual({
+      startsAt: new Date(2026, 10, 6, 22, 0, 0),
+      endsAt: new Date(2026, 10, 7, 0, 0, 0),
+    });
+
+    // Multi-day event ending at midnight: Fri Nov 6 18:00 -> Sun Nov 8 00:00
+    const multiKeys = expandEventDateKeys(
+      new Date(2026, 10, 6, 18, 0).toISOString(),
+      new Date(2026, 10, 8, 0, 0).toISOString(),
+    );
+    expect(multiKeys).toEqual(["2026-11-06", "2026-11-07"]);
+    const multiGroups = groupConsecutiveDateKeys(multiKeys);
+    expect(validateDraftDateGroups(multiGroups, "18:00", "00:00")).toBeNull();
+    const multiInterval = buildDraftInterval(
+      multiGroups[0]![0]!,
+      multiGroups[0]![multiGroups[0]!.length - 1]!,
+      "18:00",
+      "00:00",
+    );
+    expect(multiInterval).toEqual({
+      startsAt: new Date(2026, 10, 6, 18, 0, 0),
+      endsAt: new Date(2026, 10, 8, 0, 0, 0),
+    });
+  });
+
+  it("keeps Month-view spanning helpers consistent with TimeGrid on exact-midnight 00:00 endpoints", () => {
+    const lateShow = makeEvent({
+      id: "late",
+      starts_at: new Date(2026, 10, 6, 22, 0).toISOString(), // Fri 22:00
+      ends_at: new Date(2026, 10, 7, 0, 0).toISOString(),    // Sat 00:00
+    });
+    expect(effectiveEventEndDay(lateShow.starts_at, lateShow.ends_at)).toEqual(
+      new Date(2026, 10, 6),
+    );
+    expect(isMultiDayEvent(lateShow)).toBe(false);
+    expect(eventsSpanningDay([lateShow], new Date(2026, 10, 6)).map((e) => e.id)).toEqual(["late"]);
+    expect(eventsSpanningDay([lateShow], new Date(2026, 10, 7))).toEqual([]);
+
+    const twoDayMidnight = makeEvent({
+      id: "two-day",
+      starts_at: new Date(2026, 10, 6, 18, 0).toISOString(), // Fri 18:00
+      ends_at: new Date(2026, 10, 8, 0, 0).toISOString(),    // Sun 00:00
+    });
+    expect(isMultiDayEvent(twoDayMidnight)).toBe(true);
+    expect(eventsSpanningDay([twoDayMidnight], new Date(2026, 10, 7)).map((e) => e.id)).toEqual(["two-day"]);
+    expect(eventsSpanningDay([twoDayMidnight], new Date(2026, 10, 8))).toEqual([]);
+    expect(getSpanPosition(twoDayMidnight, new Date(2026, 10, 6), 5, true)).toBe("start");
+    expect(getSpanPosition(twoDayMidnight, new Date(2026, 10, 7), 6, true)).toBe("end");
+  });
+
+  it("pre-assigns event IDs for bulk inserts so tag rows do not depend on RETURNING order", () => {
+    let seq = 0;
+    const makeId = () => `id-${++seq}`;
+    const { eventRows, tagRows } = prepareBulkEventInserts(
+      [
+        {
+          title: "First",
+          description: "",
+          startsAt: new Date("2026-11-06T09:00:00.000Z"),
+          endsAt: new Date("2026-11-06T10:00:00.000Z"),
+          tagIds: ["tag-a", "tag-b"],
+        },
+        {
+          title: "Second",
+          description: "Notes",
+          startsAt: new Date("2026-11-07T09:00:00.000Z"),
+          endsAt: new Date("2026-11-07T10:00:00.000Z"),
+          tagIds: ["tag-c"],
+        },
+      ],
+      { groupId: "grp-1", userId: "user-1", createId: makeId },
+    );
+
+    expect(eventRows.map((r) => ({ id: r.id, title: r.title, recurrence_group_id: r.recurrence_group_id }))).toEqual([
+      { id: "id-2", title: "First", recurrence_group_id: "id-1" },
+      { id: "id-3", title: "Second", recurrence_group_id: "id-1" },
+    ]);
+    expect(tagRows).toEqual([
+      { event_id: "id-2", tag_id: "tag-a" },
+      { event_id: "id-2", tag_id: "tag-b" },
+      { event_id: "id-3", tag_id: "tag-c" },
+    ]);
+  });
+
+  it("reconciles series updates in-place by date, consuming each existing ID at most once", () => {
+    let seq = 0;
+    const makeId = () => `new-${++seq}`;
+
+    const existing = [
+      { id: "e1", starts_at: new Date(2026, 10, 6, 9, 0).toISOString() },
+      { id: "e2", starts_at: new Date(2026, 10, 13, 9, 0).toISOString() },
+      { id: "e3", starts_at: new Date(2026, 10, 20, 9, 0).toISOString() },
+    ];
+
+    const result = reconcileSeriesUpdate(
+      existing,
+      [
+        {
+          title: "Standup AM",
+          description: "Updated",
+          startsAt: new Date(2026, 10, 6, 9, 0),
+          endsAt: new Date(2026, 10, 6, 9, 30),
+          tagIds: ["t1"],
+        },
+        {
+          title: "Standup PM",
+          description: "Extra same day",
+          startsAt: new Date(2026, 10, 6, 16, 0),
+          endsAt: new Date(2026, 10, 6, 16, 30),
+          tagIds: ["t2"],
+        },
+        {
+          title: "Standup Week 2",
+          description: "",
+          startsAt: new Date(2026, 10, 13, 9, 0),
+          endsAt: new Date(2026, 10, 13, 9, 30),
+          tagIds: [],
+        },
+        {
+          title: "Standup Week 4",
+          description: "Added",
+          startsAt: new Date(2026, 10, 27, 9, 0),
+          endsAt: new Date(2026, 10, 27, 9, 30),
+          tagIds: ["t1", "t2"],
+        },
+      ],
+      {
+        groupId: "grp-1",
+        userId: "u1",
+        recurrenceGroupId: "rec-1",
+        createId: makeId,
+      },
+    );
+
+    expect(result.updates.map((u) => ({ id: u.id, title: u.patch.title, tagIds: u.tagIds }))).toEqual([
+      { id: "e1", title: "Standup AM", tagIds: ["t1"] },
+      { id: "e2", title: "Standup Week 2", tagIds: [] },
+    ]);
+    expect(result.deleteIds).toEqual(["e3"]);
+    expect(result.insertEventRows.map((r) => ({ id: r.id, title: r.title, recurrence_group_id: r.recurrence_group_id }))).toEqual([
+      { id: "new-1", title: "Standup PM", recurrence_group_id: "rec-1" },
+      { id: "new-2", title: "Standup Week 4", recurrence_group_id: "rec-1" },
+    ]);
+    expect(result.insertTagRows).toEqual([
+      { event_id: "new-1", tag_id: "t2" },
+      { event_id: "new-2", tag_id: "t1" },
+      { event_id: "new-2", tag_id: "t2" },
+    ]);
+  });
+
+  it("executes series reconciliation with concurrent updates, bulk tag replacement, and finally reload on error", async () => {
+    const eventsMod = await import("./events");
+    const executeSeriesReconciliation = (eventsMod as Record<string, unknown>)
+      .executeSeriesReconciliation as (
+      plan: ReturnType<typeof reconcileSeriesUpdate>,
+      ops: {
+        updateEvent: (id: string, patch: ReturnType<typeof reconcileSeriesUpdate>["updates"][number]["patch"]) => Promise<void>;
+        replaceUpdatedEventTags: (eventIds: string[], tagRows: { event_id: string; tag_id: string }[]) => Promise<void>;
+        deleteEvents: (ids: string[]) => Promise<void>;
+        insertEvents: (
+          eventRows: ReturnType<typeof reconcileSeriesUpdate>["insertEventRows"],
+          tagRows: ReturnType<typeof reconcileSeriesUpdate>["insertTagRows"],
+        ) => Promise<void>;
+        reload: () => Promise<void>;
+      },
+    ) => Promise<void>;
+
+    expect(typeof executeSeriesReconciliation).toBe("function");
+
+    const plan = reconcileSeriesUpdate(
+      [
+        { id: "e1", starts_at: new Date(2026, 10, 6, 9, 0).toISOString() },
+        { id: "e2", starts_at: new Date(2026, 10, 13, 9, 0).toISOString() },
+        { id: "e3", starts_at: new Date(2026, 10, 20, 9, 0).toISOString() },
+      ],
+      [
+        {
+          title: "Updated 1",
+          description: "",
+          startsAt: new Date(2026, 10, 6, 9, 0),
+          endsAt: new Date(2026, 10, 6, 10, 0),
+          tagIds: ["t1"],
+        },
+        {
+          title: "Updated 2",
+          description: "",
+          startsAt: new Date(2026, 10, 13, 9, 0),
+          endsAt: new Date(2026, 10, 13, 10, 0),
+          tagIds: ["t2"],
+        },
+      ],
+      { groupId: "g1", userId: "u1", recurrenceGroupId: "r1", createId: () => "new-1" },
+    );
+
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const bulkTagCalls: { eventIds: string[]; tagRows: { event_id: string; tag_id: string }[] }[] = [];
+    let reloadCount = 0;
+
+    await executeSeriesReconciliation(plan, {
+      updateEvent: async () => {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise((r) => setTimeout(r, 10));
+        inFlight -= 1;
+      },
+      replaceUpdatedEventTags: async (eventIds, tagRows) => {
+        bulkTagCalls.push({ eventIds, tagRows });
+      },
+      deleteEvents: async () => {},
+      insertEvents: async () => {},
+      reload: async () => {
+        reloadCount += 1;
+      },
+    });
+
+    expect(maxInFlight).toBe(2);
+    expect(bulkTagCalls).toEqual([
+      {
+        eventIds: ["e1", "e2"],
+        tagRows: [
+          { event_id: "e1", tag_id: "t1" },
+          { event_id: "e2", tag_id: "t2" },
+        ],
+      },
+    ]);
+    expect(reloadCount).toBe(1);
+
+    await expect(
+      executeSeriesReconciliation(plan, {
+        updateEvent: async (id) => {
+          if (id === "e2") throw new Error("network failure");
+        },
+        replaceUpdatedEventTags: async () => {},
+        deleteEvents: async () => {},
+        insertEvents: async () => {},
+        reload: async () => {
+          reloadCount += 1;
+        },
+      }),
+    ).rejects.toThrow("network failure");
+    expect(reloadCount).toBe(2);
+  });
+});

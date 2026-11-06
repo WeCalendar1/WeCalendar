@@ -65,6 +65,7 @@ type NotesAppProps = {
   draggingNoteIds: string[];
   onDraggingNoteIds: (ids: string[]) => void;
   onDragOverTarget: (target: string | null) => void;
+  onOpenWorkspaceModal?: () => void;
 };
 
 export function NotesApp({
@@ -90,6 +91,7 @@ export function NotesApp({
   draggingNoteIds,
   onDraggingNoteIds,
   onDragOverTarget,
+  onOpenWorkspaceModal,
 }: NotesAppProps) {
   const [localSearch, setLocalSearch] = useState("");
   const [deleteNoteTarget, setDeleteNoteTarget] = useState<{ id: string; title: string } | null>(
@@ -287,9 +289,18 @@ export function NotesApp({
             Join a workspace to use Notes
           </p>
           <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>
-            Create or join a shared workspace from the calendar sidebar to start writing notes
-            with your group.
+            Create or join a shared workspace from the calendar sidebar to start writing notes with your group.
           </p>
+          {onOpenWorkspaceModal && (
+            <button
+              type="button"
+              onClick={onOpenWorkspaceModal}
+              className="pressable mt-4 cursor-pointer px-4 py-2 text-sm font-semibold text-white"
+              style={{ borderRadius: "var(--radius-full)", background: "var(--accent)" }}
+            >
+              Create or join workspace
+            </button>
+          )}
         </div>
       </div>
     );

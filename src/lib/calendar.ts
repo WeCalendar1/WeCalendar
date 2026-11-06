@@ -1,6 +1,20 @@
 export type CalendarMode = "day" | "week" | "month" | "year";
 export type ScreenView = "calendar" | "notes" | "map";
 
+const WEEKDAYS_SUN = {
+  short: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  narrow: ["S", "M", "T", "W", "T", "F", "S"],
+  two: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+} as const;
+
+export function getWeekdayLabels(
+  weekStartsOnMonday = false,
+  style: "short" | "narrow" | "two" = "short",
+): string[] {
+  const base = WEEKDAYS_SUN[style];
+  return weekStartsOnMonday ? [...base.slice(1), base[0]!] : [...base];
+}
+
 export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -9,9 +23,10 @@ export function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-export function startOfWeek(date: Date): Date {
+export function startOfWeek(date: Date, weekStartsOnMonday = false): Date {
   const d = startOfDay(date);
-  d.setDate(d.getDate() - d.getDay()); // Sunday
+  const offset = weekStartsOnMonday ? (d.getDay() + 6) % 7 : d.getDay();
+  d.setDate(d.getDate() - offset);
   return d;
 }
 
@@ -45,14 +60,19 @@ export function isSameMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
-export function isDateInView(date: Date, viewDate: Date, mode: CalendarMode): boolean {
+export function isDateInView(
+  date: Date,
+  viewDate: Date,
+  mode: CalendarMode,
+  weekStartsOnMonday = false,
+): boolean {
   switch (mode) {
     case "day":
       return isSameDay(date, viewDate);
     case "week": {
-      const start = startOfWeek(viewDate);
+      const start = startOfWeek(viewDate, weekStartsOnMonday);
       const end = addDays(start, 6);
-      const t = date.getTime();
+      const t = startOfDay(date).getTime();
       return t >= start.getTime() && t <= end.getTime();
     }
     case "month":
@@ -77,8 +97,8 @@ export function formatDayLabel(date: Date): string {
   });
 }
 
-export function formatWeekLabel(date: Date): string {
-  const start = startOfWeek(date);
+export function formatWeekLabel(date: Date, weekStartsOnMonday = false): string {
+  const start = startOfWeek(date, weekStartsOnMonday);
   const end = addDays(start, 6);
   const sameMonth = start.getMonth() === end.getMonth();
   const sameYear = start.getFullYear() === end.getFullYear();
@@ -98,12 +118,16 @@ export function formatYearLabel(date: Date): string {
   return String(date.getFullYear());
 }
 
-export function formatViewLabel(date: Date, mode: CalendarMode): string {
+export function formatViewLabel(
+  date: Date,
+  mode: CalendarMode,
+  weekStartsOnMonday = false,
+): string {
   switch (mode) {
     case "day":
       return formatDayLabel(date);
     case "week":
-      return formatWeekLabel(date);
+      return formatWeekLabel(date, weekStartsOnMonday);
     case "year":
       return formatYearLabel(date);
     case "month":
@@ -142,10 +166,14 @@ export type CalendarDay = {
   isToday: boolean;
 };
 
-/** Builds a Sunday-Saturday month grid (6 weeks × 7 days). */
-export function getMonthGrid(viewDate: Date, today = new Date()): CalendarDay[] {
+/** Builds a 6-week × 7-day month grid (Sunday-Saturday or Monday-Sunday). */
+export function getMonthGrid(
+  viewDate: Date,
+  today = new Date(),
+  weekStartsOnMonday = false,
+): CalendarDay[] {
   const first = startOfMonth(viewDate);
-  const startOffset = first.getDay(); // 0 = Sunday
+  const startOffset = weekStartsOnMonday ? (first.getDay() + 6) % 7 : first.getDay();
   const gridStart = new Date(first);
   gridStart.setDate(first.getDate() - startOffset);
 
@@ -162,9 +190,13 @@ export function getMonthGrid(viewDate: Date, today = new Date()): CalendarDay[] 
   return days;
 }
 
-/** Seven days of the week containing `viewDate` (Sunday-Saturday). */
-export function getWeekDays(viewDate: Date, today = new Date()): CalendarDay[] {
-  const start = startOfWeek(viewDate);
+/** Seven days of the week containing `viewDate` (Sunday-Saturday or Monday-Sunday). */
+export function getWeekDays(
+  viewDate: Date,
+  today = new Date(),
+  weekStartsOnMonday = false,
+): CalendarDay[] {
+  const start = startOfWeek(viewDate, weekStartsOnMonday);
   return Array.from({ length: 7 }, (_, i) => {
     const date = addDays(start, i);
     return {

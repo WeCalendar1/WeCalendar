@@ -31,6 +31,10 @@ type SidebarProps = {
   onCreateGroup: (name: string) => Promise<void>;
   onJoinGroup: (inviteCode: string) => Promise<void>;
   showWorkspace?: boolean;
+  weekStartsOnMonday?: boolean;
+  onSelectDate?: (date: Date) => void;
+  workspaceModalRequestKey?: number;
+  onConsumeWorkspaceModalRequest?: () => void;
   // Notes-specific (consumed when screenView === "notes")
   notesFilter?: NotesFilter;
   noteFolders?: NoteFolder[];
@@ -61,6 +65,10 @@ export function Sidebar({
   onCreateGroup,
   onJoinGroup,
   showWorkspace = false,
+  weekStartsOnMonday = false,
+  onSelectDate,
+  workspaceModalRequestKey,
+  onConsumeWorkspaceModalRequest,
   notesFilter,
   noteFolders = [],
   onNotesFilterChange,
@@ -135,11 +143,17 @@ export function Sidebar({
                 onSelectGroup={onSelectGroup}
                 onCreateGroup={onCreateGroup}
                 onJoinGroup={onJoinGroup}
+                openModalRequestKey={workspaceModalRequestKey}
+                onConsumeModalRequest={onConsumeWorkspaceModalRequest}
               />
             )}
 
             {/* Mini calendar — always visible */}
-            <MiniCalendar viewDate={viewDate} />
+            <MiniCalendar
+              viewDate={viewDate}
+              weekStartsOnMonday={weekStartsOnMonday}
+              onSelectDate={onSelectDate}
+            />
 
             {/* ─── Notes-specific sections ─── */}
             {isNotesView && notesFilter && onNotesFilterChange && (
