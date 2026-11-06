@@ -218,6 +218,7 @@ export function CalendarCell({
         const showLabel = pos === "solo" || pos === "start";
         const warn =
           showConflictHighlights && Boolean(conflictIds?.has(event.id));
+        const isDeclined = event.myRsvp === "declined";
 
         const leftPad = 10;
 
@@ -246,6 +247,7 @@ export function CalendarCell({
               zIndex:       1,
               whiteSpace:   "nowrap",
               boxShadow:    conflictBarShadow(warn, pos),
+              opacity:      isDeclined ? 0.45 : 1,
             }}
           >
             {showLabel && (pos === "solo" || pos === "start") && (
@@ -254,7 +256,7 @@ export function CalendarCell({
             {showLabel && (
               <span className="flex min-w-0 items-center gap-1">
                 <EventCreatorBadge event={event} />
-                <span className="truncate">
+                <span className={`truncate${isDeclined ? " line-through" : ""}`}>
                 {`${formatEventTime(event.starts_at)} `}
                 {event.title}
                 </span>
@@ -275,6 +277,7 @@ export function CalendarCell({
           const color = tagColors[0] ?? "var(--accent)";
           const warn =
             showConflictHighlights && Boolean(conflictIds?.has(event.id));
+          const isDeclined = event.myRsvp === "declined";
           const leftPad = 14;
           return (
             <button
@@ -293,12 +296,12 @@ export function CalendarCell({
                 paddingLeft:  `${leftPad}px`,
                 boxShadow:    conflictOutline(warn),
                 letterSpacing: "-0.01em",
-                opacity: 0.92,
+                opacity:      isDeclined ? 0.45 : 0.92,
               }}
             >
               <EventTagStripes event={event} colors={tagColors} width={`${leftPad + 7}px`} />
               <EventCreatorBadge event={event} />
-              <span className="truncate">{formatEventTime(event.starts_at)} {event.title}</span>
+              <span className={`truncate${isDeclined ? " line-through" : ""}`}>{formatEventTime(event.starts_at)} {event.title}</span>
             </button>
           );
         })}

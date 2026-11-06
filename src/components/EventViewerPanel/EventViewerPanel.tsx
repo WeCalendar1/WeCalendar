@@ -218,13 +218,14 @@ function EventRow({
   });
 
   const isRecurring = Boolean(event.recurrence_group_id);
+  const isDeclined = event.myRsvp === "declined";
 
   return (
     <button
       type="button"
       onClick={onSelect}
       className="pressable flex w-full items-start gap-3 rounded-lg px-2.5 py-2 text-left transition-colors"
-      style={{ cursor: "pointer" }}
+      style={{ cursor: "pointer", opacity: isDeclined ? 0.5 : 1 }}
     >
       {/* Tag colour bar */}
       <div
@@ -239,7 +240,8 @@ function EventRow({
             className="truncate text-sm font-semibold"
             style={{ color: "var(--foreground)", letterSpacing: "-0.01em" }}
           >
-            <EventCreatorBadge event={event} /> {event.title}
+            <EventCreatorBadge event={event} />{" "}
+            <span className={isDeclined ? "line-through" : undefined}>{event.title}</span>
           </span>
           {isRecurring && (
             <svg
@@ -268,6 +270,17 @@ function EventRow({
               <span style={{ color: "var(--separator)" }}>·</span>
               <span>{dateLabel}</span>
             </>
+          )}
+          {isDeclined && (
+            <span
+              className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+              style={{
+                background: "var(--surface-2)",
+                color: "var(--text-muted)",
+              }}
+            >
+              Declined
+            </span>
           )}
         </div>
 

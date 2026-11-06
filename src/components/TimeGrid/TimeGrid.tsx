@@ -171,6 +171,7 @@ export function TimeGrid({
                         const color = tagColors[0] ?? "var(--accent)";
                         const warn =
                           showConflictHighlights && Boolean(conflictIds?.has(event.id));
+                        const isDeclined = event.myRsvp === "declined";
 
                         // Sub-column geometry: small inset gap between adjacent events
                         const GAP = 2; // px gap between sub-columns
@@ -198,12 +199,13 @@ export function TimeGrid({
                               boxShadow: warn
                                 ? "0 0 0 2px #dc2626, var(--shadow-sm)"
                                 : "var(--shadow-sm)",
+                              opacity: isDeclined ? 0.45 : 1,
                             }}
                           >
                             <EventTagStripes event={event} colors={tagColors} width={`${leftPad + 7}px`} />
                             <div className="flex items-center gap-1">
                               <EventCreatorBadge event={event} />
-                              <span className="truncate">{event.title}</span>
+                              <span className={`truncate${isDeclined ? " line-through" : ""}`}>{event.title}</span>
                             </div>
                             <div className="truncate opacity-90">
                               {formatEventTime(event.starts_at)}

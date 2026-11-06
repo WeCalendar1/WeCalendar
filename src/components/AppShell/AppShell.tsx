@@ -23,7 +23,14 @@ import {
 } from "@/lib/calendar";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
 import { EMPTY_TIPTAP_DOC, isEmptyNotePatch, normalizeFolderColor, canMoveNoteToFolder, filterNotesByTags } from "@/lib/notes";
-import { prepareBulkEventInserts, type CalendarEvent } from "@/lib/events";
+import { prepareBulkEventInserts, reconcileSeriesUpdate, type CalendarEvent } from "@/lib/events";
+import {
+  filterConflictCandidateEvents,
+  filterVisibleEvents,
+  rsvpMapForUser,
+  type EventRsvp,
+  type RsvpStatus,
+} from "@/lib/rsvps";
 import {
   conflictFingerprint,
   conflictingEventGroups,
@@ -65,6 +72,10 @@ export function AppShell() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [eventRsvps, setEventRsvps] = useState<EventRsvp[]>([]);
+  const [groupProfilesById, setGroupProfilesById] = useState<
+    Map<string, { display_name: string | null; avatar_url: string | null }>
+  >(() => new Map());
   const [tags, setTags] = useState<Tag[]>([]);
   const [eventTags, setEventTags] = useState<EventTag[]>([]);
   const [noteFolders, setNoteFolders] = useState<NoteFolder[]>([]);
@@ -236,6 +247,78 @@ export function AppShell() {
     [supabase],
   );
 
+  const loadEventRsvps = useCallback(
+    async (groupId: string | null) => {
+      if (!groupId) {
+        setEventRsvps([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("event_rsvps")
+        .select("event_id, group_id, user_id, status, updated_at")
+        .eq("group_id", groupId);
+
+      if (error) {
+        console.warn("loadEventRsvps", error);
+        setEventRsvps([]);
+        return;
+      }
+      setEventRsvps(data ?? []);
+    },
+    [supabase],
+  );
+
+  const loadGroupProfiles = useCallback(
+    async (groupId: string | null) => {
+      if (!groupId) {
+        setGroupProfilesById(new Map());
+        return;
+      }
+      const { data: memberRows, error: memberError } = await supabase
+        .from("group_members")
+        .select("user_id")
+        .eq("group_id", groupId);
+
+      if (memberError) {
+        console.warn("loadGroupProfiles.members", memberError);
+        setGroupProfilesById(new Map());
+        return;
+      }
+
+      const userIds = [...new Set((memberRows ?? []).map((row) => row.user_id))];
+      if (userIds.length === 0) {
+        setGroupProfilesById(new Map());
+        return;
+      }
+
+      const nextMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
+      const { data: profilesWithAvatars, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", userIds);
+
+      if (profileError) {
+        const { data: fallbackProfiles, error: fallbackError } = await supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", userIds);
+        if (fallbackError) {
+          console.warn("loadGroupProfiles.profiles", fallbackError);
+        } else {
+          (fallbackProfiles ?? []).forEach((p) => {
+            nextMap.set(p.id, { display_name: p.display_name, avatar_url: null });
+          });
+        }
+      } else {
+        (profilesWithAvatars ?? []).forEach((p) => {
+          nextMap.set(p.id, { display_name: p.display_name, avatar_url: p.avatar_url });
+        });
+      }
+      setGroupProfilesById(nextMap);
+    },
+    [supabase],
+  );
+
   const loadNotes = useCallback(
     async (groupId: string | null) => {
       if (!groupId) {
@@ -310,6 +393,8 @@ export function AppShell() {
       setGroups([]);
       setActiveGroupId(null);
       setEvents([]);
+      setEventRsvps([]);
+      setGroupProfilesById(new Map());
       setTags([]);
       setEventTags([]);
       setNoteFolders([]);
@@ -354,8 +439,18 @@ export function AppShell() {
     void loadEvents(activeGroupId);
     void loadTags(activeGroupId);
     void loadEventTags(activeGroupId);
+    void loadEventRsvps(activeGroupId);
+    void loadGroupProfiles(activeGroupId);
     void loadNotes(activeGroupId);
-  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadNotes]);
+  }, [
+    activeGroupId,
+    loadEvents,
+    loadTags,
+    loadEventTags,
+    loadEventRsvps,
+    loadGroupProfiles,
+    loadNotes,
+  ]);
 
   // ─── Realtime subscriptions ───────────────────────────────────────────────
 
@@ -381,6 +476,16 @@ export function AppShell() {
       )
       .on(
         "postgres_changes",
+        { event: "*", schema: "public", table: "event_rsvps" },
+        () => { void loadEventRsvps(activeGroupId); },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "group_members", filter: `group_id=eq.${activeGroupId}` },
+        () => { void loadGroupProfiles(activeGroupId); },
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "note_folders", filter: `group_id=eq.${activeGroupId}` },
         () => { void loadNotes(activeGroupId); },
       )
@@ -392,12 +497,31 @@ export function AppShell() {
       .subscribe();
 
     return () => { void supabase.removeChannel(channel); };
-  }, [activeGroupId, loadEvents, loadTags, loadEventTags, loadNotes, supabase]);
+  }, [
+    activeGroupId,
+    loadEvents,
+    loadTags,
+    loadEventTags,
+    loadEventRsvps,
+    loadGroupProfiles,
+    loadNotes,
+    supabase,
+  ]);
 
   // ─── Filtered events ──────────────────────────────────────────────────────
 
+  const myRsvpByEventId = useMemo(
+    () => rsvpMapForUser(eventRsvps, user?.id),
+    [eventRsvps, user?.id],
+  );
+
+  const eventsWithRsvp = useMemo(
+    () => events.map((e) => ({ ...e, myRsvp: myRsvpByEventId.get(e.id) ?? null })),
+    [events, myRsvpByEventId],
+  );
+
   const filteredEvents = useMemo(() => {
-    let filtered = events;
+    let filtered = filterVisibleEvents(eventsWithRsvp, prefs.showDeclinedEvents);
 
     // Text search
     if (searchQuery.trim()) {
@@ -418,7 +542,7 @@ export function AppShell() {
     }
 
     return filtered;
-  }, [events, searchQuery, activeTagIds, eventTags]);
+  }, [eventsWithRsvp, prefs.showDeclinedEvents, searchQuery, activeTagIds, eventTags]);
 
   // Filter notes by active tags (via linked event's tags)
   const filteredNotes = useMemo(
@@ -427,15 +551,12 @@ export function AppShell() {
   );
 
   const conflictGroups = useMemo(() => {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const todayMs = startOfToday.getTime();
-    // When the pref is enabled, ignore events whose day has fully passed.
-    const eventsToCheck = prefs.hidePastConflicts
-      ? events.filter((e) => new Date(e.ends_at).getTime() > todayMs)
-      : events;
-    return conflictingEventGroups(eventsToCheck);
-  }, [events, prefs.hidePastConflicts]);
+    return conflictingEventGroups(
+      filterConflictCandidateEvents(eventsWithRsvp, {
+        hidePastConflicts: prefs.hidePastConflicts,
+      }),
+    );
+  }, [eventsWithRsvp, prefs.hidePastConflicts]);
   const conflictFp = useMemo(
     () => conflictFingerprint(conflictGroups.map((g) => g.key)),
     [conflictGroups],
@@ -600,35 +721,143 @@ export function AppShell() {
       );
     }
 
-    await loadEvents(activeGroupId);
-    await loadEventTags(activeGroupId);
+    await Promise.all([
+      loadEvents(activeGroupId),
+      loadEventTags(activeGroupId),
+      loadEventRsvps(activeGroupId),
+    ]);
   }
 
   async function handleDeleteEvent(eventId: string) {
     const { error } = await supabase.from("events").delete().eq("id", eventId);
     if (error) throw new Error(error.message);
-    await loadEvents(activeGroupId);
-    await loadEventTags(activeGroupId);
+    await Promise.all([
+      loadEvents(activeGroupId),
+      loadEventTags(activeGroupId),
+      loadEventRsvps(activeGroupId),
+    ]);
   }
 
   async function handleUpdateSeries(recurrenceGroupId: string, drafts: EventDraft[]) {
-    if (!activeGroupId) throw new Error("Join or create a shared workspace first.");
+    if (!user || !activeGroupId) throw new Error("Join or create a shared workspace first.");
 
-    const { error: deleteError } = await supabase
-      .from("events")
-      .delete()
-      .eq("recurrence_group_id", recurrenceGroupId);
+    const existingSeries = events.filter((e) => e.recurrence_group_id === recurrenceGroupId);
+    const { updates, deleteIds, insertEventRows, insertTagRows } = reconcileSeriesUpdate(
+      existingSeries,
+      drafts,
+      {
+        groupId: activeGroupId,
+        userId: user.id,
+        recurrenceGroupId,
+      },
+    );
 
-    if (deleteError) throw new Error(deleteError.message);
+    for (const u of updates) {
+      const { error: updateError } = await supabase
+        .from("events")
+        .update(u.patch)
+        .eq("id", u.id);
+      if (updateError) throw new Error(updateError.message);
 
-    await handleCreateMultipleEvents(drafts, recurrenceGroupId);
+      const { error: delTagError } = await supabase
+        .from("event_tags")
+        .delete()
+        .eq("event_id", u.id);
+      if (delTagError) throw new Error(delTagError.message);
+
+      if (u.tagIds.length > 0) {
+        const { error: insTagError } = await supabase
+          .from("event_tags")
+          .insert(u.tagIds.map((tagId) => ({ event_id: u.id, tag_id: tagId })));
+        if (insTagError) throw new Error(insTagError.message);
+      }
+    }
+
+    if (deleteIds.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("events")
+        .delete()
+        .in("id", deleteIds);
+      if (deleteError) throw new Error(deleteError.message);
+    }
+
+    if (insertEventRows.length > 0) {
+      const { error: insertError } = await supabase.from("events").insert(insertEventRows);
+      if (insertError) throw new Error(insertError.message);
+
+      if (insertTagRows.length > 0) {
+        const { error: insertTagError } = await supabase.from("event_tags").insert(insertTagRows);
+        if (insertTagError) throw new Error(insertTagError.message);
+      }
+    }
+
+    await Promise.all([
+      loadEvents(activeGroupId),
+      loadEventTags(activeGroupId),
+      loadEventRsvps(activeGroupId),
+    ]);
   }
 
   async function handleDeleteSeries(recurrenceGroupId: string) {
     const { error } = await supabase.from("events").delete().eq("recurrence_group_id", recurrenceGroupId);
     if (error) throw new Error(error.message);
-    await loadEvents(activeGroupId);
-    await loadEventTags(activeGroupId);
+    await Promise.all([
+      loadEvents(activeGroupId),
+      loadEventTags(activeGroupId),
+      loadEventRsvps(activeGroupId),
+    ]);
+  }
+
+  async function handleSetEventRsvp(targetEventIds: string[], status: RsvpStatus | null) {
+    if (!user || !activeGroupId || targetEventIds.length === 0) return;
+
+    const uniqueIds = [...new Set(targetEventIds)];
+    const targetSet = new Set(uniqueIds);
+    const nowIso = new Date().toISOString();
+
+    setEventRsvps((prev) => {
+      const kept = prev.filter(
+        (row) => !(row.user_id === user.id && targetSet.has(row.event_id)),
+      );
+      if (status === null) return kept;
+      return [
+        ...kept,
+        ...uniqueIds.map((eventId) => ({
+          event_id: eventId,
+          group_id: activeGroupId,
+          user_id: user.id,
+          status,
+          updated_at: nowIso,
+        })),
+      ];
+    });
+
+    if (status === null) {
+      const { error } = await supabase
+        .from("event_rsvps")
+        .delete()
+        .eq("user_id", user.id)
+        .in("event_id", uniqueIds);
+      if (error) {
+        await loadEventRsvps(activeGroupId);
+        throw new Error(error.message);
+      }
+    } else {
+      const { error } = await supabase.from("event_rsvps").upsert(
+        uniqueIds.map((eventId) => ({
+          event_id: eventId,
+          group_id: activeGroupId,
+          user_id: user.id,
+          status,
+          updated_at: nowIso,
+        })),
+        { onConflict: "event_id,user_id" },
+      );
+      if (error) {
+        await loadEventRsvps(activeGroupId);
+        throw new Error(error.message);
+      }
+    }
   }
 
   function openCreateModal(date?: Date) {
@@ -908,15 +1137,23 @@ export function AppShell() {
     profileDisplayName || (user?.user_metadata?.display_name as string | undefined) || user?.email,
   );
 
+  const activeSelectedEvent = useMemo(
+    () =>
+      selectedEvent
+        ? eventsWithRsvp.find((e) => e.id === selectedEvent.id) ?? selectedEvent
+        : null,
+    [selectedEvent, eventsWithRsvp],
+  );
+
   // Tag IDs on the currently-selected event (for the modal)
-  const selectedEventTagIds = selectedEvent
-    ? tagIdsForEvent(selectedEvent.id, eventTags)
+  const selectedEventTagIds = activeSelectedEvent
+    ? tagIdsForEvent(activeSelectedEvent.id, eventTags)
     : [];
 
-  const seriesEvents = selectedEvent?.recurrence_group_id
-    ? events.filter((e) => e.recurrence_group_id === selectedEvent.recurrence_group_id)
-    : selectedEvent
-      ? [selectedEvent]
+  const seriesEvents = activeSelectedEvent?.recurrence_group_id
+    ? eventsWithRsvp.filter((e) => e.recurrence_group_id === activeSelectedEvent.recurrence_group_id)
+    : activeSelectedEvent
+      ? [activeSelectedEvent]
       : [];
 
   const consumeWorkspaceModalRequest = useCallback(() => {
@@ -1134,9 +1371,9 @@ export function AppShell() {
         key="create-event-modal"
         open={modalOpen}
         defaultDate={modalDefaultDate}
-        event={selectedEvent}
+        event={activeSelectedEvent}
         seriesEvents={seriesEvents}
-        existingEvents={events}
+        existingEvents={eventsWithRsvp}
         tags={tags}
         initialTagIds={selectedEventTagIds}
         onClose={closeEventModal}
@@ -1151,6 +1388,9 @@ export function AppShell() {
         onOpenNote={openNotesForEvent}
         onCreateNoteForEvent={handleCreateNoteForEvent}
         currentUserId={user?.id}
+        eventRsvps={eventRsvps}
+        groupProfilesById={groupProfilesById}
+        onSetRsvp={handleSetEventRsvp}
         confirmDeleteOthers={prefs.confirmDeleteOthers}
         weekStartsOnMonday={prefs.weekStartsOnMonday}
       />
