@@ -14,6 +14,11 @@ import type { Tag } from "@/lib/tags";
 import { addDays, addMonths, formatMonthYear, getMonthGrid, getWeekdayLabels } from "@/lib/calendar";
 import { draftOverlapsExisting } from "@/lib/scheduling";
 import { noteTitle, type Note } from "@/lib/notes";
+import {
+  summarizeEventRsvps,
+  type EventRsvp,
+  type RsvpStatus,
+} from "@/lib/rsvps";
 
 export type EventDraft = {
   title: string;
@@ -48,11 +53,23 @@ type CreateEventModalProps = {
   onCreateNoteForEvent?: (eventId: string) => Promise<void>;
   /** ID of the currently logged-in user (for ownership checks) */
   currentUserId?: string | null;
+  /** Group RSVP rows for events in the active workspace */
+  eventRsvps?: readonly EventRsvp[];
+  /** Group member profile map for rendering RSVP respondent names */
+  groupProfilesById?: ReadonlyMap<string, { display_name: string | null; avatar_url?: string | null }>;
+  /** Immediate RSVP handler (pass null status to clear response) */
+  onSetRsvp?: (eventIds: string[], status: RsvpStatus | null) => Promise<void>;
   /** When true, deleting another user's event requires an extra confirmation */
   confirmDeleteOthers?: boolean;
   /** When true, DayPicker columns start on Monday instead of Sunday */
   weekStartsOnMonday?: boolean;
 };
+
+const RSVP_OPTIONS: readonly { id: RsvpStatus; label: string; color: string }[] = [
+  { id: "going", label: "Going", color: "#10b981" },
+  { id: "maybe", label: "Maybe", color: "#f59e0b" },
+  { id: "declined", label: "Declined", color: "#ef4444" },
+];
 
 function toDateInput(date: Date): string {
   const y = date.getFullYear();
@@ -253,6 +270,9 @@ function CreateEventModalContent({
   onOpenNote,
   onCreateNoteForEvent,
   currentUserId,
+  eventRsvps = [],
+  groupProfilesById,
+  onSetRsvp,
   confirmDeleteOthers = true,
   weekStartsOnMonday = false,
 }: CreateEventModalProps) {
@@ -288,10 +308,56 @@ function CreateEventModalContent({
   const [repeats, setRepeats] = useState(false);
   const [repeatFreq, setRepeatFreq] = useState<"daily" | "weekly" | "monthly">("weekly");
   const [repeatCount, setRepeatCount] = useState(4);
+  const [applyRsvpToSeries, setApplyRsvpToSeries] = useState(false);
+  const [rsvpBusy, setRsvpBusy] = useState(false);
+
+  const emptyProfiles = useMemo(
+    () => new Map<string, { display_name: string | null; avatar_url?: string | null }>(),
+    [],
+  );
+  const rsvpSummary = useMemo(
+    () =>
+      event
+        ? summarizeEventRsvps(
+            event.id,
+            eventRsvps,
+            groupProfilesById ?? emptyProfiles,
+            currentUserId,
+          )
+        : null,
+    [event, eventRsvps, groupProfilesById, emptyProfiles, currentUserId],
+  );
+
+  async function handleRsvpSelect(option: RsvpStatus) {
+    if (!event || !onSetRsvp) return;
+    const nextStatus = rsvpSummary?.myStatus === option ? null : option;
+    const targetIds =
+      applyRsvpToSeries && seriesEvents.length > 1
+        ? seriesEvents.map((e) => e.id)
+        : [event.id];
+    setRsvpBusy(true);
+    setError(null);
+    try {
+      await onSetRsvp(targetIds, nextStatus);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update RSVP.");
+    } finally {
+      setRsvpBusy(false);
+    }
+  }
 
   const softOverlap = useMemo(() => {
+    if (
+      isEditing &&
+      event &&
+      (rsvpSummary?.myStatus === "declined" || event.myRsvp === "declined")
+    ) {
+      return { overlaps: false, titles: [] };
+    }
+
     const excludeIds = new Set(seriesEvents.map((e) => e.id));
     if (event) excludeIds.add(event.id);
+    const activeExisting = existingEvents.filter((e) => e.myRsvp !== "declined");
 
     const titles = new Set<string>();
 
@@ -301,7 +367,7 @@ function CreateEventModalContent({
       const result = draftOverlapsExisting(
         interval.startsAt,
         interval.endsAt,
-        existingEvents,
+        activeExisting,
         excludeIds,
       );
       for (const t of result.titles) titles.add(t);
@@ -311,7 +377,16 @@ function CreateEventModalContent({
       overlaps: titles.size > 0,
       titles: [...titles],
     };
-  }, [selectedDates, startTime, endTime, existingEvents, event, seriesEvents]);
+  }, [
+    isEditing,
+    rsvpSummary,
+    selectedDates,
+    startTime,
+    endTime,
+    existingEvents,
+    event,
+    seriesEvents,
+  ]);
 
   function toggleTag(tagId: string) {
     setSelectedTagIds((prev) =>
@@ -750,6 +825,110 @@ function CreateEventModalContent({
                         <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
                           {repeatFreq === "daily" ? "days" : repeatFreq === "weekly" ? "weeks" : "months"}
                         </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Attendance (RSVP) */}
+                {isEditing && event && onSetRsvp && rsvpSummary && (
+                  <div
+                    className="flex flex-col gap-2 rounded-xl p-3"
+                    style={{
+                      border: "1px solid var(--border)",
+                      background: "var(--surface-2)",
+                    }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                        Attendance
+                      </p>
+                      <div className="flex items-center gap-1.5" role="group" aria-label="Your RSVP">
+                        {RSVP_OPTIONS.map((opt) => {
+                          const active = rsvpSummary.myStatus === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              disabled={rsvpBusy || busy}
+                              aria-pressed={active}
+                              onClick={() => void handleRsvpSelect(opt.id)}
+                              className="pressable flex cursor-pointer items-center gap-1.5 px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                              style={{
+                                borderRadius: "var(--radius-full)",
+                                border: `1.5px solid ${active ? opt.color : "var(--border)"}`,
+                                background: active
+                                  ? `color-mix(in srgb, ${opt.color} 16%, var(--surface))`
+                                  : "var(--surface)",
+                                color: active ? opt.color : "var(--text-secondary)",
+                              }}
+                            >
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ background: opt.color }}
+                              />
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {seriesEvents.length > 1 && (
+                      <label
+                        className="flex cursor-pointer items-center gap-2 text-xs"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={applyRsvpToSeries}
+                          onChange={(e) => setApplyRsvpToSeries(e.target.checked)}
+                          className="h-3.5 w-3.5 rounded accent-[var(--accent)]"
+                        />
+                        Apply RSVP to all {seriesEvents.length} events in series
+                      </label>
+                    )}
+
+                    <div
+                      className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      <span>Going · {rsvpSummary.counts.going}</span>
+                      <span>Maybe · {rsvpSummary.counts.maybe}</span>
+                      <span>Declined · {rsvpSummary.counts.declined}</span>
+                    </div>
+
+                    {rsvpSummary.respondents.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {rsvpSummary.respondents.map((resp) => {
+                          const dotColor =
+                            resp.status === "going"
+                              ? "#10b981"
+                              : resp.status === "maybe"
+                                ? "#f59e0b"
+                                : "#ef4444";
+                          return (
+                            <span
+                              key={resp.userId}
+                              className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium"
+                              style={{
+                                borderRadius: "var(--radius-full)",
+                                background: "var(--surface)",
+                                border: "1px solid var(--border)",
+                                color: "var(--foreground)",
+                              }}
+                            >
+                              <span
+                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                style={{ background: dotColor }}
+                              />
+                              <span>{resp.displayName}</span>
+                              <span style={{ color: "var(--text-muted)" }}>
+                                ({resp.status})
+                              </span>
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
