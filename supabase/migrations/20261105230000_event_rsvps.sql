@@ -116,6 +116,10 @@ create trigger events_reset_rsvps_on_reschedule
 -- 4. Realtime Publication
 -- ---------------------------------------------------------------------------
 
+-- Ensure DELETE WAL records include group_id (not part of composite PK (event_id, user_id))
+-- so Supabase Realtime can evaluate the SELECT RLS policy (is_group_member(group_id)).
+alter table public.event_rsvps replica identity full;
+
 do $$
 begin
   alter publication supabase_realtime add table public.event_rsvps;
@@ -234,3 +238,4 @@ $$;
 alter function public.leave_group(uuid) owner to postgres;
 revoke all on function public.leave_group(uuid) from public, anon;
 grant execute on function public.leave_group(uuid) to authenticated;
+

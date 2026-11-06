@@ -588,3 +588,47 @@ export function reconcileSeriesUpdate(
 
   return { updates, deleteIds, insertEventRows, insertTagRows };
 }
+
+export async function executeSeriesReconciliation(
+  plan: ReturnType<typeof reconcileSeriesUpdate>,
+  ops: {
+    updateEvent: (
+      id: string,
+      patch: ReturnType<typeof reconcileSeriesUpdate>["updates"][number]["patch"],
+    ) => Promise<void>;
+    replaceUpdatedEventTags: (
+      eventIds: string[],
+      tagRows: { event_id: string; tag_id: string }[],
+    ) => Promise<void>;
+    deleteEvents: (ids: string[]) => Promise<void>;
+    insertEvents: (
+      eventRows: ReturnType<typeof reconcileSeriesUpdate>["insertEventRows"],
+      tagRows: ReturnType<typeof reconcileSeriesUpdate>["insertTagRows"],
+    ) => Promise<void>;
+    reload: () => Promise<void>;
+  },
+): Promise<void> {
+  try {
+    if (plan.updates.length > 0) {
+      await Promise.all(plan.updates.map((u) => ops.updateEvent(u.id, u.patch)));
+      const updatedEventIds = plan.updates.map((u) => u.id);
+      const updatedTagRows: { event_id: string; tag_id: string }[] = [];
+      for (const u of plan.updates) {
+        for (const tagId of u.tagIds) {
+          updatedTagRows.push({ event_id: u.id, tag_id: tagId });
+        }
+      }
+      await ops.replaceUpdatedEventTags(updatedEventIds, updatedTagRows);
+    }
+
+    if (plan.deleteIds.length > 0) {
+      await ops.deleteEvents(plan.deleteIds);
+    }
+
+    if (plan.insertEventRows.length > 0) {
+      await ops.insertEvents(plan.insertEventRows, plan.insertTagRows);
+    }
+  } finally {
+    await ops.reload();
+  }
+}

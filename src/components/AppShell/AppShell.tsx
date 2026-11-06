@@ -23,7 +23,12 @@ import {
 } from "@/lib/calendar";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
 import { EMPTY_TIPTAP_DOC, isEmptyNotePatch, normalizeFolderColor, canMoveNoteToFolder, filterNotesByTags } from "@/lib/notes";
-import { prepareBulkEventInserts, reconcileSeriesUpdate, type CalendarEvent } from "@/lib/events";
+import {
+  executeSeriesReconciliation,
+  prepareBulkEventInserts,
+  reconcileSeriesUpdate,
+  type CalendarEvent,
+} from "@/lib/events";
 import {
   filterConflictCandidateEvents,
   filterVisibleEvents,
@@ -476,7 +481,7 @@ export function AppShell() {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "event_rsvps" },
+        { event: "*", schema: "public", table: "event_rsvps", filter: `group_id=eq.${activeGroupId}` },
         () => { void loadEventRsvps(activeGroupId); },
       )
       .on(
@@ -742,60 +747,50 @@ export function AppShell() {
     if (!user || !activeGroupId) throw new Error("Join or create a shared workspace first.");
 
     const existingSeries = events.filter((e) => e.recurrence_group_id === recurrenceGroupId);
-    const { updates, deleteIds, insertEventRows, insertTagRows } = reconcileSeriesUpdate(
-      existingSeries,
-      drafts,
-      {
-        groupId: activeGroupId,
-        userId: user.id,
-        recurrenceGroupId,
+    const plan = reconcileSeriesUpdate(existingSeries, drafts, {
+      groupId: activeGroupId,
+      userId: user.id,
+      recurrenceGroupId,
+    });
+
+    await executeSeriesReconciliation(plan, {
+      updateEvent: async (id, patch) => {
+        const { error } = await supabase.from("events").update(patch).eq("id", id);
+        if (error) throw new Error(error.message);
       },
-    );
-
-    for (const u of updates) {
-      const { error: updateError } = await supabase
-        .from("events")
-        .update(u.patch)
-        .eq("id", u.id);
-      if (updateError) throw new Error(updateError.message);
-
-      const { error: delTagError } = await supabase
-        .from("event_tags")
-        .delete()
-        .eq("event_id", u.id);
-      if (delTagError) throw new Error(delTagError.message);
-
-      if (u.tagIds.length > 0) {
-        const { error: insTagError } = await supabase
+      replaceUpdatedEventTags: async (eventIds, tagRows) => {
+        const { error: delTagError } = await supabase
           .from("event_tags")
-          .insert(u.tagIds.map((tagId) => ({ event_id: u.id, tag_id: tagId })));
-        if (insTagError) throw new Error(insTagError.message);
-      }
-    }
+          .delete()
+          .in("event_id", eventIds);
+        if (delTagError) throw new Error(delTagError.message);
 
-    if (deleteIds.length > 0) {
-      const { error: deleteError } = await supabase
-        .from("events")
-        .delete()
-        .in("id", deleteIds);
-      if (deleteError) throw new Error(deleteError.message);
-    }
+        if (tagRows.length > 0) {
+          const { error: insTagError } = await supabase.from("event_tags").insert(tagRows);
+          if (insTagError) throw new Error(insTagError.message);
+        }
+      },
+      deleteEvents: async (ids) => {
+        const { error } = await supabase.from("events").delete().in("id", ids);
+        if (error) throw new Error(error.message);
+      },
+      insertEvents: async (eventRows, tagRows) => {
+        const { error: insertError } = await supabase.from("events").insert(eventRows);
+        if (insertError) throw new Error(insertError.message);
 
-    if (insertEventRows.length > 0) {
-      const { error: insertError } = await supabase.from("events").insert(insertEventRows);
-      if (insertError) throw new Error(insertError.message);
-
-      if (insertTagRows.length > 0) {
-        const { error: insertTagError } = await supabase.from("event_tags").insert(insertTagRows);
-        if (insertTagError) throw new Error(insertTagError.message);
-      }
-    }
-
-    await Promise.all([
-      loadEvents(activeGroupId),
-      loadEventTags(activeGroupId),
-      loadEventRsvps(activeGroupId),
-    ]);
+        if (tagRows.length > 0) {
+          const { error: insertTagError } = await supabase.from("event_tags").insert(tagRows);
+          if (insertTagError) throw new Error(insertTagError.message);
+        }
+      },
+      reload: async () => {
+        await Promise.all([
+          loadEvents(activeGroupId),
+          loadEventTags(activeGroupId),
+          loadEventRsvps(activeGroupId),
+        ]);
+      },
+    });
   }
 
   async function handleDeleteSeries(recurrenceGroupId: string) {

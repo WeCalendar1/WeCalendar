@@ -530,4 +530,98 @@ describe("multi-day modal date helpers", () => {
       { event_id: "new-2", tag_id: "t2" },
     ]);
   });
+
+  it("executes series reconciliation with concurrent updates, bulk tag replacement, and finally reload on error", async () => {
+    const eventsMod = await import("./events");
+    const executeSeriesReconciliation = (eventsMod as Record<string, unknown>)
+      .executeSeriesReconciliation as (
+      plan: ReturnType<typeof reconcileSeriesUpdate>,
+      ops: {
+        updateEvent: (id: string, patch: ReturnType<typeof reconcileSeriesUpdate>["updates"][number]["patch"]) => Promise<void>;
+        replaceUpdatedEventTags: (eventIds: string[], tagRows: { event_id: string; tag_id: string }[]) => Promise<void>;
+        deleteEvents: (ids: string[]) => Promise<void>;
+        insertEvents: (
+          eventRows: ReturnType<typeof reconcileSeriesUpdate>["insertEventRows"],
+          tagRows: ReturnType<typeof reconcileSeriesUpdate>["insertTagRows"],
+        ) => Promise<void>;
+        reload: () => Promise<void>;
+      },
+    ) => Promise<void>;
+
+    expect(typeof executeSeriesReconciliation).toBe("function");
+
+    const plan = reconcileSeriesUpdate(
+      [
+        { id: "e1", starts_at: new Date(2026, 10, 6, 9, 0).toISOString() },
+        { id: "e2", starts_at: new Date(2026, 10, 13, 9, 0).toISOString() },
+        { id: "e3", starts_at: new Date(2026, 10, 20, 9, 0).toISOString() },
+      ],
+      [
+        {
+          title: "Updated 1",
+          description: "",
+          startsAt: new Date(2026, 10, 6, 9, 0),
+          endsAt: new Date(2026, 10, 6, 10, 0),
+          tagIds: ["t1"],
+        },
+        {
+          title: "Updated 2",
+          description: "",
+          startsAt: new Date(2026, 10, 13, 9, 0),
+          endsAt: new Date(2026, 10, 13, 10, 0),
+          tagIds: ["t2"],
+        },
+      ],
+      { groupId: "g1", userId: "u1", recurrenceGroupId: "r1", createId: () => "new-1" },
+    );
+
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const bulkTagCalls: { eventIds: string[]; tagRows: { event_id: string; tag_id: string }[] }[] = [];
+    let reloadCount = 0;
+
+    await executeSeriesReconciliation(plan, {
+      updateEvent: async () => {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise((r) => setTimeout(r, 10));
+        inFlight -= 1;
+      },
+      replaceUpdatedEventTags: async (eventIds, tagRows) => {
+        bulkTagCalls.push({ eventIds, tagRows });
+      },
+      deleteEvents: async () => {},
+      insertEvents: async () => {},
+      reload: async () => {
+        reloadCount += 1;
+      },
+    });
+
+    expect(maxInFlight).toBe(2);
+    expect(bulkTagCalls).toEqual([
+      {
+        eventIds: ["e1", "e2"],
+        tagRows: [
+          { event_id: "e1", tag_id: "t1" },
+          { event_id: "e2", tag_id: "t2" },
+        ],
+      },
+    ]);
+    expect(reloadCount).toBe(1);
+
+    await expect(
+      executeSeriesReconciliation(plan, {
+        updateEvent: async (id) => {
+          if (id === "e2") throw new Error("network failure");
+        },
+        replaceUpdatedEventTags: async () => {},
+        deleteEvents: async () => {},
+        insertEvents: async () => {},
+        reload: async () => {
+          reloadCount += 1;
+        },
+      }),
+    ).rejects.toThrow("network failure");
+    expect(reloadCount).toBe(2);
+  });
 });

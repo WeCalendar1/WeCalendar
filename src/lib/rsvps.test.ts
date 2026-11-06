@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   filterConflictCandidateEvents,
@@ -129,4 +131,13 @@ describe("rsvps helpers", () => {
       filterConflictCandidateEvents(events, { hidePastConflicts: true, nowMs }).map((e) => e.id),
     ).toEqual(["future-going", "future-maybe", "future-unanswered"]);
   });
+
+  it("configures REPLICA IDENTITY FULL on public.event_rsvps so Realtime DELETE events retain group_id for RLS", () => {
+    const sql = readFileSync(
+      resolve(process.cwd(), "supabase/migrations/20261105230000_event_rsvps.sql"),
+      "utf8",
+    );
+    expect(sql).toMatch(/alter\s+table\s+public\.event_rsvps\s+replica\s+identity\s+full\s*;/i);
+  });
 });
+
