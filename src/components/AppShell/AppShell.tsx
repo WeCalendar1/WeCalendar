@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTheme } from "@/lib/theme";
 import type { User } from "@supabase/supabase-js";
 import { Calendar } from "@/components/Calendar";
@@ -23,7 +23,7 @@ import {
 } from "@/lib/calendar";
 import type { Note, NoteFolder, NotesFilter } from "@/lib/notes";
 import { EMPTY_TIPTAP_DOC, isEmptyNotePatch, normalizeFolderColor, canMoveNoteToFolder, filterNotesByTags } from "@/lib/notes";
-import type { CalendarEvent } from "@/lib/events";
+import { prepareBulkEventInserts, type CalendarEvent } from "@/lib/events";
 import {
   conflictFingerprint,
   conflictingEventGroups,
@@ -37,16 +37,20 @@ type Group = Tables<"groups">;
 type EventCreator = NonNullable<CalendarEvent["creator"]>;
 
 const ACTIVE_GROUP_KEY = "wecalendar.activeGroupId";
+const emptySubscribe = () => () => {};
 
 export function AppShell() {
   const { mode: themeMode, accent, toggleMode: toggleTheme, setAccentColor } = useTheme();
   const { prefs } = useCalendarPrefs();
+  const isHydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [viewDate, setViewDate] = useState(() => startOfDay(new Date()));
   const [calendarMode, setCalendarMode] = useState<CalendarMode>(prefs.defaultView);
-  const [prevDefaultView, setPrevDefaultView] = useState<CalendarMode>(prefs.defaultView);
-  if (prefs.defaultView !== prevDefaultView) {
-    setPrevDefaultView(prefs.defaultView);
-    setCalendarMode(prefs.defaultView);
+  const [didInitDefaultView, setDidInitDefaultView] = useState(false);
+  if (isHydrated && !didInitDefaultView) {
+    setDidInitDefaultView(true);
+    if (calendarMode !== prefs.defaultView) {
+      setCalendarMode(prefs.defaultView);
+    }
   }
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
@@ -549,43 +553,19 @@ export function AppShell() {
     }
     if (drafts.length === 0) return;
 
-    const recurrenceGroupId = explicitRecurrenceGroupId || crypto.randomUUID();
+    const { eventRows, tagRows } = prepareBulkEventInserts(drafts, {
+      groupId: activeGroupId,
+      userId: user.id,
+      recurrenceGroupId: explicitRecurrenceGroupId,
+    });
 
-    // 1. Bulk insert events
-    const { data: insertedEvents, error: eventsError } = await supabase
-      .from("events")
-      .insert(
-        drafts.map((input) => ({
-          group_id: activeGroupId,
-          title: input.title,
-          description: input.description || null,
-          starts_at: input.startsAt.toISOString(),
-          ends_at: input.endsAt.toISOString(),
-          created_by: user.id,
-          recurrence_group_id: drafts.length > 1 ? recurrenceGroupId : null,
-        }))
-      )
-      .select("id");
-
+    const { error: eventsError } = await supabase.from("events").insert(eventRows);
     if (eventsError) {
       throw new Error(eventsError.message);
     }
 
-    // 2. Bulk insert tags for all events
-    const tagInserts: { event_id: string; tag_id: string }[] = [];
-    if (insertedEvents) {
-      insertedEvents.forEach((ev, idx) => {
-        const input = drafts[idx];
-        if (input && input.tagIds.length > 0) {
-          input.tagIds.forEach((tagId) => {
-            tagInserts.push({ event_id: ev.id, tag_id: tagId });
-          });
-        }
-      });
-    }
-
-    if (tagInserts.length > 0) {
-      const { error: tagError } = await supabase.from("event_tags").insert(tagInserts);
+    if (tagRows.length > 0) {
+      const { error: tagError } = await supabase.from("event_tags").insert(tagRows);
       if (tagError) throw new Error(tagError.message);
     }
 

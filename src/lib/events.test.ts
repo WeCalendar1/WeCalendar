@@ -13,6 +13,7 @@ import {
   getSpanPosition,
   getSeriesSpanPosition,
   layoutOverlappingEvents,
+  prepareBulkEventInserts,
   validateDraftDateGroups,
 } from "./events";
 import type { CalendarEvent } from "./events";
@@ -427,5 +428,39 @@ describe("multi-day modal date helpers", () => {
     expect(eventsSpanningDay([twoDayMidnight], new Date(2026, 10, 8))).toEqual([]);
     expect(getSpanPosition(twoDayMidnight, new Date(2026, 10, 6), 5, true)).toBe("start");
     expect(getSpanPosition(twoDayMidnight, new Date(2026, 10, 7), 6, true)).toBe("end");
+  });
+
+  it("pre-assigns event IDs for bulk inserts so tag rows do not depend on RETURNING order", () => {
+    let seq = 0;
+    const makeId = () => `id-${++seq}`;
+    const { eventRows, tagRows } = prepareBulkEventInserts(
+      [
+        {
+          title: "First",
+          description: "",
+          startsAt: new Date("2026-11-06T09:00:00.000Z"),
+          endsAt: new Date("2026-11-06T10:00:00.000Z"),
+          tagIds: ["tag-a", "tag-b"],
+        },
+        {
+          title: "Second",
+          description: "Notes",
+          startsAt: new Date("2026-11-07T09:00:00.000Z"),
+          endsAt: new Date("2026-11-07T10:00:00.000Z"),
+          tagIds: ["tag-c"],
+        },
+      ],
+      { groupId: "grp-1", userId: "user-1", createId: makeId },
+    );
+
+    expect(eventRows.map((r) => ({ id: r.id, title: r.title, recurrence_group_id: r.recurrence_group_id }))).toEqual([
+      { id: "id-2", title: "First", recurrence_group_id: "id-1" },
+      { id: "id-3", title: "Second", recurrence_group_id: "id-1" },
+    ]);
+    expect(tagRows).toEqual([
+      { event_id: "id-2", tag_id: "tag-a" },
+      { event_id: "id-2", tag_id: "tag-b" },
+      { event_id: "id-3", tag_id: "tag-c" },
+    ]);
   });
 });

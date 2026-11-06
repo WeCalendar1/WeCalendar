@@ -422,3 +422,66 @@ export function validateDraftDateGroups(
 
   return null;
 }
+
+export function prepareBulkEventInserts(
+  drafts: readonly {
+    title: string;
+    description: string;
+    startsAt: Date;
+    endsAt: Date;
+    tagIds: readonly string[];
+  }[],
+  params: {
+    groupId: string;
+    userId: string;
+    recurrenceGroupId?: string;
+    createId?: () => string;
+  },
+): {
+  eventRows: {
+    id: string;
+    group_id: string;
+    title: string;
+    description: string | null;
+    starts_at: string;
+    ends_at: string;
+    created_by: string;
+    recurrence_group_id: string | null;
+  }[];
+  tagRows: { event_id: string; tag_id: string }[];
+} {
+  const makeId = params.createId ?? (() => crypto.randomUUID());
+  const sharedRecurrenceId =
+    drafts.length > 1 ? (params.recurrenceGroupId ?? makeId()) : null;
+
+  const eventRows: {
+    id: string;
+    group_id: string;
+    title: string;
+    description: string | null;
+    starts_at: string;
+    ends_at: string;
+    created_by: string;
+    recurrence_group_id: string | null;
+  }[] = [];
+  const tagRows: { event_id: string; tag_id: string }[] = [];
+
+  for (const input of drafts) {
+    const id = makeId();
+    eventRows.push({
+      id,
+      group_id: params.groupId,
+      title: input.title,
+      description: input.description || null,
+      starts_at: input.startsAt.toISOString(),
+      ends_at: input.endsAt.toISOString(),
+      created_by: params.userId,
+      recurrence_group_id: sharedRecurrenceId,
+    });
+    for (const tagId of input.tagIds) {
+      tagRows.push({ event_id: id, tag_id: tagId });
+    }
+  }
+
+  return { eventRows, tagRows };
+}

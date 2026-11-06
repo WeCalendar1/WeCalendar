@@ -1488,7 +1488,7 @@ export default function ProfilePage() {
                 </svg>
               }
               title="Export your data"
-              description="Download a copy of all your events, lists, and profile data as JSON"
+              description="Download a copy of your profile and shared workspace data as JSON"
               confirmLabel="Export"
               onClick={() => {
                 void handleExportData();
@@ -1506,7 +1506,7 @@ export default function ProfilePage() {
                 </svg>
               }
               title="Delete account"
-              description="Permanently delete your account and all associated data - cannot be undone"
+              description="Permanently delete your account, profile, private notes, and solo workspaces — shared items in multi-member calendars stay for remaining members"
               confirmLabel="Delete forever"
               onClick={() => {
                 void handleDeleteAccount();

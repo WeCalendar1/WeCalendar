@@ -65,6 +65,16 @@ begin
     raise exception 'Not authenticated';
   end if;
 
+  -- Reject non-members before acquiring any lock on public.groups so an
+  -- authenticated outsider cannot block operations on another workspace.
+  if not exists (
+    select 1
+    from public.group_members
+    where group_id = p_group_id and user_id = v_uid
+  ) then
+    return;
+  end if;
+
   -- Serialize concurrent leaves on the same workspace so the last two members
   -- leaving simultaneously cannot strand an empty group row.
   perform 1
@@ -72,6 +82,7 @@ begin
   where id = p_group_id
   for update;
 
+  -- Re-check membership under the lock in case a concurrent call already left.
   if not exists (
     select 1
     from public.group_members
