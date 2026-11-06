@@ -14,6 +14,7 @@ import {
   getSeriesSpanPosition,
   layoutOverlappingEvents,
   prepareBulkEventInserts,
+  reconcileSeriesUpdate,
   validateDraftDateGroups,
 } from "./events";
 import type { CalendarEvent } from "./events";
@@ -461,6 +462,72 @@ describe("multi-day modal date helpers", () => {
       { event_id: "id-2", tag_id: "tag-a" },
       { event_id: "id-2", tag_id: "tag-b" },
       { event_id: "id-3", tag_id: "tag-c" },
+    ]);
+  });
+
+  it("reconciles series updates in-place by date, consuming each existing ID at most once", () => {
+    let seq = 0;
+    const makeId = () => `new-${++seq}`;
+
+    const existing = [
+      { id: "e1", starts_at: new Date(2026, 10, 6, 9, 0).toISOString() },
+      { id: "e2", starts_at: new Date(2026, 10, 13, 9, 0).toISOString() },
+      { id: "e3", starts_at: new Date(2026, 10, 20, 9, 0).toISOString() },
+    ];
+
+    const result = reconcileSeriesUpdate(
+      existing,
+      [
+        {
+          title: "Standup AM",
+          description: "Updated",
+          startsAt: new Date(2026, 10, 6, 9, 0),
+          endsAt: new Date(2026, 10, 6, 9, 30),
+          tagIds: ["t1"],
+        },
+        {
+          title: "Standup PM",
+          description: "Extra same day",
+          startsAt: new Date(2026, 10, 6, 16, 0),
+          endsAt: new Date(2026, 10, 6, 16, 30),
+          tagIds: ["t2"],
+        },
+        {
+          title: "Standup Week 2",
+          description: "",
+          startsAt: new Date(2026, 10, 13, 9, 0),
+          endsAt: new Date(2026, 10, 13, 9, 30),
+          tagIds: [],
+        },
+        {
+          title: "Standup Week 4",
+          description: "Added",
+          startsAt: new Date(2026, 10, 27, 9, 0),
+          endsAt: new Date(2026, 10, 27, 9, 30),
+          tagIds: ["t1", "t2"],
+        },
+      ],
+      {
+        groupId: "grp-1",
+        userId: "u1",
+        recurrenceGroupId: "rec-1",
+        createId: makeId,
+      },
+    );
+
+    expect(result.updates.map((u) => ({ id: u.id, title: u.patch.title, tagIds: u.tagIds }))).toEqual([
+      { id: "e1", title: "Standup AM", tagIds: ["t1"] },
+      { id: "e2", title: "Standup Week 2", tagIds: [] },
+    ]);
+    expect(result.deleteIds).toEqual(["e3"]);
+    expect(result.insertEventRows.map((r) => ({ id: r.id, title: r.title, recurrence_group_id: r.recurrence_group_id }))).toEqual([
+      { id: "new-1", title: "Standup PM", recurrence_group_id: "rec-1" },
+      { id: "new-2", title: "Standup Week 4", recurrence_group_id: "rec-1" },
+    ]);
+    expect(result.insertTagRows).toEqual([
+      { event_id: "new-1", tag_id: "t2" },
+      { event_id: "new-2", tag_id: "t1" },
+      { event_id: "new-2", tag_id: "t2" },
     ]);
   });
 });
