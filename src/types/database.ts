@@ -469,6 +469,55 @@ export type Database = {
           },
         ];
       };
+      event_rsvps: {
+        Row: {
+          event_id: string;
+          group_id: string;
+          user_id: string;
+          status: "going" | "maybe" | "declined";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          event_id: string;
+          group_id: string;
+          user_id: string;
+          status: "going" | "maybe" | "declined";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          event_id?: string;
+          group_id?: string;
+          user_id?: string;
+          status?: "going" | "maybe" | "declined";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_rsvps_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_rsvps_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_rsvps_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -506,6 +555,10 @@ export type Database = {
       };
       is_event_group_member: {
         Args: { p_event_id: string };
+        Returns: boolean;
+      };
+      is_event_in_group: {
+        Args: { p_event_id: string; p_group_id: string };
         Returns: boolean;
       };
       can_view_note_folder: {

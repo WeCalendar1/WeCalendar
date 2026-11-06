@@ -12,11 +12,17 @@ export type AccountExportBundle = {
   events: Tables<"events">[];
   tags: Tables<"tags">[];
   eventTags: Tables<"event_tags">[];
+  eventRsvps: Tables<"event_rsvps">[];
   noteFolders: Tables<"note_folders">[];
   notes: Tables<"notes">[];
   lists: Tables<"lists">[];
   listItems: Tables<"list_items">[];
 };
+
+function isMissingRelationError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "42P01" || error.code === "PGRST205";
+}
 
 export function serializeAccountExport(bundle: AccountExportBundle): string {
   return JSON.stringify(bundle, null, 2);
@@ -65,6 +71,7 @@ export async function fetchAccountExportBundle(
       events: [],
       tags: [],
       eventTags: [],
+      eventRsvps: [],
       noteFolders: [],
       notes: [],
       lists: [],
@@ -72,11 +79,12 @@ export async function fetchAccountExportBundle(
     };
   }
 
-  const [groupsRes, eventsRes, tagsRes, noteFoldersRes, notesRes, listsRes] =
+  const [groupsRes, eventsRes, tagsRes, eventRsvpsRes, noteFoldersRes, notesRes, listsRes] =
     await Promise.all([
       supabase.from("groups").select("*").in("id", groupIds),
       supabase.from("events").select("*").in("group_id", groupIds),
       supabase.from("tags").select("*").in("group_id", groupIds),
+      supabase.from("event_rsvps").select("*").in("group_id", groupIds),
       supabase.from("note_folders").select("*").in("group_id", groupIds),
       supabase.from("notes").select("*").in("group_id", groupIds),
       supabase.from("lists").select("*").in("group_id", groupIds),
@@ -85,9 +93,14 @@ export async function fetchAccountExportBundle(
   if (groupsRes.error) throw groupsRes.error;
   if (eventsRes.error) throw eventsRes.error;
   if (tagsRes.error) throw tagsRes.error;
+  if (eventRsvpsRes.error && !isMissingRelationError(eventRsvpsRes.error)) {
+    throw eventRsvpsRes.error;
+  }
   if (noteFoldersRes.error) throw noteFoldersRes.error;
   if (notesRes.error) throw notesRes.error;
   if (listsRes.error) throw listsRes.error;
+
+  const eventRsvps = eventRsvpsRes.error ? [] : (eventRsvpsRes.data ?? []);
 
   const events = eventsRes.data ?? [];
   const lists = listsRes.data ?? [];
@@ -114,6 +127,7 @@ export async function fetchAccountExportBundle(
     events,
     tags: tagsRes.data ?? [],
     eventTags: eventTagsRes.data ?? [],
+    eventRsvps,
     noteFolders: noteFoldersRes.data ?? [],
     notes: notesRes.data ?? [],
     lists,
