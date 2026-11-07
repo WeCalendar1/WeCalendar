@@ -15,6 +15,7 @@ import { addDays, addMonths, formatMonthYear, getMonthGrid, getWeekdayLabels } f
 import { draftOverlapsExisting } from "@/lib/scheduling";
 import { noteTitle, type Note } from "@/lib/notes";
 import { unansweredMemberIdsForEvent } from "@/lib/notifications";
+import { PLACE_KIND_LABEL, type Place } from "@/lib/places";
 import {
   summarizeEventRsvps,
   type EventRsvp,
@@ -27,6 +28,7 @@ export type EventDraft = {
   startsAt: Date;
   endsAt: Date;
   tagIds: string[];
+  placeId: string | null;
 };
 
 type CreateEventModalProps = {
@@ -40,6 +42,8 @@ type CreateEventModalProps = {
   tags: Tag[];
   /** Tag IDs already assigned to this event (when editing) */
   initialTagIds?: string[];
+  places?: Place[];
+  initialPlaceId?: string | null;
   onClose: () => void;
   onCreate: (input: EventDraft) => Promise<void>;
   onCreateMultiple?: (drafts: EventDraft[]) => Promise<void>;
@@ -246,8 +250,7 @@ function DayPicker({ selectedDates, onToggle, weekStartsOnMonday = false }: DayP
 // ─── Main modal ───────────────────────────────────────────────────────────────
 
 export function CreateEventModal(props: CreateEventModalProps) {
-  const formKey =
-    props.event?.id ?? `new-${toDateInput(props.defaultDate)}-${props.initialPlaceId ?? ""}`;
+  const formKey = props.event?.id ?? `new-${toDateInput(props.defaultDate)}-${props.initialPlaceId ?? ""}`;
   return (
     <AnimatePresence>
       {props.open ? <CreateEventModalContent key={formKey} {...props} /> : null}
@@ -262,6 +265,8 @@ function CreateEventModalContent({
   existingEvents = [],
   tags,
   initialTagIds = [],
+  places = [],
+  initialPlaceId = null,
   onClose,
   onCreate,
   onCreateMultiple,
@@ -304,6 +309,7 @@ function CreateEventModalContent({
     return toTimeInput(new Date(defaultDate.getTime() + 60 * 60 * 1000));
   });
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTagIds);
+  const [placeId, setPlaceId] = useState<string | null>(event?.place_id ?? initialPlaceId);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Extra owner-confirmation step: fires when deleting another user's event
@@ -326,11 +332,11 @@ function CreateEventModalContent({
     () =>
       event
         ? summarizeEventRsvps(
-          event.id,
-          eventRsvps,
-          groupProfilesById ?? emptyProfiles,
-          currentUserId,
-        )
+            event.id,
+            eventRsvps,
+            groupProfilesById ?? emptyProfiles,
+            currentUserId,
+          )
         : null,
     [event, eventRsvps, groupProfilesById, emptyProfiles, currentUserId],
   );
@@ -461,6 +467,7 @@ function CreateEventModalContent({
       startsAt: interval.startsAt,
       endsAt: interval.endsAt,
       tagIds: selectedTagIds,
+      placeId,
     };
   }
 
@@ -616,587 +623,614 @@ function CreateEventModalContent({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-      {/* Translucent dimming scrim */}
-      <motion.div
-        className="fixed inset-0"
-        style={{
-          background: "var(--scrim)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-        }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        onClick={onClose}
-      />
-
-      {/* Dialog surface */}
-      <motion.div
-        className="relative z-10 flex w-full max-w-md flex-col overflow-hidden"
-        style={{
-          borderRadius: "var(--radius-xl)",
-          background: "var(--glass-bg-heavy)",
-          backdropFilter: "var(--glass-blur-heavy)",
-          WebkitBackdropFilter: "var(--glass-blur-heavy)",
-          boxShadow: "var(--shadow-lg)",
-          maxHeight: "90vh",
-        }}
-        initial={{ opacity: 0, scale: 0.96, y: 14, filter: "blur(4px)" }}
-        animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-        exit={{ opacity: 0, scale: 0.96, y: 14, filter: "blur(4px)" }}
-        transition={{ type: "spring", bounce: 0, duration: 0.34 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header with Apple-style close circle */}
-        <div
-          className="flex items-center justify-between px-5 py-4"
-          style={{ boxShadow: "inset 0 -0.5px 0 var(--separator)" }}
-        >
-          <div>
-            <h2
-              className="text-base font-semibold tracking-tight"
-              style={{ color: "var(--foreground)", letterSpacing: "-0.015em" }}
-            >
-              {isEditing ? "Event details" : "Create shared event"}
-            </h2>
-            <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-              {isEditing
-                ? "Changes sync to everyone in the workspace."
-                : "This event syncs to everyone in the workspace."}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close modal"
-            className="pressable flex h-7 w-7 items-center justify-center rounded-full"
+          {/* Translucent dimming scrim */}
+          <motion.div
+            className="fixed inset-0"
             style={{
-              background: "var(--surface-2)",
-              color: "var(--text-secondary)",
+              background: "var(--scrim)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
             }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            onClick={onClose}
+          />
+
+          {/* Dialog surface */}
+          <motion.div
+            className="relative z-10 flex w-full max-w-md flex-col overflow-hidden"
+            style={{
+              borderRadius: "var(--radius-xl)",
+              background: "var(--glass-bg-heavy)",
+              backdropFilter: "var(--glass-blur-heavy)",
+              WebkitBackdropFilter: "var(--glass-blur-heavy)",
+              boxShadow: "var(--shadow-lg)",
+              maxHeight: "90vh",
+            }}
+            initial={{ opacity: 0, scale: 0.96, y: 14, filter: "blur(4px)" }}
+            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.96, y: 14, filter: "blur(4px)" }}
+            transition={{ type: "spring", bounce: 0, duration: 0.34 }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Scrollable body */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3.5">
-            <input
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Event title"
-              className="w-full px-3.5 py-2.5 text-sm outline-none transition-all"
-              style={{
-                borderRadius: "var(--radius-md)",
-                border: "1px solid var(--border)",
-                background: "var(--surface-2)",
-                color: "var(--foreground)",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "var(--accent)";
-                e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-muted)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            />
-
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description (optional)"
-              rows={2}
-              className="w-full px-3.5 py-2.5 text-sm outline-none transition-all"
-              style={{
-                borderRadius: "var(--radius-md)",
-                border: "1px solid var(--border)",
-                background: "var(--surface-2)",
-                color: "var(--foreground)",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "var(--accent)";
-                e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-muted)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            />
-
-            {/* Date selection */}
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-                  {isEditing ? "Date" : "Day(s)"}
+            {/* Header with Apple-style close circle */}
+            <div
+              className="flex items-center justify-between px-5 py-4"
+              style={{ boxShadow: "inset 0 -0.5px 0 var(--separator)" }}
+            >
+              <div>
+                <h2
+                  className="text-base font-semibold tracking-tight"
+                  style={{ color: "var(--foreground)", letterSpacing: "-0.015em" }}
+                >
+                  {isEditing ? "Event details" : "Create shared event"}
+                </h2>
+                <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                  {isEditing
+                    ? "Changes sync to everyone in the workspace."
+                    : "This event syncs to everyone in the workspace."}
                 </p>
-                {isEditing && seriesEvents.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (event) {
-                        setSelectedDates(new Set(expandEventDateKeys(event.starts_at, event.ends_at)));
-                      }
-                    }}
-                    className="pressable text-[10px] font-semibold"
-                    style={{ color: "var(--color-danger)" }}
-                  >
-                    Remove repeating
-                  </button>
-                )}
               </div>
 
-              <DayPicker
-                selectedDates={selectedDates}
-                onToggle={toggleDay}
-                weekStartsOnMonday={weekStartsOnMonday}
-              />
-            </div>
-
-            {/* Times */}
-            <div className="grid grid-cols-2 gap-3">
-              <label className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-                Start
-                <input
-                  type="time"
-                  required
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="mt-1 w-full px-3 py-2 text-sm outline-none transition-all"
-                  style={{
-                    borderRadius: "var(--radius-md)",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-2)",
-                    color: "var(--foreground)",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "var(--accent)";
-                    e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-muted)";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                />
-              </label>
-              <label className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-                End
-                <input
-                  type="time"
-                  required
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="mt-1 w-full px-3 py-2 text-sm outline-none transition-all"
-                  style={{
-                    borderRadius: "var(--radius-md)",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-2)",
-                    color: "var(--foreground)",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "var(--accent)";
-                    e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-muted)";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                />
-              </label>
-            </div>
-
-            {/* Repeating */}
-            {(!isEditing || seriesEvents.length <= 1) && (
-              <div className="flex flex-col gap-2">
-                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium" style={{ color: "var(--foreground)" }}>
-                  <input
-                    type="checkbox"
-                    checked={repeats}
-                    onChange={(e) => setRepeats(e.target.checked)}
-                    className="h-4 w-4 rounded accent-[var(--accent)]"
-                  />
-                  Repeat this event
-                </label>
-
-                {repeats && (
-                  <div className="flex items-center gap-2.5 pl-6">
-                    <select
-                      value={repeatFreq}
-                      onChange={(e) => setRepeatFreq(e.target.value as "daily" | "weekly" | "monthly")}
-                      className="px-2.5 py-1.5 text-xs font-medium outline-none"
-                      style={{
-                        borderRadius: "var(--radius-md)",
-                        border: "1px solid var(--border)",
-                        background: "var(--surface-2)",
-                        color: "var(--foreground)",
-                      }}
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                    </select>
-                    <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-                      for
-                    </span>
-                    <input
-                      type="number"
-                      min="2"
-                      max="52"
-                      value={repeatCount}
-                      onChange={(e) => setRepeatCount(parseInt(e.target.value) || 2)}
-                      className="w-16 px-2.5 py-1.5 text-xs font-medium outline-none"
-                      style={{
-                        borderRadius: "var(--radius-md)",
-                        border: "1px solid var(--border)",
-                        background: "var(--surface-2)",
-                        color: "var(--foreground)",
-                      }}
-                    />
-                    <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-                      {repeatFreq === "daily" ? "days" : repeatFreq === "weekly" ? "weeks" : "months"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Attendance (RSVP) */}
-            {isEditing && event && onSetRsvp && rsvpSummary && (
-              <div
-                className="flex flex-col gap-2 rounded-xl p-3"
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close modal"
+                className="pressable flex h-7 w-7 items-center justify-center rounded-full"
                 style={{
-                  border: "1px solid var(--border)",
                   background: "var(--surface-2)",
+                  color: "var(--text-secondary)",
                 }}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-                    Attendance
-                  </p>
-                  <div className="flex items-center gap-1.5" role="group" aria-label="Your RSVP">
-                    {RSVP_OPTIONS.map((opt) => {
-                      const active = rsvpSummary.myStatus === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          disabled={rsvpBusy || busy}
-                          aria-pressed={active}
-                          onClick={() => void handleRsvpSelect(opt.id)}
-                          className="pressable flex cursor-pointer items-center gap-1.5 px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                          style={{
-                            borderRadius: "var(--radius-full)",
-                            border: `1.5px solid ${active ? opt.color : "var(--border)"}`,
-                            background: active
-                              ? `color-mix(in srgb, ${opt.color} 16%, var(--surface))`
-                              : "var(--surface)",
-                            color: active ? opt.color : "var(--text-secondary)",
-                          }}
-                        >
-                          <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ background: opt.color }}
-                          />
-                          {opt.label}
-                        </button>
-                      );
-                    })}
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+              <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3.5">
+                <input
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Event title"
+                  className="w-full px-3.5 py-2.5 text-sm outline-none transition-all"
+                  style={{
+                    borderRadius: "var(--radius-md)",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface-2)",
+                    color: "var(--foreground)",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "var(--accent)";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-muted)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                />
+
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Description (optional)"
+                  rows={2}
+                  className="w-full px-3.5 py-2.5 text-sm outline-none transition-all"
+                  style={{
+                    borderRadius: "var(--radius-md)",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface-2)",
+                    color: "var(--foreground)",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "var(--accent)";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-muted)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                />
+
+                {/* Date selection */}
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                      {isEditing ? "Date" : "Day(s)"}
+                    </p>
+                    {isEditing && seriesEvents.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (event) {
+                            setSelectedDates(new Set(expandEventDateKeys(event.starts_at, event.ends_at)));
+                          }
+                        }}
+                        className="pressable text-[10px] font-semibold"
+                        style={{ color: "var(--color-danger)" }}
+                      >
+                        Remove repeating
+                      </button>
+                    )}
                   </div>
+
+                  <DayPicker
+                    selectedDates={selectedDates}
+                    onToggle={toggleDay}
+                    weekStartsOnMonday={weekStartsOnMonday}
+                  />
                 </div>
 
-                {seriesEvents.length > 1 && (
-                  <label
-                    className="flex cursor-pointer items-center gap-2 text-xs"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
+                {/* Times */}
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                    Start
                     <input
-                      type="checkbox"
-                      checked={applyRsvpToSeries}
-                      onChange={(e) => setApplyRsvpToSeries(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded accent-[var(--accent)]"
-                    />
-                    Apply RSVP to all {seriesEvents.length} events in series
-                  </label>
-                )}
-
-                <div
-                  className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-medium"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span>Going · {rsvpSummary.counts.going}</span>
-                    <span>Maybe · {rsvpSummary.counts.maybe}</span>
-                    <span>Declined · {rsvpSummary.counts.declined}</span>
-                  </div>
-                  {onNudgeUnanswered && unansweredCount > 0 && (
-                    <button
-                      type="button"
-                      disabled={nudgeBusy || busy}
-                      onClick={() => void handleNudgeClick()}
-                      className="pressable cursor-pointer rounded-full px-2.5 py-0.5 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                      type="time"
+                      required
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 text-sm outline-none transition-all"
                       style={{
-                        background: "var(--accent-muted)",
-                        color: "var(--accent)",
+                        borderRadius: "var(--radius-md)",
+                        border: "1px solid var(--border)",
+                        background: "var(--surface-2)",
+                        color: "var(--foreground)",
                       }}
-                    >
-                      {nudgeBusy ? "Sending…" : `Nudge unanswered (${unansweredCount})`}
-                    </button>
-                  )}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = "var(--accent)";
+                        e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-muted)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = "var(--border)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    />
+                  </label>
+                  <label className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                    End
+                    <input
+                      type="time"
+                      required
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 text-sm outline-none transition-all"
+                      style={{
+                        borderRadius: "var(--radius-md)",
+                        border: "1px solid var(--border)",
+                        background: "var(--surface-2)",
+                        color: "var(--foreground)",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = "var(--accent)";
+                        e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-muted)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = "var(--border)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    />
+                  </label>
                 </div>
-                {nudgeStatus && (
-                  <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
-                    {nudgeStatus}
-                  </p>
-                )}
 
-                {rsvpSummary.respondents.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {rsvpSummary.respondents.map((resp) => {
-                      const dotColor =
-                        resp.status === "going"
-                          ? "#10b981"
-                          : resp.status === "maybe"
-                            ? "#f59e0b"
-                            : "#ef4444";
-                      return (
-                        <span
-                          key={resp.userId}
-                          className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium"
-                          style={{
-                            borderRadius: "var(--radius-full)",
-                            background: "var(--surface)",
-                            border: "1px solid var(--border)",
-                            color: "var(--foreground)",
-                          }}
-                        >
-                          <span
-                            className="h-1.5 w-1.5 shrink-0 rounded-full"
-                            style={{ background: dotColor }}
-                          />
-                          <span>{resp.displayName}</span>
-                          <span style={{ color: "var(--text-muted)" }}>
-                            ({resp.status})
-                          </span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+                {/* Repeating */}
+                {(!isEditing || seriesEvents.length <= 1) && (
+                  <div className="flex flex-col gap-2">
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-medium" style={{ color: "var(--foreground)" }}>
+                      <input
+                        type="checkbox"
+                        checked={repeats}
+                        onChange={(e) => setRepeats(e.target.checked)}
+                        className="h-4 w-4 rounded accent-[var(--accent)]"
+                      />
+                      Repeat this event
+                    </label>
 
-            {/* Linked notes */}
-            {isEditing && event && (
-              <div className="flex flex-col gap-1.5">
-                <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-                  Notes
-                </p>
-                {linkedNotes.length > 0 ? (
-                  <ul className="space-y-1">
-                    {linkedNotes.map((note) => (
-                      <li key={note.id}>
-                        <button
-                          type="button"
-                          onClick={() => onOpenNote?.(note.id)}
-                          className="pressable w-full rounded-lg px-3 py-2 text-left text-xs font-medium"
+                    {repeats && (
+                      <div className="flex items-center gap-2.5 pl-6">
+                        <select
+                          value={repeatFreq}
+                          onChange={(e) => setRepeatFreq(e.target.value as "daily" | "weekly" | "monthly")}
+                          className="px-2.5 py-1.5 text-xs font-medium outline-none"
                           style={{
+                            borderRadius: "var(--radius-md)",
                             border: "1px solid var(--border)",
                             background: "var(--surface-2)",
                             color: "var(--foreground)",
                           }}
                         >
-                          {noteTitle(note)}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    No notes linked to this event yet.
-                  </p>
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                        </select>
+                        <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                          for
+                        </span>
+                        <input
+                          type="number"
+                          min="2"
+                          max="52"
+                          value={repeatCount}
+                          onChange={(e) => setRepeatCount(parseInt(e.target.value) || 2)}
+                          className="w-16 px-2.5 py-1.5 text-xs font-medium outline-none"
+                          style={{
+                            borderRadius: "var(--radius-md)",
+                            border: "1px solid var(--border)",
+                            background: "var(--surface-2)",
+                            color: "var(--foreground)",
+                          }}
+                        />
+                        <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                          {repeatFreq === "daily" ? "days" : repeatFreq === "weekly" ? "weeks" : "months"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
-                {onCreateNoteForEvent && (
-                  <button
-                    type="button"
-                    onClick={() => void onCreateNoteForEvent(event.id)}
-                    className="pressable self-start text-xs font-semibold"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    + Add note for this event
-                  </button>
-                )}
-              </div>
-            )}
 
-            {/* Tags */}
-            <div className="flex flex-col gap-1.5">
-              <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-                Tags
-              </p>
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {tags.map((tag) => {
-                    const active = selectedTagIds.includes(tag.id);
-                    return (
-                      <button
-                        key={tag.id}
-                        type="button"
-                        onClick={() => toggleTag(tag.id)}
-                        className="pressable flex items-center gap-1 px-2.5 py-1 text-xs font-medium"
-                        style={{
-                          borderRadius: "var(--radius-full)",
-                          border: `1.5px solid ${tag.color}`,
-                          background: active ? tag.color : "transparent",
-                          color: active ? "#fff" : tag.color,
-                        }}
-                      >
-                        {active && (
-                          <svg viewBox="0 0 12 12" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M2 6l3 3 5-5" />
-                          </svg>
-                        )}
-                        {tag.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              <TagCreatorInline onAdd={onCreateTag} />
-            </div>
-
-            {softOverlap.overlaps && (
-              <div
-                className="rounded-lg px-3 py-2 text-xs"
-                style={{
-                  background: "rgba(255, 59, 48, 0.1)",
-                  border: "1px solid rgba(255, 59, 48, 0.25)",
-                  color: "var(--color-danger)",
-                }}
-              >
-                Overlaps with {softOverlap.titles.slice(0, 2).join(", ")}
-                {softOverlap.titles.length > 2 ? ` +${softOverlap.titles.length - 2} more` : ""}.
-                Conflicting events will be highlighted.
-              </div>
-            )}
-
-            {/* Owner-confirmation warning banner */}
-            {confirmOwner && !confirmDelete && isOthersEvent && (
-              <div
-                className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs"
-                style={{
-                  background: "rgba(255, 149, 0, 0.08)",
-                  border: "1px solid rgba(255, 149, 0, 0.3)",
-                  color: "var(--foreground)",
-                }}
-              >
-                <svg viewBox="0 0 24 24" className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "#f97316" }} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                <span style={{ color: "var(--text-secondary)" }}>
-                  This event was created by{" "}
-                  <strong style={{ color: "var(--foreground)" }}>
-                    {event?.creator?.display_name ?? "another user"}
-                  </strong>
-                  . Are you sure you want to delete it?
-                </span>
-              </div>
-            )}
-
-            {/* Error */}
-            {error && (
-              <p className="text-xs font-medium" style={{ color: "var(--color-danger)" }}>
-                {error}
-              </p>
-            )}
-
-            {/* Actions bar */}
-            <div
-              className="flex items-center justify-between gap-2 border-t pt-3"
-              style={{ borderColor: "var(--separator)" }}
-            >
-              {isEditing && onDelete ? (
-                <div className="flex gap-1.5">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void handleDelete()}
-                    className="pressable px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+                <label className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                  Suggested location
+                  <select
+                    value={placeId ?? ""}
+                    onChange={(e) => setPlaceId(e.target.value || null)}
+                    className="mt-1 w-full px-3 py-2 text-sm outline-none"
                     style={{
                       borderRadius: "var(--radius-md)",
-                      border: "1px solid rgba(255, 59, 48, 0.3)",
-                      background: confirmDelete ? "var(--color-danger)" : confirmOwner ? "rgba(255, 149, 0, 0.12)" : "rgba(255, 59, 48, 0.08)",
-                      color: confirmDelete ? "#fff" : confirmOwner ? "#ea580c" : "var(--color-danger)",
+                      border: "1px solid var(--border)",
+                      background: "var(--surface-2)",
+                      color: "var(--foreground)",
                     }}
                   >
-                    {confirmDelete ? "Confirm delete" : confirmOwner ? "Yes, delete it" : "Delete"}
-                  </button>
-                  {event?.recurrence_group_id && onDeleteSeries && (
+                    <option value="">No location</option>
+                    {places.map((place) => (
+                      <option key={place.id} value={place.id}>
+                        {place.name} · {PLACE_KIND_LABEL[place.kind]}
+                      </option>
+                    ))}
+                  </select>
+                  {places.length === 0 && (
+                    <span className="mt-1 block text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      Drop pins on the Map tab to suggest a place.
+                    </span>
+                  )}
+                </label>
+
+                {/* Attendance (RSVP) */}
+                {isEditing && event && onSetRsvp && rsvpSummary && (
+                  <div
+                    className="flex flex-col gap-2 rounded-xl p-3"
+                    style={{
+                      border: "1px solid var(--border)",
+                      background: "var(--surface-2)",
+                    }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                        Attendance
+                      </p>
+                      <div className="flex items-center gap-1.5" role="group" aria-label="Your RSVP">
+                        {RSVP_OPTIONS.map((opt) => {
+                          const active = rsvpSummary.myStatus === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              disabled={rsvpBusy || busy}
+                              aria-pressed={active}
+                              onClick={() => void handleRsvpSelect(opt.id)}
+                              className="pressable flex cursor-pointer items-center gap-1.5 px-2.5 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                              style={{
+                                borderRadius: "var(--radius-full)",
+                                border: `1.5px solid ${active ? opt.color : "var(--border)"}`,
+                                background: active
+                                  ? `color-mix(in srgb, ${opt.color} 16%, var(--surface))`
+                                  : "var(--surface)",
+                                color: active ? opt.color : "var(--text-secondary)",
+                              }}
+                            >
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ background: opt.color }}
+                              />
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {seriesEvents.length > 1 && (
+                      <label
+                        className="flex cursor-pointer items-center gap-2 text-xs"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={applyRsvpToSeries}
+                          onChange={(e) => setApplyRsvpToSeries(e.target.checked)}
+                          className="h-3.5 w-3.5 rounded accent-[var(--accent)]"
+                        />
+                        Apply RSVP to all {seriesEvents.length} events in series
+                      </label>
+                    )}
+
+                    <div
+                      className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-medium"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>Going · {rsvpSummary.counts.going}</span>
+                        <span>Maybe · {rsvpSummary.counts.maybe}</span>
+                        <span>Declined · {rsvpSummary.counts.declined}</span>
+                      </div>
+                      {onNudgeUnanswered && unansweredCount > 0 && (
+                        <button
+                          type="button"
+                          disabled={nudgeBusy || busy}
+                          onClick={() => void handleNudgeClick()}
+                          className="pressable cursor-pointer rounded-full px-2.5 py-0.5 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                          style={{
+                            background: "var(--accent-muted)",
+                            color: "var(--accent)",
+                          }}
+                        >
+                          {nudgeBusy ? "Sending…" : `Nudge unanswered (${unansweredCount})`}
+                        </button>
+                      )}
+                    </div>
+                    {nudgeStatus && (
+                      <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
+                        {nudgeStatus}
+                      </p>
+                    )}
+
+                    {rsvpSummary.respondents.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {rsvpSummary.respondents.map((resp) => {
+                          const dotColor =
+                            resp.status === "going"
+                              ? "#10b981"
+                              : resp.status === "maybe"
+                                ? "#f59e0b"
+                                : "#ef4444";
+                          return (
+                            <span
+                              key={resp.userId}
+                              className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium"
+                              style={{
+                                borderRadius: "var(--radius-full)",
+                                background: "var(--surface)",
+                                border: "1px solid var(--border)",
+                                color: "var(--foreground)",
+                              }}
+                            >
+                              <span
+                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                style={{ background: dotColor }}
+                              />
+                              <span>{resp.displayName}</span>
+                              <span style={{ color: "var(--text-muted)" }}>
+                                ({resp.status})
+                              </span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Linked notes */}
+                {isEditing && event && (
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                      Notes
+                    </p>
+                    {linkedNotes.length > 0 ? (
+                      <ul className="space-y-1">
+                        {linkedNotes.map((note) => (
+                          <li key={note.id}>
+                            <button
+                              type="button"
+                              onClick={() => onOpenNote?.(note.id)}
+                              className="pressable w-full rounded-lg px-3 py-2 text-left text-xs font-medium"
+                              style={{
+                                border: "1px solid var(--border)",
+                                background: "var(--surface-2)",
+                                color: "var(--foreground)",
+                              }}
+                            >
+                              {noteTitle(note)}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        No notes linked to this event yet.
+                      </p>
+                    )}
+                    {onCreateNoteForEvent && (
+                      <button
+                        type="button"
+                        onClick={() => void onCreateNoteForEvent(event.id)}
+                        className="pressable self-start text-xs font-semibold"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        + Add note for this event
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Tags */}
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                    Tags
+                  </p>
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {tags.map((tag) => {
+                        const active = selectedTagIds.includes(tag.id);
+                        return (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            onClick={() => toggleTag(tag.id)}
+                            className="pressable flex items-center gap-1 px-2.5 py-1 text-xs font-medium"
+                            style={{
+                              borderRadius: "var(--radius-full)",
+                              border: `1.5px solid ${tag.color}`,
+                              background: active ? tag.color : "transparent",
+                              color: active ? "#fff" : tag.color,
+                            }}
+                          >
+                            {active && (
+                              <svg viewBox="0 0 12 12" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M2 6l3 3 5-5" />
+                              </svg>
+                            )}
+                            {tag.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <TagCreatorInline onAdd={onCreateTag} />
+                </div>
+
+                {softOverlap.overlaps && (
+                  <div
+                    className="rounded-lg px-3 py-2 text-xs"
+                    style={{
+                      background: "rgba(255, 59, 48, 0.1)",
+                      border: "1px solid rgba(255, 59, 48, 0.25)",
+                      color: "var(--color-danger)",
+                    }}
+                  >
+                    Overlaps with {softOverlap.titles.slice(0, 2).join(", ")}
+                    {softOverlap.titles.length > 2 ? ` +${softOverlap.titles.length - 2} more` : ""}.
+                    Conflicting events will be highlighted.
+                  </div>
+                )}
+
+                {/* Owner-confirmation warning banner */}
+                {confirmOwner && !confirmDelete && isOthersEvent && (
+                  <div
+                    className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs"
+                    style={{
+                      background: "rgba(255, 149, 0, 0.08)",
+                      border: "1px solid rgba(255, 149, 0, 0.3)",
+                      color: "var(--foreground)",
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "#f97316" }} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <span style={{ color: "var(--text-secondary)" }}>
+                      This event was created by{" "}
+                      <strong style={{ color: "var(--foreground)" }}>
+                        {event?.creator?.display_name ?? "another user"}
+                      </strong>
+                      . Are you sure you want to delete it?
+                    </span>
+                  </div>
+                )}
+
+                {/* Error */}
+                {error && (
+                  <p className="text-xs font-medium" style={{ color: "var(--color-danger)" }}>
+                    {error}
+                  </p>
+                )}
+
+                {/* Actions bar */}
+                <div
+                  className="flex items-center justify-between gap-2 border-t pt-3"
+                  style={{ borderColor: "var(--separator)" }}
+                >
+                  {isEditing && onDelete ? (
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void handleDelete()}
+                        className="pressable px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+                        style={{
+                          borderRadius: "var(--radius-md)",
+                          border: "1px solid rgba(255, 59, 48, 0.3)",
+                          background: confirmDelete ? "var(--color-danger)" : confirmOwner ? "rgba(255, 149, 0, 0.12)" : "rgba(255, 59, 48, 0.08)",
+                          color: confirmDelete ? "#fff" : confirmOwner ? "#ea580c" : "var(--color-danger)",
+                        }}
+                      >
+                        {confirmDelete ? "Confirm delete" : confirmOwner ? "Yes, delete it" : "Delete"}
+                      </button>
+                      {event?.recurrence_group_id && onDeleteSeries && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void handleDeleteSeriesAction()}
+                          className="pressable px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+                          style={{
+                            borderRadius: "var(--radius-md)",
+                            border: "1px solid rgba(255, 59, 48, 0.3)",
+                            background: confirmDelete ? "var(--color-danger)" : confirmOwner ? "rgba(255, 149, 0, 0.12)" : "rgba(255, 59, 48, 0.08)",
+                            color: confirmDelete ? "#fff" : confirmOwner ? "#ea580c" : "var(--color-danger)",
+                          }}
+                        >
+                          {confirmDelete ? "Confirm series" : confirmOwner ? "Yes, delete series" : "Delete series"}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span />
+                  )}
+
+
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      disabled={busy}
-                      onClick={() => void handleDeleteSeriesAction()}
-                      className="pressable px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+                      onClick={onClose}
+                      className="pressable px-3.5 py-1.5 text-xs font-medium"
                       style={{
-                        borderRadius: "var(--radius-md)",
-                        border: "1px solid rgba(255, 59, 48, 0.3)",
-                        background: confirmDelete ? "var(--color-danger)" : confirmOwner ? "rgba(255, 149, 0, 0.12)" : "rgba(255, 59, 48, 0.08)",
-                        color: confirmDelete ? "#fff" : confirmOwner ? "#ea580c" : "var(--color-danger)",
+                        borderRadius: "var(--radius-full)",
+                        border: "1px solid var(--border)",
+                        background: "var(--surface)",
+                        color: "var(--foreground)",
                       }}
                     >
-                      {confirmDelete ? "Confirm series" : confirmOwner ? "Yes, delete series" : "Delete series"}
+                      Cancel
                     </button>
-                  )}
+                    <button
+                      type="submit"
+                      disabled={busy || (!isEditing && selectedDates.size === 0)}
+                      className="pressable px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                      style={{
+                        borderRadius: "var(--radius-full)",
+                        background: "var(--accent)",
+                      }}
+                    >
+                      {busy
+                        ? "Saving…"
+                        : isEditing
+                          ? "Save changes"
+                          : (() => {
+                              const baseCount = groupConsecutiveDateKeys(selectedDates).length;
+                              const totalCount = repeats ? baseCount * repeatCount : baseCount;
+                              return totalCount > 1 ? `Save ${totalCount} events` : "Save event";
+                            })()}
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <span />
-              )}
-
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="pressable px-3.5 py-1.5 text-xs font-medium"
-                  style={{
-                    borderRadius: "var(--radius-full)",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface)",
-                    color: "var(--foreground)",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={busy || (!isEditing && selectedDates.size === 0)}
-                  className="pressable px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-                  style={{
-                    borderRadius: "var(--radius-full)",
-                    background: "var(--accent)",
-                  }}
-                >
-                  {busy
-                    ? "Saving…"
-                    : isEditing
-                      ? "Save changes"
-                      : (() => {
-                        const baseCount = groupConsecutiveDateKeys(selectedDates).length;
-                        const totalCount = repeats ? baseCount * repeatCount : baseCount;
-                        return totalCount > 1 ? `Save ${totalCount} events` : "Save event";
-                      })()}
-                </button>
-              </div>
+              </form>
             </div>
-          </form>
-        </div>
-      </motion.div>
+          </motion.div>
     </div>
   );
 }
