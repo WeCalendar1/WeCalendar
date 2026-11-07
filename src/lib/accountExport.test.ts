@@ -24,6 +24,12 @@ describe("accountExport", () => {
                   display_name: "Alex",
                   avatar_url: null,
                   theme_preferences: {},
+                  notification_preferences: {
+                    events: true,
+                    invites: true,
+                    lists: false,
+                    nudges: true,
+                  },
                   created_at: "2026-11-04T00:00:00Z",
                   updated_at: "2026-11-04T00:00:00Z",
                 },
@@ -40,6 +46,32 @@ describe("accountExport", () => {
           }),
         };
       }
+      if (table === "notifications") {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({
+                data: [
+                  {
+                    id: "n1",
+                    recipient_id: "u1",
+                    actor_id: null,
+                    group_id: null,
+                    category: "invites",
+                    title: "Welcome",
+                    body: null,
+                    event_id: null,
+                    note_id: null,
+                    read_at: null,
+                    created_at: "2026-11-04T00:00:00Z",
+                  },
+                ],
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
       throw new Error(`Unexpected query on ${table} when user has zero groups`);
     });
 
@@ -52,7 +84,8 @@ describe("accountExport", () => {
     expect(bundle.groups).toEqual([]);
     expect(bundle.events).toEqual([]);
     expect(bundle.eventRsvps).toEqual([]);
-    expect(fromSpy).toHaveBeenCalledTimes(2);
+    expect(bundle.notifications).toHaveLength(1);
+    expect(fromSpy).toHaveBeenCalledTimes(3);
 
     const parsed = JSON.parse(
       serializeAccountExport({
@@ -92,6 +125,15 @@ describe("accountExport", () => {
         return {
           select: () => ({
             eq: async () => ({ data: [{ group_id: "g1" }], error: null }),
+          }),
+        };
+      }
+      if (table === "notifications") {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({ data: [], error: null }),
+            }),
           }),
         };
       }
@@ -246,6 +288,18 @@ describe("accountExport", () => {
           }),
         };
       }
+      if (table === "notifications") {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({
+                data: null,
+                error: { code: "42P01", message: 'relation "notifications" does not exist' },
+              }),
+            }),
+          }),
+        };
+      }
       return { select: () => ({ in: async () => ({ data: [], error: null }) }) };
     });
 
@@ -254,6 +308,7 @@ describe("accountExport", () => {
       { id: "u1", email: "a@b.com" },
     );
     expect(bundle.eventRsvps).toEqual([]);
+    expect(bundle.notifications).toEqual([]);
   });
 });
 

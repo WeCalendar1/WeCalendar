@@ -12,6 +12,15 @@ import {
   triggerJsonDownload,
 } from "@/lib/accountExport";
 import { useCalendarPrefs } from "@/lib/calendarPrefs";
+import {
+  DEFAULT_NOTIFICATION_PREFS,
+  isMissingColumnOrRelationError,
+  normalizeNotificationPrefs,
+  readLocalNotificationPrefs,
+  writeLocalNotificationPrefs,
+  type NotificationCategory,
+  type NotificationPrefs,
+} from "@/lib/notifications";
 import type { CalendarMode } from "@/lib/calendar";
 import { SharedWorkspace } from "@/components/SharedWorkspace";
 import type { Tables } from "@/types/database";
@@ -596,6 +605,7 @@ export default function ProfilePage() {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [otherMemberCount, setOtherMemberCount] = useState(0);
   const { prefs, setShowWorkspaceInSidebar } = useCalendarPrefs();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -608,6 +618,15 @@ export default function ProfilePage() {
   const [dangerError, setDangerError] = useState<string | null>(null);
   const [dangerNotice, setDangerNotice] = useState<string | null>(null);
   const [dangerBusy, setDangerBusy] = useState(false);
+
+  const [userId, setUserId] = useState<string | null>(null);
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(() => ({
+    ...DEFAULT_NOTIFICATION_PREFS,
+  }));
+  const notifPrefsRef = useRef<NotificationPrefs>({ ...DEFAULT_NOTIFICATION_PREFS });
+  const notifSaveSeqRef = useRef(0);
+  const [notifSaved, setNotifSaved] = useState(false);
+  const [notifError, setNotifError] = useState<string | null>(null);
 
   const pwRules = validatePasswordRules(newPassword);
   const pwAllValid = isPasswordValid(newPassword);
@@ -623,6 +642,7 @@ export default function ProfilePage() {
       const user = data.user;
       if (!mounted || !user) return;
 
+      setUserId(user.id);
       setEmail(user.email ?? "");
       setDisplayName(
         (user.user_metadata?.display_name as string | undefined) ||
@@ -630,13 +650,40 @@ export default function ProfilePage() {
           "",
       );
 
-      const { data: profile } = await supabase
+      const localNotif = readLocalNotificationPrefs();
+      notifPrefsRef.current = localNotif;
+      setNotifPrefs(localNotif);
+
+      const { data: profileWithNotif, error: profileNotifErr } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url, theme_preferences")
+        .select("display_name, avatar_url, theme_preferences, notification_preferences")
         .eq("id", user.id)
         .maybeSingle();
 
+      let profile: {
+        display_name: string | null;
+        avatar_url: string | null;
+        theme_preferences: unknown;
+        notification_preferences?: unknown;
+      } | null = profileWithNotif;
+
+      if (profileNotifErr && isMissingColumnOrRelationError(profileNotifErr)) {
+        const { data: fallbackProfile } = await supabase
+          .from("profiles")
+          .select("display_name, avatar_url, theme_preferences")
+          .eq("id", user.id)
+          .maybeSingle();
+        profile = fallbackProfile;
+      }
+
       if (!mounted) return;
+
+      if (profile && "notification_preferences" in profile && profile.notification_preferences !== undefined) {
+        const normalized = normalizeNotificationPrefs(profile.notification_preferences);
+        notifPrefsRef.current = normalized;
+        setNotifPrefs(normalized);
+        writeLocalNotificationPrefs(normalized);
+      }
 
       if (profile?.display_name) {
         setDisplayName(profile.display_name);
@@ -679,6 +726,33 @@ export default function ProfilePage() {
       mounted = false;
     };
   }, [supabase]);
+
+  useEffect(() => {
+    if (!activeGroupId || !userId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOtherMemberCount(0);
+      return;
+    }
+    let active = true;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("group_members")
+        .select("user_id")
+        .eq("group_id", activeGroupId);
+      if (!active) return;
+      if (error) {
+        setOtherMemberCount(0);
+        return;
+      }
+      const others = new Set(
+        (data ?? []).map((row) => row.user_id).filter((id) => id !== userId),
+      );
+      setOtherMemberCount(others.size);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [activeGroupId, userId, supabase]);
 
   // Avatar upload handler
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -755,6 +829,41 @@ export default function ProfilePage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     }
+  }
+
+  async function handleToggleNotificationPref(
+    category: NotificationCategory,
+    checked: boolean,
+  ) {
+    const previous = notifPrefsRef.current;
+    const next: NotificationPrefs = { ...previous, [category]: checked };
+    notifPrefsRef.current = next;
+    setNotifPrefs(next);
+    setNotifError(null);
+    writeLocalNotificationPrefs(next);
+
+    if (!userId) return;
+    const seq = ++notifSaveSeqRef.current;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ notification_preferences: next })
+      .eq("id", userId);
+
+    if (seq !== notifSaveSeqRef.current) return;
+
+    if (error && !isMissingColumnOrRelationError(error)) {
+      notifPrefsRef.current = previous;
+      setNotifPrefs(previous);
+      writeLocalNotificationPrefs(previous);
+      setNotifError(error.message);
+      return;
+    }
+
+    setNotifSaved(true);
+    setTimeout(() => {
+      if (notifSaveSeqRef.current === seq) setNotifSaved(false);
+    }, 1800);
   }
 
   async function handleChangePassword(e: React.FormEvent) {
@@ -963,6 +1072,15 @@ export default function ProfilePage() {
   function handleSelectGroup(groupId: string) {
     setActiveGroupId(groupId);
     window.localStorage.setItem(ACTIVE_GROUP_KEY, groupId);
+  }
+
+  async function handleNudgeGroupAvailability(): Promise<number> {
+    if (!activeGroupId) throw new Error("Select a shared calendar first.");
+    const { data, error } = await supabase.rpc("send_availability_nudge", {
+      p_group_id: activeGroupId,
+    });
+    if (error) throw new Error(error.message);
+    return data ?? 0;
   }
 
   const initials = displayName
@@ -1337,12 +1455,30 @@ export default function ProfilePage() {
           defaultOpen={false}
         >
           <div className="divide-y px-6 py-2" style={{ borderColor: "var(--border)" }}>
-            {[
-              { id: "notif-events", label: "New events added to shared calendars", defaultChecked: true },
-              { id: "notif-invites", label: "Group invites & membership changes", defaultChecked: true },
-              { id: "notif-lists", label: "Shared list updates", defaultChecked: false },
-              { id: "notif-nudges", label: "Availability nudges from group members", defaultChecked: true },
-            ].map(({ id, label, defaultChecked }) => (
+            {(
+              [
+                {
+                  id: "notif-events",
+                  key: "events",
+                  label: "New events added to shared calendars",
+                },
+                {
+                  id: "notif-invites",
+                  key: "invites",
+                  label: "Group invites & membership changes",
+                },
+                {
+                  id: "notif-lists",
+                  key: "lists",
+                  label: "Shared notes & list updates",
+                },
+                {
+                  id: "notif-nudges",
+                  key: "nudges",
+                  label: "Availability nudges from group members",
+                },
+              ] as const
+            ).map(({ id, key, label }) => (
               <label
                 key={id}
                 htmlFor={id}
@@ -1354,11 +1490,31 @@ export default function ProfilePage() {
                 <input
                   id={id}
                   type="checkbox"
-                  defaultChecked={defaultChecked}
+                  checked={notifPrefs[key]}
+                  onChange={(e) => {
+                    void handleToggleNotificationPref(key, e.target.checked);
+                  }}
                   className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
                 />
               </label>
             ))}
+            {(notifSaved || notifError) && (
+              <div className="flex items-center justify-end py-2.5">
+                {notifError ? (
+                  <p role="alert" className="text-xs font-medium" style={{ color: "var(--color-danger)" }}>
+                    {notifError}
+                  </p>
+                ) : (
+                  <span
+                    role="status"
+                    className="text-xs font-semibold"
+                    style={{ color: "var(--color-success)" }}
+                  >
+                    Preferences saved
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </SectionCard>
 
@@ -1379,6 +1535,8 @@ export default function ProfilePage() {
             onSelectGroup={handleSelectGroup}
             onCreateGroup={handleCreateGroup}
             onJoinGroup={handleJoinGroup}
+            otherMemberCount={otherMemberCount}
+            onNudgeGroupAvailability={handleNudgeGroupAvailability}
           />
           <SettingRow
             id="pref-workspace-in-sidebar"

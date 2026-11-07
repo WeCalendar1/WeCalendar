@@ -15,6 +15,7 @@ export type Database = {
           display_name: string | null;
           avatar_url: string | null;
           theme_preferences: Json;
+          notification_preferences: Json;
           created_at: string;
           updated_at: string;
         };
@@ -23,6 +24,7 @@ export type Database = {
           display_name?: string | null;
           avatar_url?: string | null;
           theme_preferences?: Json;
+          notification_preferences?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -31,6 +33,7 @@ export type Database = {
           display_name?: string | null;
           avatar_url?: string | null;
           theme_preferences?: Json;
+          notification_preferences?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -518,9 +521,96 @@ export type Database = {
           },
         ];
       };
+      notifications: {
+        Row: {
+          id: string;
+          recipient_id: string;
+          actor_id: string | null;
+          group_id: string | null;
+          category: "events" | "invites" | "lists" | "nudges";
+          title: string;
+          body: string | null;
+          event_id: string | null;
+          note_id: string | null;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipient_id: string;
+          actor_id?: string | null;
+          group_id?: string | null;
+          category: "events" | "invites" | "lists" | "nudges";
+          title: string;
+          body?: string | null;
+          event_id?: string | null;
+          note_id?: string | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          recipient_id?: string;
+          actor_id?: string | null;
+          group_id?: string | null;
+          category?: "events" | "invites" | "lists" | "nudges";
+          title?: string;
+          body?: string | null;
+          event_id?: string | null;
+          note_id?: string | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_note_id_fkey";
+            columns: ["note_id"];
+            isOneToOne: false;
+            referencedRelation: "notes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      send_availability_nudge: {
+        Args: {
+          p_group_id: string;
+          p_event_id?: string | null;
+          p_recipient_id?: string | null;
+          p_message?: string | null;
+        };
+        Returns: number;
+      };
       create_group: {
         Args: { p_name: string };
         Returns: Database["public"]["Tables"]["groups"]["Row"];

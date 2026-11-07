@@ -30,6 +30,8 @@ type SidebarProps = {
   onSelectGroup: (groupId: string) => void;
   onCreateGroup: (name: string) => Promise<void>;
   onJoinGroup: (inviteCode: string) => Promise<void>;
+  otherMemberCount?: number;
+  onNudgeGroupAvailability?: () => Promise<number>;
   showWorkspace?: boolean;
   weekStartsOnMonday?: boolean;
   onSelectDate?: (date: Date) => void;
@@ -64,6 +66,8 @@ export function Sidebar({
   onSelectGroup,
   onCreateGroup,
   onJoinGroup,
+  otherMemberCount = 0,
+  onNudgeGroupAvailability,
   showWorkspace = false,
   weekStartsOnMonday = false,
   onSelectDate,
@@ -143,6 +147,8 @@ export function Sidebar({
                 onSelectGroup={onSelectGroup}
                 onCreateGroup={onCreateGroup}
                 onJoinGroup={onJoinGroup}
+                otherMemberCount={otherMemberCount}
+                onNudgeGroupAvailability={onNudgeGroupAvailability}
                 openModalRequestKey={workspaceModalRequestKey}
                 onConsumeModalRequest={onConsumeWorkspaceModalRequest}
               />

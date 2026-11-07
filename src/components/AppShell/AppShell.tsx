@@ -30,6 +30,11 @@ import {
   type CalendarEvent,
 } from "@/lib/events";
 import {
+  isMissingColumnOrRelationError,
+  resolveNotificationNavigation,
+  type AppNotification,
+} from "@/lib/notifications";
+import {
   filterConflictCandidateEvents,
   filterVisibleEvents,
   rsvpMapForUser,
@@ -88,6 +93,7 @@ export function AppShell() {
   const [notesSearchQuery, setNotesSearchQuery] = useState("");
   const [notesFilter, setNotesFilter] = useState<NotesFilter>({ type: "all" });
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [modalDefaultDate, setModalDefaultDate] = useState<Date>(() => startOfDay(new Date()));
@@ -105,6 +111,7 @@ export function AppShell() {
 
   const supabase = useMemo(() => createClient(), []);
   const selectedNoteIdRef = useRef<string | null>(null);
+  const pendingOpenEventRef = useRef<{ groupId: string; eventId: string } | null>(null);
   const showRightPanel = screenView === "map";
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
 
@@ -198,6 +205,17 @@ export function AppShell() {
         creator: event.created_by ? (creatorsById.get(event.created_by) ?? null) : null,
       }));
       setEvents(nextEvents);
+      const pendingOpen = pendingOpenEventRef.current;
+      if (pendingOpen && pendingOpen.groupId === groupId) {
+        pendingOpenEventRef.current = null;
+        const target = nextEvents.find((event) => event.id === pendingOpen.eventId) ?? null;
+        if (target) {
+          setViewDate(startOfDay(new Date(target.starts_at)));
+          setSelectedEvent(target);
+          setModalOpen(true);
+          return;
+        }
+      }
       setSelectedEvent((current) => {
         if (!current) return current;
         const next = nextEvents.find((event) => event.id === current.id) ?? null;
@@ -371,6 +389,31 @@ export function AppShell() {
     [supabase],
   );
 
+  const loadNotifications = useCallback(
+    async (userId: string | null) => {
+      if (!userId) {
+        setNotifications([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("recipient_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(30);
+
+      if (error) {
+        if (!isMissingColumnOrRelationError(error)) {
+          console.warn("loadNotifications", error);
+        }
+        setNotifications([]);
+        return;
+      }
+      setNotifications(data ?? []);
+    },
+    [supabase],
+  );
+
   // ─── Auth effects ─────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -404,11 +447,14 @@ export function AppShell() {
       setEventTags([]);
       setNoteFolders([]);
       setNotes([]);
+      setNotifications([]);
+      pendingOpenEventRef.current = null;
       setUserAvatarUrl(null);
       setProfileDisplayName(null);
       return;
     }
     void loadGroups();
+    void loadNotifications(user.id);
     let active = true;
     void (async () => {
       const { data, error } = await supabase
@@ -434,7 +480,23 @@ export function AppShell() {
     return () => {
       active = false;
     };
-  }, [user, loadGroups, supabase]);
+  }, [user, loadGroups, loadNotifications, supabase]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const uid = user.id;
+
+    const channel = supabase
+      .channel(`user-notifications:${uid}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `recipient_id=eq.${uid}` },
+        () => { void loadNotifications(uid); },
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [user?.id, loadNotifications, supabase]);
 
   useEffect(() => {
     if (activeGroupId) {
@@ -855,6 +917,148 @@ export function AppShell() {
     }
   }
 
+  async function handleMarkNotificationRead(notificationId: string) {
+    if (!user) return;
+    const nowIso = new Date().toISOString();
+    setNotifications((prev) =>
+      prev.map((item) =>
+        item.id === notificationId && !item.read_at ? { ...item, read_at: nowIso } : item,
+      ),
+    );
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read_at: nowIso })
+      .eq("id", notificationId)
+      .eq("recipient_id", user.id);
+    if (error && !isMissingColumnOrRelationError(error)) {
+      console.warn("handleMarkNotificationRead", error);
+      await loadNotifications(user.id);
+    }
+  }
+
+  async function handleMarkAllNotificationsRead() {
+    if (!user) return;
+    if (!notifications.some((item) => !item.read_at)) return;
+    const nowIso = new Date().toISOString();
+    setNotifications((prev) =>
+      prev.map((item) => (item.read_at ? item : { ...item, read_at: nowIso })),
+    );
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read_at: nowIso })
+      .eq("recipient_id", user.id)
+      .is("read_at", null);
+    if (error && !isMissingColumnOrRelationError(error)) {
+      console.warn("handleMarkAllNotificationsRead", error);
+      await loadNotifications(user.id);
+    }
+  }
+
+  async function handleDismissNotification(notificationId: string) {
+    if (!user) return;
+    setNotifications((prev) => prev.filter((item) => item.id !== notificationId));
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("id", notificationId)
+      .eq("recipient_id", user.id);
+    if (error && !isMissingColumnOrRelationError(error)) {
+      console.warn("handleDismissNotification", error);
+      await loadNotifications(user.id);
+    }
+  }
+
+  async function handleClearNotifications() {
+    if (!user || notifications.length === 0) return;
+    setNotifications([]);
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("recipient_id", user.id);
+    if (error && !isMissingColumnOrRelationError(error)) {
+      console.warn("handleClearNotifications", error);
+      await loadNotifications(user.id);
+    }
+  }
+
+  function handleSelectNotification(notification: AppNotification) {
+    if (!notification.read_at) {
+      void handleMarkNotificationRead(notification.id);
+    }
+
+    const nav = resolveNotificationNavigation(notification, {
+      activeGroupId,
+      memberGroupIds: groups.map((g) => g.id),
+      loadedEventIds: eventsWithRsvp.map((e) => e.id),
+    });
+    if (!nav) return;
+
+    if (nav.switchToGroupId) {
+      setActiveTagIds([]);
+      setActiveGroupId(nav.switchToGroupId);
+    }
+
+    if (nav.screenView === "notes" && nav.noteId) {
+      closeEventModal();
+      setScreenView("notes");
+      setNotesFilter({ type: "all" });
+      setNotesSearchQuery("");
+      setSelectedNoteId(nav.noteId);
+      if (!nav.switchToGroupId && activeGroupId && !notes.some((n) => n.id === nav.noteId)) {
+        void loadNotes(activeGroupId);
+      }
+      return;
+    }
+
+    setScreenView("calendar");
+    if (nav.eventId) {
+      if (nav.deferEventOpenForGroupId) {
+        pendingOpenEventRef.current = {
+          groupId: nav.deferEventOpenForGroupId,
+          eventId: nav.eventId,
+        };
+        if (nav.reloadEventsForGroupId) {
+          void Promise.all([
+            loadEvents(nav.reloadEventsForGroupId),
+            loadEventTags(nav.reloadEventsForGroupId),
+            loadEventRsvps(nav.reloadEventsForGroupId),
+          ]);
+        }
+      } else {
+        const matched = eventsWithRsvp.find((event) => event.id === nav.eventId) ?? null;
+        if (matched) {
+          setViewDate(startOfDay(new Date(matched.starts_at)));
+          openEventDetails(matched);
+        }
+      }
+    } else if (nav.switchToGroupId) {
+      closeEventModal();
+    }
+  }
+
+  async function handleNudgeUnanswered(eventId: string): Promise<number> {
+    if (!user || !activeGroupId) {
+      throw new Error("Join or create a shared workspace first.");
+    }
+    const { data, error } = await supabase.rpc("send_availability_nudge", {
+      p_group_id: activeGroupId,
+      p_event_id: eventId,
+    });
+    if (error) throw new Error(error.message);
+    return data ?? 0;
+  }
+
+  async function handleNudgeGroupAvailability(): Promise<number> {
+    if (!user || !activeGroupId) {
+      throw new Error("Join or create a shared workspace first.");
+    }
+    const { data, error } = await supabase.rpc("send_availability_nudge", {
+      p_group_id: activeGroupId,
+    });
+    if (error) throw new Error(error.message);
+    return data ?? 0;
+  }
+
   function openCreateModal(date?: Date) {
     setSelectedEvent(null);
     setModalDefaultDate(date instanceof Date ? date : viewDate);
@@ -1155,6 +1359,15 @@ export function AppShell() {
     setWorkspaceModalRequestKey(0);
   }, []);
 
+  const otherMemberCount = useMemo(() => {
+    if (!user) return 0;
+    let count = 0;
+    for (const memberId of groupProfilesById.keys()) {
+      if (memberId !== user.id) count += 1;
+    }
+    return count;
+  }, [groupProfilesById, user]);
+
   function openWorkspaceOnboarding() {
     setSidebarOpen(true);
     setWorkspaceModalRequestKey((k) => k + 1);
@@ -1192,6 +1405,17 @@ export function AppShell() {
         onToggleEventViewer={() => setEventViewerOpen((v) => !v)}
         onCreateEvent={() => openCreateModal()}
         canCreateEvent={Boolean(activeGroupId)}
+        notifications={notifications}
+        onSelectNotification={handleSelectNotification}
+        onMarkAllNotificationsRead={() => {
+          void handleMarkAllNotificationsRead();
+        }}
+        onClearNotifications={() => {
+          void handleClearNotifications();
+        }}
+        onDismissNotification={(notificationId) => {
+          void handleDismissNotification(notificationId);
+        }}
         conflictAlert={
           <ConflictToast
             open={conflictToastOpen && screenView === "calendar"}
@@ -1244,6 +1468,8 @@ export function AppShell() {
           onSelectGroup={setActiveGroupId}
           onCreateGroup={handleCreateGroup}
           onJoinGroup={handleJoinGroup}
+          otherMemberCount={otherMemberCount}
+          onNudgeGroupAvailability={handleNudgeGroupAvailability}
           showWorkspace={prefs.showWorkspaceInSidebar || groups.length === 0}
           weekStartsOnMonday={prefs.weekStartsOnMonday}
           onSelectDate={setViewDate}
@@ -1386,6 +1612,7 @@ export function AppShell() {
         eventRsvps={eventRsvps}
         groupProfilesById={groupProfilesById}
         onSetRsvp={handleSetEventRsvp}
+        onNudgeUnanswered={handleNudgeUnanswered}
         confirmDeleteOthers={prefs.confirmDeleteOthers}
         weekStartsOnMonday={prefs.weekStartsOnMonday}
       />

@@ -14,6 +14,7 @@ import type { Tag } from "@/lib/tags";
 import { addDays, addMonths, formatMonthYear, getMonthGrid, getWeekdayLabels } from "@/lib/calendar";
 import { draftOverlapsExisting } from "@/lib/scheduling";
 import { noteTitle, type Note } from "@/lib/notes";
+import { unansweredMemberIdsForEvent } from "@/lib/notifications";
 import {
   summarizeEventRsvps,
   type EventRsvp,
@@ -59,6 +60,8 @@ type CreateEventModalProps = {
   groupProfilesById?: ReadonlyMap<string, { display_name: string | null; avatar_url?: string | null }>;
   /** Immediate RSVP handler (pass null status to clear response) */
   onSetRsvp?: (eventIds: string[], status: RsvpStatus | null) => Promise<void>;
+  /** Sends an availability nudge to unanswered workspace members for this event */
+  onNudgeUnanswered?: (eventId: string) => Promise<number>;
   /** When true, deleting another user's event requires an extra confirmation */
   confirmDeleteOthers?: boolean;
   /** When true, DayPicker columns start on Monday instead of Sunday */
@@ -273,6 +276,7 @@ function CreateEventModalContent({
   eventRsvps = [],
   groupProfilesById,
   onSetRsvp,
+  onNudgeUnanswered,
   confirmDeleteOthers = true,
   weekStartsOnMonday = false,
 }: CreateEventModalProps) {
@@ -310,6 +314,8 @@ function CreateEventModalContent({
   const [repeatCount, setRepeatCount] = useState(4);
   const [applyRsvpToSeries, setApplyRsvpToSeries] = useState(false);
   const [rsvpBusy, setRsvpBusy] = useState(false);
+  const [nudgeBusy, setNudgeBusy] = useState(false);
+  const [nudgeStatus, setNudgeStatus] = useState<string | null>(null);
 
   const emptyProfiles = useMemo(
     () => new Map<string, { display_name: string | null; avatar_url?: string | null }>(),
@@ -327,6 +333,35 @@ function CreateEventModalContent({
         : null,
     [event, eventRsvps, groupProfilesById, emptyProfiles, currentUserId],
   );
+
+  const unansweredCount = useMemo(() => {
+    if (!event || !groupProfilesById) return 0;
+    return unansweredMemberIdsForEvent(
+      event.id,
+      [...groupProfilesById.keys()],
+      eventRsvps,
+      currentUserId,
+    ).length;
+  }, [event, groupProfilesById, eventRsvps, currentUserId]);
+
+  async function handleNudgeClick() {
+    if (!event || !onNudgeUnanswered) return;
+    setNudgeBusy(true);
+    setNudgeStatus(null);
+    setError(null);
+    try {
+      const sent = await onNudgeUnanswered(event.id);
+      setNudgeStatus(
+        sent > 0
+          ? `Nudged ${sent} member${sent === 1 ? "" : "s"}`
+          : "Already nudged recently (or notifications off)",
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send nudge.");
+    } finally {
+      setNudgeBusy(false);
+    }
+  }
 
   async function handleRsvpSelect(option: RsvpStatus) {
     if (!event || !onSetRsvp) return;
@@ -890,13 +925,34 @@ function CreateEventModalContent({
                     )}
 
                     <div
-                      className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium"
+                      className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-medium"
                       style={{ color: "var(--text-muted)" }}
                     >
-                      <span>Going · {rsvpSummary.counts.going}</span>
-                      <span>Maybe · {rsvpSummary.counts.maybe}</span>
-                      <span>Declined · {rsvpSummary.counts.declined}</span>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>Going · {rsvpSummary.counts.going}</span>
+                        <span>Maybe · {rsvpSummary.counts.maybe}</span>
+                        <span>Declined · {rsvpSummary.counts.declined}</span>
+                      </div>
+                      {onNudgeUnanswered && unansweredCount > 0 && (
+                        <button
+                          type="button"
+                          disabled={nudgeBusy || busy}
+                          onClick={() => void handleNudgeClick()}
+                          className="pressable cursor-pointer rounded-full px-2.5 py-0.5 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                          style={{
+                            background: "var(--accent-muted)",
+                            color: "var(--accent)",
+                          }}
+                        >
+                          {nudgeBusy ? "Sending…" : `Nudge unanswered (${unansweredCount})`}
+                        </button>
+                      )}
                     </div>
+                    {nudgeStatus && (
+                      <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
+                        {nudgeStatus}
+                      </p>
+                    )}
 
                     {rsvpSummary.respondents.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 pt-0.5">

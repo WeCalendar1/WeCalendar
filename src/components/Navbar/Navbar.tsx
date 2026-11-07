@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CalendarMode, ScreenView } from "@/lib/calendar";
+import {
+  countUnreadNotifications,
+  formatNotificationRelativeTime,
+  type AppNotification,
+} from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── View Mode Picker (Calendar only) ───────────────────────────────────────
@@ -667,6 +672,223 @@ function ProfileMenu({
   );
 }
 
+// ─── Notification Bell ────────────────────────────────────────────────────────
+
+function NotificationBell({
+  notifications = [],
+  onSelectNotification,
+  onMarkAllRead,
+  onClearAll,
+  onDismiss,
+}: {
+  notifications?: readonly AppNotification[];
+  onSelectNotification?: (notification: AppNotification) => void;
+  onMarkAllRead?: () => void;
+  onClearAll?: () => void;
+  onDismiss?: (notificationId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const unreadCount = countUnreadNotifications(notifications);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!popoverRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  function categoryBadgeColor(category: AppNotification["category"]): string {
+    switch (category) {
+      case "events":
+        return "var(--accent)";
+      case "invites":
+        return "#10b981";
+      case "lists":
+        return "#8b5cf6";
+      case "nudges":
+        return "#f59e0b";
+    }
+  }
+
+  return (
+    <div ref={popoverRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label={
+          unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"
+        }
+        aria-expanded={open}
+        title="Notifications"
+        className="pressable relative flex h-8 w-8 items-center justify-center"
+        style={{
+          borderRadius: "var(--radius-md)",
+          background: "var(--surface-2)",
+          boxShadow: "inset 0 0 0 0.5px var(--hairline)",
+          color: open ? "var(--accent)" : "var(--text-secondary)",
+        }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        {unreadCount > 0 && (
+          <span
+            className="pointer-events-none absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+            style={{ background: "var(--accent)" }}
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="dialog"
+            aria-label="Notifications"
+            className="absolute right-0 z-50 mt-2 w-80 overflow-hidden"
+            style={{
+              borderRadius: "var(--radius-lg)",
+              boxShadow: "var(--shadow-menu)",
+              transformOrigin: "top right",
+            }}
+            initial={{ opacity: 0, scale: 0.96, y: -4, filter: "blur(4px)" }}
+            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.96, y: -4, filter: "blur(4px)" }}
+            transition={{ type: "spring", bounce: 0, duration: 0.28 }}
+          >
+            <div className="glass-heavy absolute inset-0" style={{ borderRadius: "var(--radius-lg)" }} />
+            <div className="relative z-10 flex max-h-96 flex-col">
+              <div
+                className="flex items-center justify-between border-b px-3.5 py-2.5"
+                style={{ borderColor: "var(--separator)" }}
+              >
+                <span className="text-xs font-semibold" style={{ color: "var(--foreground)" }}>
+                  Notifications
+                </span>
+                <div className="flex items-center gap-2.5">
+                  {unreadCount > 0 && onMarkAllRead && (
+                    <button
+                      type="button"
+                      onClick={onMarkAllRead}
+                      className="cursor-pointer text-[11px] font-semibold"
+                      style={{ color: "var(--accent)" }}
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                  {notifications.length > 0 && onClearAll && (
+                    <button
+                      type="button"
+                      onClick={onClearAll}
+                      className="cursor-pointer text-[11px] font-medium"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {notifications.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+                    You&apos;re all caught up
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y overflow-y-auto" style={{ borderColor: "var(--separator)" }}>
+                  {notifications.map((n) => {
+                    const unread = !n.read_at;
+                    return (
+                      <div
+                        key={n.id}
+                        className="group flex items-start gap-2.5 px-3.5 py-2.5 transition-colors hover:bg-[var(--accent-muted)]"
+                        style={{
+                          background: unread
+                            ? "color-mix(in srgb, var(--accent) 6%, transparent)"
+                            : "transparent",
+                        }}
+                      >
+                        <span
+                          className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                          style={{
+                            background: unread ? categoryBadgeColor(n.category) : "transparent",
+                            border: unread ? "none" : "1px solid var(--border)",
+                          }}
+                          aria-hidden
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onSelectNotification?.(n);
+                            setOpen(false);
+                          }}
+                          className="flex min-w-0 flex-1 cursor-pointer flex-col gap-0.5 text-left"
+                        >
+                          <span
+                            className={`text-xs leading-snug ${unread ? "font-semibold" : "font-medium"}`}
+                            style={{ color: "var(--foreground)" }}
+                          >
+                            {n.title}
+                          </span>
+                          <span
+                            className="flex items-center gap-1.5 text-[11px]"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            {n.body && <span className="truncate">{n.body}</span>}
+                            {n.body && <span>·</span>}
+                            <span className="shrink-0">
+                              {formatNotificationRelativeTime(n.created_at)}
+                            </span>
+                          </span>
+                        </button>
+                        {onDismiss && (
+                          <button
+                            type="button"
+                            onClick={() => onDismiss(n.id)}
+                            aria-label="Dismiss notification"
+                            className="mt-0.5 shrink-0 cursor-pointer rounded p-0.5 opacity-60 transition-opacity hover:opacity-100"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                              <path d="M4 4l8 8M12 4l-8 8" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
 export type NavbarProps = {
@@ -694,6 +916,11 @@ export type NavbarProps = {
   onCreateEvent?: () => void;
   canCreateEvent?: boolean;
   conflictAlert?: ReactNode;
+  notifications?: readonly AppNotification[];
+  onSelectNotification?: (notification: AppNotification) => void;
+  onMarkAllNotificationsRead?: () => void;
+  onClearNotifications?: () => void;
+  onDismissNotification?: (notificationId: string) => void;
 };
 
 export function Navbar({
@@ -721,6 +948,11 @@ export function Navbar({
   onCreateEvent,
   canCreateEvent = false,
   conflictAlert,
+  notifications = [],
+  onSelectNotification,
+  onMarkAllNotificationsRead,
+  onClearNotifications,
+  onDismissNotification,
 }: NavbarProps) {
   return (
     <header
@@ -918,6 +1150,14 @@ export function Navbar({
         <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 
         <SnapshotButton label={monthLabel} />
+
+        <NotificationBell
+          notifications={notifications}
+          onSelectNotification={onSelectNotification}
+          onMarkAllRead={onMarkAllNotificationsRead}
+          onClearAll={onClearNotifications}
+          onDismiss={onDismissNotification}
+        />
 
         <ProfileMenu
           userInitials={userInitials}
