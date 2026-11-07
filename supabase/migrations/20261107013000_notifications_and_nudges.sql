@@ -384,8 +384,8 @@ begin
     v_list_name := new.name;
   else
     if tg_op = 'UPDATE'
-       and old.label is not distinct from new.label
-       and old.checked is not distinct from new.checked then
+       and old.content is not distinct from new.content
+       and old.is_checked is not distinct from new.is_checked then
       return new;
     end if;
     select group_id, name into v_group_id, v_list_name
@@ -438,7 +438,7 @@ create trigger lists_notify_insert
 
 drop trigger if exists list_items_notify_insert on public.list_items;
 create trigger list_items_notify_insert
-  after insert or update of label, checked on public.list_items
+  after insert or update of content, is_checked on public.list_items
   for each row execute function public.notify_on_list_activity();
 
 -- ---------------------------------------------------------------------------

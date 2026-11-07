@@ -110,8 +110,10 @@ describe("notifications domain helpers", () => {
     expect(sql).toMatch(/revoke\s+all\s+on\s+function\s+public\.send_availability_nudge/i);
     expect(sql).not.toMatch(/on\s+public\.notifications\s+for\s+insert/i);
     expect(sql).toMatch(
-      /after\s+insert\s+or\s+update\s+of\s+label\s*,\s*checked\s+on\s+public\.list_items/i,
+      /after\s+insert\s+or\s+update\s+of\s+content\s*,\s*is_checked\s+on\s+public\.list_items/i,
     );
+    expect(sql).toMatch(/old\.content\s+is\s+not\s+distinct\s+from\s+new\.content/i);
+    expect(sql).toMatch(/old\.is_checked\s+is\s+not\s+distinct\s+from\s+new\.is_checked/i);
   });
 
   it("resolves contextual notification navigation across active, sibling, and departed workspaces", () => {

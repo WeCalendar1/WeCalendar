@@ -56,12 +56,18 @@ describe("places", () => {
     expect(filterPlaces(places, "all", new Set()).map((p) => p.id)).toEqual(["cafe", "hike"]);
   });
 
-  it("enforces REPLICA IDENTITY FULL and same-group place_id validation in places migration", () => {
-    const sql = readFileSync(
+  it("enforces REPLICA IDENTITY FULL and same-group place_id validation in a dedicated post-places migration", () => {
+    const basePlacesSql = readFileSync(
       resolve(process.cwd(), "supabase/migrations/20261107200000_places.sql"),
       "utf8",
     );
-    expect(sql).toMatch(/alter\s+table\s+public\.places\s+replica\s+identity\s+full\s*;/i);
-    expect(sql).toMatch(/enforce_place_same_group/i);
+    expect(basePlacesSql).not.toMatch(/enforce_place_same_group/i);
+
+    const hardeningSql = readFileSync(
+      resolve(process.cwd(), "supabase/migrations/20261107210000_places_hardening.sql"),
+      "utf8",
+    );
+    expect(hardeningSql).toMatch(/alter\s+table\s+public\.places\s+replica\s+identity\s+full\s*;/i);
+    expect(hardeningSql).toMatch(/enforce_place_same_group/i);
   });
 });
