@@ -114,32 +114,66 @@ describe("notifications domain helpers", () => {
     expect(
       resolveNotificationNavigation(
         { group_id: "g2", event_id: "ev-9", note_id: null },
-        { activeGroupId: "g1", memberGroupIds: ["g1", "g2"] },
+        { activeGroupId: "g1", memberGroupIds: ["g1", "g2"], loadedEventIds: ["ev-1"] },
       ),
     ).toEqual({
       switchToGroupId: "g2",
       screenView: "calendar",
       eventId: "ev-9",
       noteId: null,
+      deferEventOpenForGroupId: "g2",
+      reloadEventsForGroupId: null,
     });
 
     expect(
       resolveNotificationNavigation(
         { group_id: "g1", event_id: null, note_id: "note-4" },
-        { activeGroupId: "g1", memberGroupIds: ["g1", "g2"] },
+        { activeGroupId: "g1", memberGroupIds: ["g1", "g2"], loadedEventIds: ["ev-1"] },
       ),
     ).toEqual({
       switchToGroupId: null,
       screenView: "notes",
       eventId: null,
       noteId: "note-4",
+      deferEventOpenForGroupId: null,
+      reloadEventsForGroupId: null,
     });
 
     expect(
       resolveNotificationNavigation(
         { group_id: "g-left", event_id: "ev-1", note_id: null },
-        { activeGroupId: "g1", memberGroupIds: ["g1"] },
+        { activeGroupId: "g1", memberGroupIds: ["g1"], loadedEventIds: ["ev-1"] },
       ),
     ).toBeNull();
+  });
+
+  it("defers opening and triggers event reload when clicking a brand-new event notification in the active workspace before events refresh", () => {
+    expect(
+      resolveNotificationNavigation(
+        { group_id: "g1", event_id: "ev-just-created", note_id: null },
+        { activeGroupId: "g1", memberGroupIds: ["g1"], loadedEventIds: ["ev-existing"] },
+      ),
+    ).toEqual({
+      switchToGroupId: null,
+      screenView: "calendar",
+      eventId: "ev-just-created",
+      noteId: null,
+      deferEventOpenForGroupId: "g1",
+      reloadEventsForGroupId: "g1",
+    });
+
+    expect(
+      resolveNotificationNavigation(
+        { group_id: "g1", event_id: "ev-existing", note_id: null },
+        { activeGroupId: "g1", memberGroupIds: ["g1"], loadedEventIds: ["ev-existing"] },
+      ),
+    ).toEqual({
+      switchToGroupId: null,
+      screenView: "calendar",
+      eventId: "ev-existing",
+      noteId: null,
+      deferEventOpenForGroupId: null,
+      reloadEventsForGroupId: null,
+    });
   });
 });

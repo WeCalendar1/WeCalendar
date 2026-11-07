@@ -989,6 +989,7 @@ export function AppShell() {
     const nav = resolveNotificationNavigation(notification, {
       activeGroupId,
       memberGroupIds: groups.map((g) => g.id),
+      loadedEventIds: eventsWithRsvp.map((e) => e.id),
     });
     if (!nav) return;
 
@@ -1003,16 +1004,26 @@ export function AppShell() {
       setNotesFilter({ type: "all" });
       setNotesSearchQuery("");
       setSelectedNoteId(nav.noteId);
+      if (!nav.switchToGroupId && activeGroupId && !notes.some((n) => n.id === nav.noteId)) {
+        void loadNotes(activeGroupId);
+      }
       return;
     }
 
     setScreenView("calendar");
     if (nav.eventId) {
-      if (nav.switchToGroupId) {
+      if (nav.deferEventOpenForGroupId) {
         pendingOpenEventRef.current = {
-          groupId: nav.switchToGroupId,
+          groupId: nav.deferEventOpenForGroupId,
           eventId: nav.eventId,
         };
+        if (nav.reloadEventsForGroupId) {
+          void Promise.all([
+            loadEvents(nav.reloadEventsForGroupId),
+            loadEventTags(nav.reloadEventsForGroupId),
+            loadEventRsvps(nav.reloadEventsForGroupId),
+          ]);
+        }
       } else {
         const matched = eventsWithRsvp.find((event) => event.id === nav.eventId) ?? null;
         if (matched) {

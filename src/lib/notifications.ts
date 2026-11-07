@@ -123,6 +123,8 @@ export type NotificationNavigationTarget = {
   screenView: "calendar" | "notes";
   eventId: string | null;
   noteId: string | null;
+  deferEventOpenForGroupId: string | null;
+  reloadEventsForGroupId: string | null;
 };
 
 export function resolveNotificationNavigation(
@@ -130,6 +132,7 @@ export function resolveNotificationNavigation(
   context: {
     activeGroupId: string | null;
     memberGroupIds: readonly string[];
+    loadedEventIds?: readonly string[];
   },
 ): NotificationNavigationTarget | null {
   const targetGroupId = notification.group_id;
@@ -146,13 +149,35 @@ export function resolveNotificationNavigation(
       screenView: "notes",
       eventId: null,
       noteId: notification.note_id,
+      deferEventOpenForGroupId: null,
+      reloadEventsForGroupId: null,
     };
+  }
+
+  const eventId = notification.event_id ?? null;
+  const effectiveGroupId = targetGroupId ?? context.activeGroupId;
+  let deferEventOpenForGroupId: string | null = null;
+  let reloadEventsForGroupId: string | null = null;
+
+  if (eventId) {
+    if (switchToGroupId) {
+      deferEventOpenForGroupId = switchToGroupId;
+    } else if (
+      effectiveGroupId &&
+      context.loadedEventIds &&
+      !context.loadedEventIds.includes(eventId)
+    ) {
+      deferEventOpenForGroupId = effectiveGroupId;
+      reloadEventsForGroupId = effectiveGroupId;
+    }
   }
 
   return {
     switchToGroupId,
     screenView: "calendar",
-    eventId: notification.event_id ?? null,
+    eventId,
     noteId: null,
+    deferEventOpenForGroupId,
+    reloadEventsForGroupId,
   };
 }
