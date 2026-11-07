@@ -8,6 +8,7 @@ import {
   isMissingColumnOrRelationError,
   normalizeNotificationPrefs,
   readLocalNotificationPrefs,
+  resolveNotificationNavigation,
   unansweredMemberIdsForEvent,
   writeLocalNotificationPrefs,
 } from "./notifications";
@@ -107,5 +108,38 @@ describe("notifications domain helpers", () => {
     expect(sql).toMatch(/alter\s+table\s+public\.notifications\s+replica\s+identity\s+full\s*;/i);
     expect(sql).toMatch(/revoke\s+all\s+on\s+function\s+public\.send_availability_nudge/i);
     expect(sql).not.toMatch(/on\s+public\.notifications\s+for\s+insert/i);
+  });
+
+  it("resolves contextual notification navigation across active, sibling, and departed workspaces", () => {
+    expect(
+      resolveNotificationNavigation(
+        { group_id: "g2", event_id: "ev-9", note_id: null },
+        { activeGroupId: "g1", memberGroupIds: ["g1", "g2"] },
+      ),
+    ).toEqual({
+      switchToGroupId: "g2",
+      screenView: "calendar",
+      eventId: "ev-9",
+      noteId: null,
+    });
+
+    expect(
+      resolveNotificationNavigation(
+        { group_id: "g1", event_id: null, note_id: "note-4" },
+        { activeGroupId: "g1", memberGroupIds: ["g1", "g2"] },
+      ),
+    ).toEqual({
+      switchToGroupId: null,
+      screenView: "notes",
+      eventId: null,
+      noteId: "note-4",
+    });
+
+    expect(
+      resolveNotificationNavigation(
+        { group_id: "g-left", event_id: "ev-1", note_id: null },
+        { activeGroupId: "g1", memberGroupIds: ["g1"] },
+      ),
+    ).toBeNull();
   });
 });

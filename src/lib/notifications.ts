@@ -117,3 +117,42 @@ export function unansweredMemberIdsForEvent(
   }
   return uniqueUnanswered;
 }
+
+export type NotificationNavigationTarget = {
+  switchToGroupId: string | null;
+  screenView: "calendar" | "notes";
+  eventId: string | null;
+  noteId: string | null;
+};
+
+export function resolveNotificationNavigation(
+  notification: Pick<AppNotification, "group_id" | "event_id" | "note_id">,
+  context: {
+    activeGroupId: string | null;
+    memberGroupIds: readonly string[];
+  },
+): NotificationNavigationTarget | null {
+  const targetGroupId = notification.group_id;
+  if (targetGroupId && !context.memberGroupIds.includes(targetGroupId)) {
+    return null;
+  }
+
+  const switchToGroupId =
+    targetGroupId && targetGroupId !== context.activeGroupId ? targetGroupId : null;
+
+  if (notification.note_id) {
+    return {
+      switchToGroupId,
+      screenView: "notes",
+      eventId: null,
+      noteId: notification.note_id,
+    };
+  }
+
+  return {
+    switchToGroupId,
+    screenView: "calendar",
+    eventId: notification.event_id ?? null,
+    noteId: null,
+  };
+}

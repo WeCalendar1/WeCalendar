@@ -605,6 +605,7 @@ export default function ProfilePage() {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [otherMemberCount, setOtherMemberCount] = useState(0);
   const { prefs, setShowWorkspaceInSidebar } = useCalendarPrefs();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -725,6 +726,33 @@ export default function ProfilePage() {
       mounted = false;
     };
   }, [supabase]);
+
+  useEffect(() => {
+    if (!activeGroupId || !userId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOtherMemberCount(0);
+      return;
+    }
+    let active = true;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("group_members")
+        .select("user_id")
+        .eq("group_id", activeGroupId);
+      if (!active) return;
+      if (error) {
+        setOtherMemberCount(0);
+        return;
+      }
+      const others = new Set(
+        (data ?? []).map((row) => row.user_id).filter((id) => id !== userId),
+      );
+      setOtherMemberCount(others.size);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [activeGroupId, userId, supabase]);
 
   // Avatar upload handler
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1044,6 +1072,15 @@ export default function ProfilePage() {
   function handleSelectGroup(groupId: string) {
     setActiveGroupId(groupId);
     window.localStorage.setItem(ACTIVE_GROUP_KEY, groupId);
+  }
+
+  async function handleNudgeGroupAvailability(): Promise<number> {
+    if (!activeGroupId) throw new Error("Select a shared calendar first.");
+    const { data, error } = await supabase.rpc("send_availability_nudge", {
+      p_group_id: activeGroupId,
+    });
+    if (error) throw new Error(error.message);
+    return data ?? 0;
   }
 
   const initials = displayName
@@ -1498,6 +1535,8 @@ export default function ProfilePage() {
             onSelectGroup={handleSelectGroup}
             onCreateGroup={handleCreateGroup}
             onJoinGroup={handleJoinGroup}
+            otherMemberCount={otherMemberCount}
+            onNudgeGroupAvailability={handleNudgeGroupAvailability}
           />
           <SettingRow
             id="pref-workspace-in-sidebar"
