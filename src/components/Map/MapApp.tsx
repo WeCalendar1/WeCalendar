@@ -448,8 +448,11 @@ function MapCanvas({
   const [mapReady, setMapReady] = useState(false);
   const onSelectRef = useRef(onSelectPlace);
   const onClickRef = useRef(onMapClick);
-  onSelectRef.current = onSelectPlace;
-  onClickRef.current = onMapClick;
+
+  useEffect(() => {
+    onSelectRef.current = onSelectPlace;
+    onClickRef.current = onMapClick;
+  }, [onSelectPlace, onMapClick]);
 
   useEffect(() => {
     const el = hostRef.current;
