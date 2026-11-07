@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_NOTIFICATION_PREFS,
+  consumePendingOpenTarget,
   countUnreadNotifications,
   formatNotificationRelativeTime,
   isMissingColumnOrRelationError,
@@ -108,6 +109,9 @@ describe("notifications domain helpers", () => {
     expect(sql).toMatch(/alter\s+table\s+public\.notifications\s+replica\s+identity\s+full\s*;/i);
     expect(sql).toMatch(/revoke\s+all\s+on\s+function\s+public\.send_availability_nudge/i);
     expect(sql).not.toMatch(/on\s+public\.notifications\s+for\s+insert/i);
+    expect(sql).toMatch(
+      /after\s+insert\s+or\s+update\s+of\s+label\s*,\s*checked\s+on\s+public\.list_items/i,
+    );
   });
 
   it("resolves contextual notification navigation across active, sibling, and departed workspaces", () => {
@@ -123,12 +127,19 @@ describe("notifications domain helpers", () => {
       noteId: null,
       deferEventOpenForGroupId: "g2",
       reloadEventsForGroupId: null,
+      deferNoteOpenForGroupId: null,
+      reloadNotesForGroupId: null,
     });
 
     expect(
       resolveNotificationNavigation(
         { group_id: "g1", event_id: null, note_id: "note-4" },
-        { activeGroupId: "g1", memberGroupIds: ["g1", "g2"], loadedEventIds: ["ev-1"] },
+        {
+          activeGroupId: "g1",
+          memberGroupIds: ["g1", "g2"],
+          loadedEventIds: ["ev-1"],
+          loadedNoteIds: ["note-4"],
+        },
       ),
     ).toEqual({
       switchToGroupId: null,
@@ -137,6 +148,28 @@ describe("notifications domain helpers", () => {
       noteId: "note-4",
       deferEventOpenForGroupId: null,
       reloadEventsForGroupId: null,
+      deferNoteOpenForGroupId: null,
+      reloadNotesForGroupId: null,
+    });
+
+    expect(
+      resolveNotificationNavigation(
+        { group_id: "g2", event_id: null, note_id: "note-remote" },
+        {
+          activeGroupId: "g1",
+          memberGroupIds: ["g1", "g2"],
+          loadedNoteIds: ["note-4"],
+        },
+      ),
+    ).toEqual({
+      switchToGroupId: "g2",
+      screenView: "notes",
+      eventId: null,
+      noteId: "note-remote",
+      deferEventOpenForGroupId: null,
+      reloadEventsForGroupId: null,
+      deferNoteOpenForGroupId: "g2",
+      reloadNotesForGroupId: null,
     });
 
     expect(
@@ -147,7 +180,7 @@ describe("notifications domain helpers", () => {
     ).toBeNull();
   });
 
-  it("defers opening and triggers event reload when clicking a brand-new event notification in the active workspace before events refresh", () => {
+  it("defers opening and triggers reload when clicking a brand-new event or note notification in the active workspace before rows refresh", () => {
     expect(
       resolveNotificationNavigation(
         { group_id: "g1", event_id: "ev-just-created", note_id: null },
@@ -160,6 +193,24 @@ describe("notifications domain helpers", () => {
       noteId: null,
       deferEventOpenForGroupId: "g1",
       reloadEventsForGroupId: "g1",
+      deferNoteOpenForGroupId: null,
+      reloadNotesForGroupId: null,
+    });
+
+    expect(
+      resolveNotificationNavigation(
+        { group_id: "g1", event_id: null, note_id: "note-just-created" },
+        { activeGroupId: "g1", memberGroupIds: ["g1"], loadedNoteIds: ["note-existing"] },
+      ),
+    ).toEqual({
+      switchToGroupId: null,
+      screenView: "notes",
+      eventId: null,
+      noteId: "note-just-created",
+      deferEventOpenForGroupId: null,
+      reloadEventsForGroupId: null,
+      deferNoteOpenForGroupId: "g1",
+      reloadNotesForGroupId: "g1",
     });
 
     expect(
@@ -174,6 +225,32 @@ describe("notifications domain helpers", () => {
       noteId: null,
       deferEventOpenForGroupId: null,
       reloadEventsForGroupId: null,
+      deferNoteOpenForGroupId: null,
+      reloadNotesForGroupId: null,
+    });
+  });
+
+  it("preserves pendingOpenTarget across stale fetches until the target row appears", () => {
+    const pending = { groupId: "g1", targetId: "ev-new" };
+
+    // Stale fetch for the same group where ev-new isn't in the payload yet: keep pending!
+    expect(consumePendingOpenTarget(pending, "g1", [{ id: "ev-old" }])).toEqual({
+      matched: null,
+      nextPending: pending,
+    });
+
+    // Fetch for a different group: keep pending!
+    expect(consumePendingOpenTarget(pending, "g2", [{ id: "ev-new" }])).toEqual({
+      matched: null,
+      nextPending: pending,
+    });
+
+    // Subsequent fetch containing ev-new: match and clear pending!
+    expect(
+      consumePendingOpenTarget(pending, "g1", [{ id: "ev-old" }, { id: "ev-new" }]),
+    ).toEqual({
+      matched: { id: "ev-new" },
+      nextPending: null,
     });
   });
 });

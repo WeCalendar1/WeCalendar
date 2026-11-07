@@ -30,9 +30,11 @@ import {
   type CalendarEvent,
 } from "@/lib/events";
 import {
+  consumePendingOpenTarget,
   isMissingColumnOrRelationError,
   resolveNotificationNavigation,
   type AppNotification,
+  type PendingOpenTarget,
 } from "@/lib/notifications";
 import {
   filterConflictCandidateEvents,
@@ -114,7 +116,8 @@ export function AppShell() {
 
   const supabase = useMemo(() => createClient(), []);
   const selectedNoteIdRef = useRef<string | null>(null);
-  const pendingOpenEventRef = useRef<{ groupId: string; eventId: string } | null>(null);
+  const pendingOpenEventRef = useRef<PendingOpenTarget | null>(null);
+  const pendingOpenNoteRef = useRef<PendingOpenTarget | null>(null);
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
 
   useEffect(() => {
@@ -207,16 +210,17 @@ export function AppShell() {
         creator: event.created_by ? (creatorsById.get(event.created_by) ?? null) : null,
       }));
       setEvents(nextEvents);
-      const pendingOpen = pendingOpenEventRef.current;
-      if (pendingOpen && pendingOpen.groupId === groupId) {
-        pendingOpenEventRef.current = null;
-        const target = nextEvents.find((event) => event.id === pendingOpen.eventId) ?? null;
-        if (target) {
-          setViewDate(startOfDay(new Date(target.starts_at)));
-          setSelectedEvent(target);
-          setModalOpen(true);
-          return;
-        }
+      const { matched: pendingTarget, nextPending } = consumePendingOpenTarget(
+        pendingOpenEventRef.current,
+        groupId,
+        nextEvents,
+      );
+      pendingOpenEventRef.current = nextPending;
+      if (pendingTarget) {
+        setViewDate(startOfDay(new Date(pendingTarget.starts_at)));
+        setSelectedEvent(pendingTarget);
+        setModalOpen(true);
+        return;
       }
       setSelectedEvent((current) => {
         if (!current) return current;
@@ -375,8 +379,20 @@ export function AppShell() {
         console.error("loadNotes", notesResult.error);
       } else {
         const incoming = notesResult.data ?? [];
+        const { matched: pendingNote, nextPending } = consumePendingOpenTarget(
+          pendingOpenNoteRef.current,
+          groupId,
+          incoming.filter((note) => !note.deleted_at),
+        );
+        pendingOpenNoteRef.current = nextPending;
+        if (pendingNote) {
+          setScreenView("notes");
+          setNotesFilter({ type: "all" });
+          setNotesSearchQuery("");
+          setSelectedNoteId(pendingNote.id);
+        }
         setNotes((prev) => {
-          const activeId = selectedNoteIdRef.current;
+          const activeId = pendingNote?.id ?? selectedNoteIdRef.current;
           if (!activeId) return incoming;
           const local = prev.find((note) => note.id === activeId);
           if (!local) return incoming;
@@ -473,6 +489,7 @@ export function AppShell() {
       setNotifications([]);
       setPlaces([]);
       pendingOpenEventRef.current = null;
+      pendingOpenNoteRef.current = null;
       setUserAvatarUrl(null);
       setProfileDisplayName(null);
       return;
@@ -1024,6 +1041,7 @@ export function AppShell() {
       activeGroupId,
       memberGroupIds: groups.map((g) => g.id),
       loadedEventIds: eventsWithRsvp.map((e) => e.id),
+      loadedNoteIds: notes.filter((n) => !n.deleted_at).map((n) => n.id),
     });
     if (!nav) return;
 
@@ -1038,8 +1056,14 @@ export function AppShell() {
       setNotesFilter({ type: "all" });
       setNotesSearchQuery("");
       setSelectedNoteId(nav.noteId);
-      if (!nav.switchToGroupId && activeGroupId && !notes.some((n) => n.id === nav.noteId)) {
-        void loadNotes(activeGroupId);
+      if (nav.deferNoteOpenForGroupId) {
+        pendingOpenNoteRef.current = {
+          groupId: nav.deferNoteOpenForGroupId,
+          targetId: nav.noteId,
+        };
+        if (nav.reloadNotesForGroupId) {
+          void loadNotes(nav.reloadNotesForGroupId);
+        }
       }
       return;
     }
@@ -1049,7 +1073,7 @@ export function AppShell() {
       if (nav.deferEventOpenForGroupId) {
         pendingOpenEventRef.current = {
           groupId: nav.deferEventOpenForGroupId,
-          eventId: nav.eventId,
+          targetId: nav.eventId,
         };
         if (nav.reloadEventsForGroupId) {
           void Promise.all([

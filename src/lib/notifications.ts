@@ -125,6 +125,8 @@ export type NotificationNavigationTarget = {
   noteId: string | null;
   deferEventOpenForGroupId: string | null;
   reloadEventsForGroupId: string | null;
+  deferNoteOpenForGroupId: string | null;
+  reloadNotesForGroupId: string | null;
 };
 
 export function resolveNotificationNavigation(
@@ -133,6 +135,7 @@ export function resolveNotificationNavigation(
     activeGroupId: string | null;
     memberGroupIds: readonly string[];
     loadedEventIds?: readonly string[];
+    loadedNoteIds?: readonly string[];
   },
 ): NotificationNavigationTarget | null {
   const targetGroupId = notification.group_id;
@@ -142,8 +145,23 @@ export function resolveNotificationNavigation(
 
   const switchToGroupId =
     targetGroupId && targetGroupId !== context.activeGroupId ? targetGroupId : null;
+  const effectiveGroupId = targetGroupId ?? context.activeGroupId;
 
   if (notification.note_id) {
+    let deferNoteOpenForGroupId: string | null = null;
+    let reloadNotesForGroupId: string | null = null;
+
+    if (switchToGroupId) {
+      deferNoteOpenForGroupId = switchToGroupId;
+    } else if (
+      effectiveGroupId &&
+      context.loadedNoteIds &&
+      !context.loadedNoteIds.includes(notification.note_id)
+    ) {
+      deferNoteOpenForGroupId = effectiveGroupId;
+      reloadNotesForGroupId = effectiveGroupId;
+    }
+
     return {
       switchToGroupId,
       screenView: "notes",
@@ -151,11 +169,12 @@ export function resolveNotificationNavigation(
       noteId: notification.note_id,
       deferEventOpenForGroupId: null,
       reloadEventsForGroupId: null,
+      deferNoteOpenForGroupId,
+      reloadNotesForGroupId,
     };
   }
 
   const eventId = notification.event_id ?? null;
-  const effectiveGroupId = targetGroupId ?? context.activeGroupId;
   let deferEventOpenForGroupId: string | null = null;
   let reloadEventsForGroupId: string | null = null;
 
@@ -179,5 +198,30 @@ export function resolveNotificationNavigation(
     noteId: null,
     deferEventOpenForGroupId,
     reloadEventsForGroupId,
+    deferNoteOpenForGroupId: null,
+    reloadNotesForGroupId: null,
   };
+}
+
+export type PendingOpenTarget = {
+  groupId: string;
+  targetId: string;
+};
+
+export function consumePendingOpenTarget<T extends { id: string }>(
+  pending: PendingOpenTarget | null,
+  groupId: string,
+  rows: readonly T[],
+): {
+  matched: T | null;
+  nextPending: PendingOpenTarget | null;
+} {
+  if (!pending || pending.groupId !== groupId) {
+    return { matched: null, nextPending: pending };
+  }
+  const matched = rows.find((row) => row.id === pending.targetId) ?? null;
+  if (!matched) {
+    return { matched: null, nextPending: pending };
+  }
+  return { matched, nextPending: null };
 }

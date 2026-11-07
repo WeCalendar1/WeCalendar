@@ -377,9 +377,17 @@ begin
   end if;
 
   if tg_table_name = 'lists' then
+    if tg_op = 'UPDATE' and old.name is not distinct from new.name then
+      return new;
+    end if;
     v_group_id := new.group_id;
     v_list_name := new.name;
   else
+    if tg_op = 'UPDATE'
+       and old.label is not distinct from new.label
+       and old.checked is not distinct from new.checked then
+      return new;
+    end if;
     select group_id, name into v_group_id, v_list_name
     from public.lists
     where id = new.list_id;
@@ -425,12 +433,12 @@ revoke all on function public.notify_on_list_activity() from public, anon;
 
 drop trigger if exists lists_notify_insert on public.lists;
 create trigger lists_notify_insert
-  after insert on public.lists
+  after insert or update of name on public.lists
   for each row execute function public.notify_on_list_activity();
 
 drop trigger if exists list_items_notify_insert on public.list_items;
 create trigger list_items_notify_insert
-  after insert on public.list_items
+  after insert or update of label, checked on public.list_items
   for each row execute function public.notify_on_list_activity();
 
 -- ---------------------------------------------------------------------------
@@ -642,3 +650,4 @@ $$;
 alter function public.leave_group(uuid) owner to postgres;
 revoke all on function public.leave_group(uuid) from public, anon;
 grant execute on function public.leave_group(uuid) to authenticated;
+
