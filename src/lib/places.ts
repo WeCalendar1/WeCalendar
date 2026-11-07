@@ -26,11 +26,13 @@ export function eventsForPlace<T extends { place_id?: string | null }>(
   return events.filter((event) => event.place_id === placeId);
 }
 
-export function notesForPlace<T extends { place_id?: string | null }>(
+export function notesForPlace<
+  T extends { place_id?: string | null; deleted_at?: string | null },
+>(
   notes: readonly T[],
   placeId: string,
 ): T[] {
-  return notes.filter((note) => note.place_id === placeId);
+  return notes.filter((note) => note.place_id === placeId && !note.deleted_at);
 }
 
 export function filterPlaces(

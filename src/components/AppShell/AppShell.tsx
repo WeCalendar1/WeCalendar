@@ -1425,7 +1425,7 @@ export function AppShell() {
   }
 
   const eventLinkedNotes = selectedEvent
-    ? notes.filter((n) => n.event_id === selectedEvent.id)
+    ? notes.filter((n) => n.event_id === selectedEvent.id && !n.deleted_at)
     : [];
 
   const userInitials = getInitials(

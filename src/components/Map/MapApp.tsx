@@ -67,6 +67,15 @@ export function MapApp({
   const [hits, setHits] = useState<{ label: string; lat: number; lng: number }[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const searchSeqRef = useRef(0);
+  const [activeGroupKey, setActiveGroupKey] = useState<string | null>(groupId);
+
+  if (groupId !== activeGroupKey) {
+    setActiveGroupKey(groupId);
+    setSelectedId(null);
+    setDraft(null);
+    setError(null);
+  }
 
   const eventPlaceIds = useMemo(
     () => new Set(events.map((e) => e.place_id).filter((id): id is string => Boolean(id))),
@@ -104,6 +113,7 @@ export function MapApp({
   }
 
   async function searchPlaces(query: string) {
+    const seq = ++searchSeqRef.current;
     const q = query.trim();
     if (q.length < 2) {
       setHits([]);
@@ -113,13 +123,14 @@ export function MapApp({
       const res = await fetch(
         `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5`,
       );
-      if (!res.ok) return;
+      if (!res.ok || seq !== searchSeqRef.current) return;
       const json = (await res.json()) as {
         features?: {
           geometry: { coordinates: [number, number] };
           properties: { name?: string; street?: string; city?: string; country?: string };
         }[];
       };
+      if (seq !== searchSeqRef.current) return;
       setHits(
         (json.features ?? []).map((f) => {
           const [lng, lat] = f.geometry.coordinates;
@@ -130,7 +141,9 @@ export function MapApp({
         }),
       );
     } catch {
-      setHits([]);
+      if (seq === searchSeqRef.current) {
+        setHits([]);
+      }
     }
   }
 
@@ -248,6 +261,7 @@ export function MapApp({
 
         <div className="relative min-h-0 flex-1">
           <MapCanvas
+            groupId={groupId}
             places={visible}
             selectedId={selectedId}
             draft={draft}
@@ -426,6 +440,7 @@ export function MapApp({
 }
 
 function MapCanvas({
+  groupId,
   places,
   selectedId,
   draft,
@@ -433,6 +448,7 @@ function MapCanvas({
   onMapClick,
   flyTo,
 }: {
+  groupId: string | null;
   places: Place[];
   selectedId: string | null;
   draft: DraftPin | null;
@@ -445,9 +461,17 @@ function MapCanvas({
   const layerRef = useRef<import("leaflet").LayerGroup | null>(null);
   const didFitRef = useRef(false);
   const didLocateRef = useRef(false);
+  const lastGroupIdRef = useRef<string | null>(groupId);
   const [mapReady, setMapReady] = useState(false);
   const onSelectRef = useRef(onSelectPlace);
   const onClickRef = useRef(onMapClick);
+
+  useEffect(() => {
+    if (lastGroupIdRef.current !== groupId) {
+      lastGroupIdRef.current = groupId;
+      didFitRef.current = false;
+    }
+  }, [groupId]);
 
   useEffect(() => {
     onSelectRef.current = onSelectPlace;
