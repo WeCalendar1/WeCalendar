@@ -8,8 +8,8 @@ import { ConflictToast } from "@/components/ConflictToast";
 import { CreateEventModal, type EventDraft } from "@/components/CreateEventModal";
 import { EventViewerPanel } from "@/components/EventViewerPanel";
 import { Navbar } from "@/components/Navbar";
+import { MapApp } from "@/components/Map/MapApp";
 import { NotesApp, type NoteDraftContext } from "@/components/Notes";
-import { RightPanel } from "@/components/RightPanel";
 import { PanelResizeHandle, usePanelWidth } from "@/components/PanelResizeHandle";
 import { Sidebar } from "@/components/Sidebar";
 import { getInitials } from "@/lib/auth";
@@ -49,6 +49,7 @@ import { colorForEvent, tagIdsForEvent, type EventTag, type Tag } from "@/lib/ta
 import { createClient } from "@/lib/supabase/client";
 import type { Tables, Json } from "@/types/database";
 import { useCalendarPrefs } from "@/lib/calendarPrefs";
+import type { Place, PlaceKind } from "@/lib/places";
 
 type Group = Tables<"groups">;
 type EventCreator = NonNullable<CalendarEvent["creator"]>;
@@ -90,6 +91,7 @@ export function AppShell() {
   const [eventTags, setEventTags] = useState<EventTag[]>([]);
   const [noteFolders, setNoteFolders] = useState<NoteFolder[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [places, setPlaces] = useState<Place[]>([]);
   const [notesSearchQuery, setNotesSearchQuery] = useState("");
   const [notesFilter, setNotesFilter] = useState<NotesFilter>({ type: "all" });
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
@@ -97,6 +99,7 @@ export function AppShell() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [modalDefaultDate, setModalDefaultDate] = useState<Date>(() => startOfDay(new Date()));
+  const [modalDefaultPlaceId, setModalDefaultPlaceId] = useState<string | null>(null);
   const [dismissedConflictFingerprint, setDismissedConflictFingerprint] = useState<string | null>(
     null,
   );
@@ -112,7 +115,6 @@ export function AppShell() {
   const supabase = useMemo(() => createClient(), []);
   const selectedNoteIdRef = useRef<string | null>(null);
   const pendingOpenEventRef = useRef<{ groupId: string; eventId: string } | null>(null);
-  const showRightPanel = screenView === "map";
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
 
   useEffect(() => {
@@ -414,6 +416,27 @@ export function AppShell() {
     [supabase],
   );
 
+  const loadPlaces = useCallback(
+    async (groupId: string | null) => {
+      if (!groupId) {
+        setPlaces([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("places")
+        .select("*")
+        .eq("group_id", groupId)
+        .order("name", { ascending: true });
+      if (error) {
+        console.warn("loadPlaces", error);
+        setPlaces([]);
+        return;
+      }
+      setPlaces(data ?? []);
+    },
+    [supabase],
+  );
+
   // ─── Auth effects ─────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -448,6 +471,7 @@ export function AppShell() {
       setNoteFolders([]);
       setNotes([]);
       setNotifications([]);
+      setPlaces([]);
       pendingOpenEventRef.current = null;
       setUserAvatarUrl(null);
       setProfileDisplayName(null);
@@ -509,6 +533,7 @@ export function AppShell() {
     void loadEventRsvps(activeGroupId);
     void loadGroupProfiles(activeGroupId);
     void loadNotes(activeGroupId);
+    void loadPlaces(activeGroupId);
   }, [
     activeGroupId,
     loadEvents,
@@ -517,6 +542,7 @@ export function AppShell() {
     loadEventRsvps,
     loadGroupProfiles,
     loadNotes,
+    loadPlaces,
   ]);
 
   // ─── Realtime subscriptions ───────────────────────────────────────────────
@@ -561,6 +587,11 @@ export function AppShell() {
         { event: "*", schema: "public", table: "notes", filter: `group_id=eq.${activeGroupId}` },
         () => { void loadNotes(activeGroupId); },
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "places", filter: `group_id=eq.${activeGroupId}` },
+        () => { void loadPlaces(activeGroupId); },
+      )
       .subscribe();
 
     return () => { void supabase.removeChannel(channel); };
@@ -572,6 +603,7 @@ export function AppShell() {
     loadEventRsvps,
     loadGroupProfiles,
     loadNotes,
+    loadPlaces,
     supabase,
   ]);
 
@@ -716,6 +748,7 @@ export function AppShell() {
         starts_at: input.startsAt.toISOString(),
         ends_at: input.endsAt.toISOString(),
         created_by: user.id,
+        place_id: input.placeId ?? null,
       })
       .select()
       .single();
@@ -773,6 +806,7 @@ export function AppShell() {
         description: input.description || null,
         starts_at: input.startsAt.toISOString(),
         ends_at: input.endsAt.toISOString(),
+        place_id: input.placeId ?? null,
       })
       .eq("id", eventId);
 
@@ -1059,9 +1093,43 @@ export function AppShell() {
     return data ?? 0;
   }
 
-  function openCreateModal(date?: Date) {
+  async function handleCreatePlace(input: {
+    name: string;
+    address: string | null;
+    lat: number;
+    lng: number;
+    kind: PlaceKind;
+  }) {
+    if (!user || !activeGroupId) throw new Error("Join or create a shared workspace first.");
+    const { error } = await supabase.from("places").insert({
+      group_id: activeGroupId,
+      name: input.name,
+      address: input.address,
+      lat: input.lat,
+      lng: input.lng,
+      kind: input.kind,
+      created_by: user.id,
+    });
+    if (error) throw new Error(error.message);
+    await loadPlaces(activeGroupId);
+  }
+
+  async function handleUpdatePlace(placeId: string, patch: { name?: string; kind?: PlaceKind }) {
+    const { error } = await supabase.from("places").update(patch).eq("id", placeId);
+    if (error) throw new Error(error.message);
+    await loadPlaces(activeGroupId);
+  }
+
+  async function handleDeletePlace(placeId: string) {
+    const { error } = await supabase.from("places").delete().eq("id", placeId);
+    if (error) throw new Error(error.message);
+    await loadPlaces(activeGroupId);
+  }
+
+  function openCreateModal(date?: Date, placeId?: string | null) {
     setSelectedEvent(null);
     setModalDefaultDate(date instanceof Date ? date : viewDate);
+    setModalDefaultPlaceId(placeId ?? null);
     setModalOpen(true);
   }
 
@@ -1073,6 +1141,7 @@ export function AppShell() {
   function closeEventModal() {
     setModalOpen(false);
     setSelectedEvent(null);
+    setModalDefaultPlaceId(null);
   }
 
   function handleTagToggle(id: string) {
@@ -1092,6 +1161,7 @@ export function AppShell() {
         group_id: activeGroupId,
         folder_id: context?.folderId ?? null,
         event_id: context?.eventId ?? null,
+        place_id: context?.placeId ?? null,
         linked_date: context?.linkedDate ?? null,
         visibility: context?.visibility ?? "shared",
         title: "",
@@ -1115,6 +1185,7 @@ export function AppShell() {
         | "content"
         | "folder_id"
         | "event_id"
+        | "place_id"
         | "linked_date"
         | "visibility"
         | "is_pinned"
@@ -1153,6 +1224,7 @@ export function AppShell() {
         | "content"
         | "folder_id"
         | "event_id"
+        | "place_id"
         | "linked_date"
         | "visibility"
         | "is_pinned"
@@ -1513,6 +1585,31 @@ export function AppShell() {
             onDraggingNoteIds={setDraggingNoteIds}
             onDragOverTarget={setDragOverTarget}
             onOpenWorkspaceModal={openWorkspaceOnboarding}
+            places={places}
+          />
+        ) : screenView === "map" ? (
+          <MapApp
+            groupId={activeGroupId}
+            places={places}
+            events={filteredEvents}
+            notes={filteredNotes}
+            onCreatePlace={handleCreatePlace}
+            onUpdatePlace={handleUpdatePlace}
+            onDeletePlace={handleDeletePlace}
+            onPlanEvent={(placeId) => openCreateModal(viewDate, placeId)}
+            onOpenEvent={openEventDetails}
+            onOpenNote={(noteId) => {
+              setScreenView("notes");
+              setSelectedNoteId(noteId);
+            }}
+            onCreateNote={async (placeId) => {
+              const id = await handleCreateNote({ placeId, visibility: "shared" });
+              if (id) {
+                setScreenView("notes");
+                setSelectedNoteId(id);
+              }
+            }}
+            onOpenWorkspaceModal={openWorkspaceOnboarding}
           />
         ) : (
           <>
@@ -1562,7 +1659,7 @@ export function AppShell() {
               />
             </main>
 
-            {(eventViewerOpen || showRightPanel) && (
+            {eventViewerOpen && (
               <PanelResizeHandle
                 width={panelWidth}
                 onResize={setPanelWidth}
@@ -1583,7 +1680,6 @@ export function AppShell() {
               resizing={panelResizing}
             />
 
-            <RightPanel visible={showRightPanel} width={panelWidth} />
           </>
         )}
       </div>
@@ -1597,6 +1693,8 @@ export function AppShell() {
         existingEvents={eventsWithRsvp}
         tags={tags}
         initialTagIds={selectedEventTagIds}
+        places={places}
+        initialPlaceId={activeSelectedEvent?.place_id ?? modalDefaultPlaceId}
         onClose={closeEventModal}
         onCreate={handleCreateEvent}
         onCreateMultiple={handleCreateMultipleEvents}

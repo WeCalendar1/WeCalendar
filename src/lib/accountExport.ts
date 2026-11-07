@@ -14,6 +14,7 @@ export type AccountExportBundle = {
   eventTags: Tables<"event_tags">[];
   eventRsvps: Tables<"event_rsvps">[];
   notifications: Tables<"notifications">[];
+  places: Tables<"places">[];
   noteFolders: Tables<"note_folders">[];
   notes: Tables<"notes">[];
   lists: Tables<"lists">[];
@@ -83,6 +84,7 @@ export async function fetchAccountExportBundle(
       eventTags: [],
       eventRsvps: [],
       notifications,
+      places: [],
       noteFolders: [],
       notes: [],
       lists: [],
@@ -90,12 +92,13 @@ export async function fetchAccountExportBundle(
     };
   }
 
-  const [groupsRes, eventsRes, tagsRes, eventRsvpsRes, noteFoldersRes, notesRes, listsRes] =
+  const [groupsRes, eventsRes, tagsRes, eventRsvpsRes, placesRes, noteFoldersRes, notesRes, listsRes] =
     await Promise.all([
       supabase.from("groups").select("*").in("id", groupIds),
       supabase.from("events").select("*").in("group_id", groupIds),
       supabase.from("tags").select("*").in("group_id", groupIds),
       supabase.from("event_rsvps").select("*").in("group_id", groupIds),
+      supabase.from("places").select("*").in("group_id", groupIds),
       supabase.from("note_folders").select("*").in("group_id", groupIds),
       supabase.from("notes").select("*").in("group_id", groupIds),
       supabase.from("lists").select("*").in("group_id", groupIds),
@@ -112,6 +115,10 @@ export async function fetchAccountExportBundle(
   if (listsRes.error) throw listsRes.error;
 
   const eventRsvps = eventRsvpsRes.error ? [] : (eventRsvpsRes.data ?? []);
+  if (placesRes.error && !isMissingRelationError(placesRes.error)) {
+    throw placesRes.error;
+  }
+  const places = placesRes.error ? [] : (placesRes.data ?? []);
 
   const events = eventsRes.data ?? [];
   const lists = listsRes.data ?? [];
@@ -140,6 +147,7 @@ export async function fetchAccountExportBundle(
     eventTags: eventTagsRes.data ?? [],
     eventRsvps,
     notifications,
+    places,
     noteFolders: noteFoldersRes.data ?? [],
     notes: notesRes.data ?? [],
     lists,

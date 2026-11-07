@@ -15,6 +15,7 @@ import { addDays, addMonths, formatMonthYear, getMonthGrid, getWeekdayLabels } f
 import { draftOverlapsExisting } from "@/lib/scheduling";
 import { noteTitle, type Note } from "@/lib/notes";
 import { unansweredMemberIdsForEvent } from "@/lib/notifications";
+import { PLACE_KIND_LABEL, type Place } from "@/lib/places";
 import {
   summarizeEventRsvps,
   type EventRsvp,
@@ -27,6 +28,7 @@ export type EventDraft = {
   startsAt: Date;
   endsAt: Date;
   tagIds: string[];
+  placeId: string | null;
 };
 
 type CreateEventModalProps = {
@@ -40,6 +42,8 @@ type CreateEventModalProps = {
   tags: Tag[];
   /** Tag IDs already assigned to this event (when editing) */
   initialTagIds?: string[];
+  places?: Place[];
+  initialPlaceId?: string | null;
   onClose: () => void;
   onCreate: (input: EventDraft) => Promise<void>;
   onCreateMultiple?: (drafts: EventDraft[]) => Promise<void>;
@@ -261,6 +265,8 @@ function CreateEventModalContent({
   existingEvents = [],
   tags,
   initialTagIds = [],
+  places = [],
+  initialPlaceId = null,
   onClose,
   onCreate,
   onCreateMultiple,
@@ -303,6 +309,7 @@ function CreateEventModalContent({
     return toTimeInput(new Date(defaultDate.getTime() + 60 * 60 * 1000));
   });
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTagIds);
+  const [placeId, setPlaceId] = useState<string | null>(event?.place_id ?? initialPlaceId);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Extra owner-confirmation step: fires when deleting another user's event
@@ -460,6 +467,7 @@ function CreateEventModalContent({
       startsAt: interval.startsAt,
       endsAt: interval.endsAt,
       tagIds: selectedTagIds,
+      placeId,
     };
   }
 
@@ -864,6 +872,33 @@ function CreateEventModalContent({
                     )}
                   </div>
                 )}
+
+                <label className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                  Suggested location
+                  <select
+                    value={placeId ?? ""}
+                    onChange={(e) => setPlaceId(e.target.value || null)}
+                    className="mt-1 w-full px-3 py-2 text-sm outline-none"
+                    style={{
+                      borderRadius: "var(--radius-md)",
+                      border: "1px solid var(--border)",
+                      background: "var(--surface-2)",
+                      color: "var(--foreground)",
+                    }}
+                  >
+                    <option value="">No location</option>
+                    {places.map((place) => (
+                      <option key={place.id} value={place.id}>
+                        {place.name} · {PLACE_KIND_LABEL[place.kind]}
+                      </option>
+                    ))}
+                  </select>
+                  {places.length === 0 && (
+                    <span className="mt-1 block text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      Drop pins on the Map tab to suggest a place.
+                    </span>
+                  )}
+                </label>
 
                 {/* Attendance (RSVP) */}
                 {isEditing && event && onSetRsvp && rsvpSummary && (

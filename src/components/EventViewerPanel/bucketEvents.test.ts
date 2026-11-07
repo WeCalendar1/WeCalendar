@@ -13,6 +13,7 @@ function ev(id: string, startsAt: Date): CalendarEvent {
     created_by: "u1",
     has_conflict: false,
     recurrence_group_id: null,
+    place_id: null,
     created_at: startsAt.toISOString(),
     updated_at: startsAt.toISOString(),
   };

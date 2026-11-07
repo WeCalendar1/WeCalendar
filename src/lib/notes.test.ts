@@ -33,6 +33,7 @@ const baseNote = (overrides: Partial<Note> = {}): Note => ({
   group_id: "g1",
   folder_id: null,
   event_id: null,
+  place_id: null,
   linked_date: null,
   title: "",
   content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Hello world" }] }] },

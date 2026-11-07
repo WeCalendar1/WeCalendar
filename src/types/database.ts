@@ -124,6 +124,7 @@ export type Database = {
           created_by: string | null;
           has_conflict: boolean;
           recurrence_group_id: string | null;
+          place_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -137,6 +138,7 @@ export type Database = {
           created_by: string;
           has_conflict?: boolean;
           recurrence_group_id?: string | null;
+          place_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -150,10 +152,18 @@ export type Database = {
           created_by?: string | null;
           has_conflict?: boolean;
           recurrence_group_id?: string | null;
+          place_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "events_place_id_fkey";
+            columns: ["place_id"];
+            isOneToOne: false;
+            referencedRelation: "places";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "events_group_id_fkey";
             columns: ["group_id"];
@@ -365,6 +375,7 @@ export type Database = {
           group_id: string;
           folder_id: string | null;
           event_id: string | null;
+          place_id: string | null;
           linked_date: string | null;
           title: string;
           content: Json;
@@ -382,6 +393,7 @@ export type Database = {
           group_id: string;
           folder_id?: string | null;
           event_id?: string | null;
+          place_id?: string | null;
           linked_date?: string | null;
           title?: string;
           content?: Json;
@@ -399,6 +411,7 @@ export type Database = {
           group_id?: string;
           folder_id?: string | null;
           event_id?: string | null;
+          place_id?: string | null;
           linked_date?: string | null;
           title?: string;
           content?: Json;
@@ -431,6 +444,13 @@ export type Database = {
             columns: ["event_id"];
             isOneToOne: false;
             referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notes_place_id_fkey";
+            columns: ["place_id"];
+            isOneToOne: false;
+            referencedRelation: "places";
             referencedColumns: ["id"];
           },
           {
@@ -595,6 +615,59 @@ export type Database = {
             columns: ["note_id"];
             isOneToOne: false;
             referencedRelation: "notes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      places: {
+        Row: {
+          id: string;
+          group_id: string;
+          name: string;
+          address: string | null;
+          lat: number;
+          lng: number;
+          kind: "favorite" | "want_to_go";
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          name: string;
+          address?: string | null;
+          lat: number;
+          lng: number;
+          kind?: "favorite" | "want_to_go";
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          name?: string;
+          address?: string | null;
+          lat?: number;
+          lng?: number;
+          kind?: "favorite" | "want_to_go";
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "places_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "places_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];

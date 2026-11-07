@@ -101,6 +101,7 @@ describe("accountExport", () => {
             created_by: null,
             has_conflict: false,
             recurrence_group_id: null,
+            place_id: null,
             created_at: "2026-11-04T00:00:00Z",
             updated_at: "2026-11-04T00:00:00Z",
           },
@@ -171,6 +172,7 @@ describe("accountExport", () => {
                   created_by: "u1",
                   has_conflict: false,
                   recurrence_group_id: null,
+                  place_id: null,
                   created_at: "2026-11-04T00:00:00Z",
                   updated_at: "2026-11-04T00:00:00Z",
                 },
@@ -267,6 +269,7 @@ describe("accountExport", () => {
     expect(bundle.events).toHaveLength(1);
     expect(bundle.eventTags).toEqual([{ event_id: "e1", tag_id: "t1" }]);
     expect(bundle.eventRsvps).toHaveLength(1);
+    expect(bundle.places).toEqual([]);
     expect(bundle.listItems[0]?.created_by).toBeNull();
   });
 

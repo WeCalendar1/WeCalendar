@@ -368,6 +368,7 @@ export function NotesListPanel({
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         {folder && <Badge label={folder.name} folderColor={folder.color} />}
                         {note.event_id && <Badge label="Event" />}
+                        {note.place_id && <Badge label="Place" />}
                         {note.linked_date && <Badge label="Date" />}
                       </div>
                     </div>
