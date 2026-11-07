@@ -13,6 +13,7 @@ export type AccountExportBundle = {
   tags: Tables<"tags">[];
   eventTags: Tables<"event_tags">[];
   eventRsvps: Tables<"event_rsvps">[];
+  notifications: Tables<"notifications">[];
   noteFolders: Tables<"note_folders">[];
   notes: Tables<"notes">[];
   lists: Tables<"lists">[];
@@ -52,14 +53,23 @@ export async function fetchAccountExportBundle(
   user: { id: string; email?: string | null },
   exportedAt: string = new Date().toISOString(),
 ): Promise<AccountExportBundle> {
-  const [profileRes, membershipsRes] = await Promise.all([
+  const [profileRes, membershipsRes, notificationsRes] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("group_members").select("group_id").eq("user_id", user.id),
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("recipient_id", user.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   if (profileRes.error) throw profileRes.error;
   if (membershipsRes.error) throw membershipsRes.error;
+  if (notificationsRes.error && !isMissingRelationError(notificationsRes.error)) {
+    throw notificationsRes.error;
+  }
 
+  const notifications = notificationsRes.error ? [] : (notificationsRes.data ?? []);
   const groupIds = [...new Set((membershipsRes.data ?? []).map((m) => m.group_id))];
 
   if (groupIds.length === 0) {
@@ -72,6 +82,7 @@ export async function fetchAccountExportBundle(
       tags: [],
       eventTags: [],
       eventRsvps: [],
+      notifications,
       noteFolders: [],
       notes: [],
       lists: [],
@@ -128,6 +139,7 @@ export async function fetchAccountExportBundle(
     tags: tagsRes.data ?? [],
     eventTags: eventTagsRes.data ?? [],
     eventRsvps,
+    notifications,
     noteFolders: noteFoldersRes.data ?? [],
     notes: notesRes.data ?? [],
     lists,
