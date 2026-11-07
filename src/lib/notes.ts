@@ -116,7 +116,7 @@ export function filterNoOpNotePatch(
 }
 
 export function isEmptyNotePatch(
-  patch: Partial<Pick<Note, "title" | "content" | "folder_id" | "event_id" | "linked_date" | "visibility" | "is_pinned">>,
+  patch: Partial<Pick<Note, "title" | "content" | "folder_id" | "event_id" | "place_id" | "linked_date" | "visibility" | "is_pinned">>,
 ): boolean {
   return Object.keys(patch).length === 0;
 }

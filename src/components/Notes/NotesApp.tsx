@@ -5,6 +5,7 @@ import type { CalendarEvent } from "@/lib/events";
 import { formatLinkedEventLabel } from "@/lib/eventPicker";
 import type { Note, NoteFolder, NotesFilter, NotesSort } from "@/lib/notes";
 import type { EventTag, Tag } from "@/lib/tags";
+import { PLACE_KIND_LABEL, type Place } from "@/lib/places";
 import {
   canMoveNoteToFolder,
   DEFAULT_NOTES_SORT,
@@ -25,6 +26,7 @@ export type NoteDraftContext = {
   eventId?: string | null;
   linkedDate?: string | null;
   visibility?: "shared" | "private";
+  placeId?: string | null;
 };
 
 type NotesAppProps = {
@@ -51,6 +53,7 @@ type NotesAppProps = {
         | "content"
         | "folder_id"
         | "event_id"
+        | "place_id"
         | "linked_date"
         | "visibility"
         | "is_pinned"
@@ -66,6 +69,7 @@ type NotesAppProps = {
   onDraggingNoteIds: (ids: string[]) => void;
   onDragOverTarget: (target: string | null) => void;
   onOpenWorkspaceModal?: () => void;
+  places?: Place[];
 };
 
 export function NotesApp({
@@ -92,6 +96,7 @@ export function NotesApp({
   onDraggingNoteIds,
   onDragOverTarget,
   onOpenWorkspaceModal,
+  places = [],
 }: NotesAppProps) {
   const [localSearch, setLocalSearch] = useState("");
   const [deleteNoteTarget, setDeleteNoteTarget] = useState<{ id: string; title: string } | null>(
@@ -348,6 +353,7 @@ export function NotesApp({
               eventTags={eventTags}
               tags={tags}
               folders={folders}
+              places={places}
               onUpdate={(patch) => void onUpdateNote(selectedNote.id, patch)}
               onDelete={() => requestDeleteNote(selectedNote)}
               onRestore={() => void onRestoreNote(selectedNote.id)}
@@ -457,6 +463,7 @@ function NoteMetaBar({
   eventTags,
   tags,
   folders,
+  places,
   onUpdate,
   onDelete,
   onRestore,
@@ -469,12 +476,14 @@ function NoteMetaBar({
   eventTags: EventTag[];
   tags: Tag[];
   folders: NoteFolder[];
+  places: Place[];
   onUpdate: (
     patch: Partial<
       Pick<
         Note,
         | "folder_id"
         | "event_id"
+        | "place_id"
         | "linked_date"
         | "visibility"
         | "is_pinned"
@@ -536,6 +545,22 @@ function NoteMetaBar({
       >
         {linkedEvent ? formatLinkedEventLabel(linkedEvent) : "Link event…"}
       </button>
+
+      <select
+        value={note.place_id ?? ""}
+        onChange={(e) => onUpdate({ place_id: e.target.value || null })}
+        disabled={!!note.deleted_at}
+        className={`max-w-[12rem] truncate rounded-lg border px-2 py-1 text-xs font-medium outline-none ${note.deleted_at ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+        style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}
+        aria-label="Link to place"
+      >
+        <option value="">Link place…</option>
+        {places.map((place) => (
+          <option key={place.id} value={place.id}>
+            {place.name} · {PLACE_KIND_LABEL[place.kind]}
+          </option>
+        ))}
+      </select>
 
       <NotesLinkEventDialog
         open={linkEventOpen}

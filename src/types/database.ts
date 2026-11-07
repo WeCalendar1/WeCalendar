@@ -15,6 +15,7 @@ export type Database = {
           display_name: string | null;
           avatar_url: string | null;
           theme_preferences: Json;
+          notification_preferences: Json;
           created_at: string;
           updated_at: string;
         };
@@ -23,6 +24,7 @@ export type Database = {
           display_name?: string | null;
           avatar_url?: string | null;
           theme_preferences?: Json;
+          notification_preferences?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -31,6 +33,7 @@ export type Database = {
           display_name?: string | null;
           avatar_url?: string | null;
           theme_preferences?: Json;
+          notification_preferences?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -121,6 +124,7 @@ export type Database = {
           created_by: string | null;
           has_conflict: boolean;
           recurrence_group_id: string | null;
+          place_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -134,6 +138,7 @@ export type Database = {
           created_by: string;
           has_conflict?: boolean;
           recurrence_group_id?: string | null;
+          place_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -147,10 +152,18 @@ export type Database = {
           created_by?: string | null;
           has_conflict?: boolean;
           recurrence_group_id?: string | null;
+          place_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "events_place_id_fkey";
+            columns: ["place_id"];
+            isOneToOne: false;
+            referencedRelation: "places";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "events_group_id_fkey";
             columns: ["group_id"];
@@ -362,6 +375,7 @@ export type Database = {
           group_id: string;
           folder_id: string | null;
           event_id: string | null;
+          place_id: string | null;
           linked_date: string | null;
           title: string;
           content: Json;
@@ -379,6 +393,7 @@ export type Database = {
           group_id: string;
           folder_id?: string | null;
           event_id?: string | null;
+          place_id?: string | null;
           linked_date?: string | null;
           title?: string;
           content?: Json;
@@ -396,6 +411,7 @@ export type Database = {
           group_id?: string;
           folder_id?: string | null;
           event_id?: string | null;
+          place_id?: string | null;
           linked_date?: string | null;
           title?: string;
           content?: Json;
@@ -428,6 +444,13 @@ export type Database = {
             columns: ["event_id"];
             isOneToOne: false;
             referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notes_place_id_fkey";
+            columns: ["place_id"];
+            isOneToOne: false;
+            referencedRelation: "places";
             referencedColumns: ["id"];
           },
           {
@@ -518,9 +541,149 @@ export type Database = {
           },
         ];
       };
+      notifications: {
+        Row: {
+          id: string;
+          recipient_id: string;
+          actor_id: string | null;
+          group_id: string | null;
+          category: "events" | "invites" | "lists" | "nudges";
+          title: string;
+          body: string | null;
+          event_id: string | null;
+          note_id: string | null;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipient_id: string;
+          actor_id?: string | null;
+          group_id?: string | null;
+          category: "events" | "invites" | "lists" | "nudges";
+          title: string;
+          body?: string | null;
+          event_id?: string | null;
+          note_id?: string | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          recipient_id?: string;
+          actor_id?: string | null;
+          group_id?: string | null;
+          category?: "events" | "invites" | "lists" | "nudges";
+          title?: string;
+          body?: string | null;
+          event_id?: string | null;
+          note_id?: string | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_note_id_fkey";
+            columns: ["note_id"];
+            isOneToOne: false;
+            referencedRelation: "notes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      places: {
+        Row: {
+          id: string;
+          group_id: string;
+          name: string;
+          address: string | null;
+          lat: number;
+          lng: number;
+          kind: "favorite" | "want_to_go";
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          name: string;
+          address?: string | null;
+          lat: number;
+          lng: number;
+          kind?: "favorite" | "want_to_go";
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          name?: string;
+          address?: string | null;
+          lat?: number;
+          lng?: number;
+          kind?: "favorite" | "want_to_go";
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "places_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "places_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      send_availability_nudge: {
+        Args: {
+          p_group_id: string;
+          p_event_id?: string | null;
+          p_recipient_id?: string | null;
+          p_message?: string | null;
+        };
+        Returns: number;
+      };
       create_group: {
         Args: { p_name: string };
         Returns: Database["public"]["Tables"]["groups"]["Row"];

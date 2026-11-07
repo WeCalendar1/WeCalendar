@@ -11,6 +11,8 @@ type SharedWorkspaceProps = {
   onSelectGroup: (groupId: string) => void;
   onCreateGroup: (name: string) => Promise<void>;
   onJoinGroup: (inviteCode: string) => Promise<void>;
+  otherMemberCount?: number;
+  onNudgeGroupAvailability?: () => Promise<number>;
   variant?: "sidebar" | "settings";
   openModalRequestKey?: number;
   onConsumeModalRequest?: () => void;
@@ -22,6 +24,8 @@ export function SharedWorkspace({
   onSelectGroup,
   onCreateGroup,
   onJoinGroup,
+  otherMemberCount = 0,
+  onNudgeGroupAvailability,
   variant = "sidebar",
   openModalRequestKey = 0,
   onConsumeModalRequest,
@@ -31,6 +35,8 @@ export function SharedWorkspace({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [nudgeBusy, setNudgeBusy] = useState(false);
+  const [nudgeFeedback, setNudgeFeedback] = useState<string | null>(null);
   /** Whether the whole section is collapsed */
   const [collapsed, setCollapsed] = useState(false);
   /** Whether the invite code is revealed */
@@ -87,6 +93,25 @@ export function SharedWorkspace({
     await navigator.clipboard.writeText(activeGroup.invite_code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleNudgeGroup() {
+    if (!onNudgeGroupAvailability || nudgeBusy) return;
+    setNudgeBusy(true);
+    setNudgeFeedback(null);
+    try {
+      const sent = await onNudgeGroupAvailability();
+      setNudgeFeedback(
+        sent > 0
+          ? `Nudged ${sent} member${sent === 1 ? "" : "s"}`
+          : "Already nudged recently",
+      );
+      setTimeout(() => setNudgeFeedback(null), 3000);
+    } catch (err) {
+      setNudgeFeedback(err instanceof Error ? err.message : "Could not nudge");
+    } finally {
+      setNudgeBusy(false);
+    }
   }
 
   return (
@@ -218,6 +243,29 @@ export function SharedWorkspace({
                       )}
                     </button>
                   </div>
+                )}
+              </div>
+            )}
+
+            {activeGroup && otherMemberCount > 0 && onNudgeGroupAvailability && (
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  disabled={nudgeBusy}
+                  onClick={() => void handleNudgeGroup()}
+                  className="pressable cursor-pointer px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    borderRadius: "var(--radius-lg)",
+                    background: "var(--accent-muted)",
+                    color: "var(--accent)",
+                  }}
+                >
+                  {nudgeBusy ? "Sending nudge…" : "Nudge group availability"}
+                </button>
+                {nudgeFeedback && (
+                  <p className="text-center text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
+                    {nudgeFeedback}
+                  </p>
                 )}
               </div>
             )}

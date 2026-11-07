@@ -432,6 +432,7 @@ export function prepareBulkEventInserts(
     startsAt: Date;
     endsAt: Date;
     tagIds: readonly string[];
+    placeId?: string | null;
   }[],
   params: {
     groupId: string;
@@ -449,6 +450,7 @@ export function prepareBulkEventInserts(
     ends_at: string;
     created_by: string;
     recurrence_group_id: string | null;
+    place_id: string | null;
   }[];
   tagRows: { event_id: string; tag_id: string }[];
 } {
@@ -465,6 +467,7 @@ export function prepareBulkEventInserts(
     ends_at: string;
     created_by: string;
     recurrence_group_id: string | null;
+    place_id: string | null;
   }[] = [];
   const tagRows: { event_id: string; tag_id: string }[] = [];
 
@@ -479,6 +482,7 @@ export function prepareBulkEventInserts(
       ends_at: input.endsAt.toISOString(),
       created_by: params.userId,
       recurrence_group_id: sharedRecurrenceId,
+      place_id: input.placeId ?? null,
     });
     for (const tagId of input.tagIds) {
       tagRows.push({ event_id: id, tag_id: tagId });
@@ -496,6 +500,7 @@ export function reconcileSeriesUpdate(
     startsAt: Date;
     endsAt: Date;
     tagIds: readonly string[];
+    placeId?: string | null;
   }[],
   params: {
     groupId: string;
@@ -512,6 +517,7 @@ export function reconcileSeriesUpdate(
       starts_at: string;
       ends_at: string;
       recurrence_group_id: string | null;
+      place_id: string | null;
     };
     tagIds: string[];
   }[];
@@ -538,6 +544,7 @@ export function reconcileSeriesUpdate(
       starts_at: string;
       ends_at: string;
       recurrence_group_id: string | null;
+      place_id: string | null;
     };
     tagIds: string[];
   }[] = [];
@@ -558,6 +565,7 @@ export function reconcileSeriesUpdate(
           starts_at: draft.startsAt.toISOString(),
           ends_at: draft.endsAt.toISOString(),
           recurrence_group_id: sharedRecurrenceId,
+          place_id: draft.placeId ?? null,
         },
         tagIds: [...draft.tagIds],
       });
@@ -572,6 +580,7 @@ export function reconcileSeriesUpdate(
         ends_at: draft.endsAt.toISOString(),
         created_by: params.userId,
         recurrence_group_id: sharedRecurrenceId,
+        place_id: draft.placeId ?? null,
       });
       for (const tagId of draft.tagIds) {
         insertTagRows.push({ event_id: id, tag_id: tagId });

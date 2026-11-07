@@ -19,6 +19,7 @@ function makeEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {
     created_by: "u1",
     has_conflict: false,
     recurrence_group_id: null,
+    place_id: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
