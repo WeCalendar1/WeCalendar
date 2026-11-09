@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  PROVIDER_LABEL,
   clearLocalCalendarSyncs,
   detectCalendarProvider,
   extractIcsCalendarName,
@@ -143,6 +144,31 @@ describe("parseIcsEvents & extractIcsCalendarName", () => {
     expect(first).toHaveLength(1);
     expect(first[0]!.externalUid).toBeTruthy();
     expect(first[0]!.externalUid).toBe(second[0]!.externalUid);
+  });
+
+  it("disambiguates duplicate UIDs across recurring VEVENT instances in the same feed and exposes PROVIDER_LABEL", () => {
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VEVENT",
+      "UID:series-1@example.com",
+      "SUMMARY:Weekly Sync",
+      "DTSTART:20261110T150000Z",
+      "DTEND:20261110T160000Z",
+      "END:VEVENT",
+      "BEGIN:VEVENT",
+      "UID:series-1@example.com",
+      "RECURRENCE-ID:20261117T150000Z",
+      "SUMMARY:Weekly Sync",
+      "DTSTART:20261117T150000Z",
+      "DTEND:20261117T160000Z",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    const parsed = parseIcsEvents(ics);
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0]!.externalUid).not.toBe(parsed[1]!.externalUid);
+    expect(PROVIDER_LABEL.google).toBe("Google Calendar");
   });
 });
 

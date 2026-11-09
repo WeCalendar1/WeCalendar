@@ -3,6 +3,13 @@ import type { Tables } from "@/types/database";
 export type CalendarSync = Tables<"calendar_syncs">;
 export type CalendarSyncProvider = CalendarSync["provider"];
 
+export const PROVIDER_LABEL: Record<CalendarSyncProvider, string> = {
+  google: "Google Calendar",
+  outlook: "Outlook",
+  apple: "Apple Calendar",
+  ics: "iCal (.ics)",
+};
+
 export type LocalCalendarSync = CalendarSync & {
   imported_event_ids?: string[];
 };
@@ -220,9 +227,11 @@ export function extractIcsCalendarName(icsText: string): string | null {
 export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent[] {
   const lines = unfoldIcsLines(icsText);
   const events: ParsedIcsEvent[] = [];
+  const usedUids = new Set<string>();
 
   let inEvent = false;
   let uid = "";
+  let recurrenceId = "";
   let summary = "";
   let description = "";
   let status = "";
@@ -238,6 +247,7 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
     if (line.toUpperCase() === "BEGIN:VEVENT") {
       inEvent = true;
       uid = "";
+      recurrenceId = "";
       summary = "";
       description = "";
       status = "";
@@ -288,9 +298,18 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
           const desc = description ? unescapeIcsText(description) : null;
           const startsAt = startParsed.date.toISOString();
           const endsAt = endDate.toISOString();
-          const externalUid = uid
+          const baseUid = uid
             ? unescapeIcsText(uid)
             : deterministicUid(title, startsAt, endsAt);
+          const candidateUid = recurrenceId
+            ? `${baseUid}#${unescapeIcsText(recurrenceId)}`
+            : baseUid;
+          let externalUid = candidateUid;
+          let dupIdx = 1;
+          while (usedUids.has(externalUid)) {
+            externalUid = `${candidateUid}#${startsAt}#${dupIdx++}`;
+          }
+          usedUids.add(externalUid);
 
           events.push({
             externalUid,
@@ -315,6 +334,7 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
     const value = line.slice(colonIdx + 1);
 
     if (baseKey === "UID") uid = value;
+    else if (baseKey === "RECURRENCE-ID") recurrenceId = value;
     else if (baseKey === "SUMMARY") summary = value;
     else if (baseKey === "DESCRIPTION") description = value;
     else if (baseKey === "STATUS") status = value;

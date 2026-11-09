@@ -101,8 +101,64 @@ create index if not exists events_sync_id_idx
   where sync_id is not null;
 
 create unique index if not exists events_sync_external_uid_idx
-  on public.events (sync_id, external_uid)
-  where sync_id is not null and external_uid is not null;
+  on public.events (sync_id, external_uid);
+
+-- Coalesce bulk calendar sync event inserts into a single notification per sync batch
+create or replace function public.notify_on_event_insert()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  rec record;
+  v_actor text;
+  v_group_name text;
+  v_title text;
+begin
+  for rec in
+    select
+      group_id,
+      created_by,
+      count(*)::int as occurrence_count,
+      (array_agg(id order by starts_at asc))[1] as first_event_id,
+      (array_agg(title order by starts_at asc))[1] as first_title
+    from inserted_rows
+    where created_by is not null
+    group by group_id, created_by, coalesce(sync_id::text, recurrence_group_id::text, id::text)
+  loop
+    select name into v_group_name from public.groups where id = rec.group_id;
+    v_actor := public.actor_display_label(rec.created_by);
+
+    if rec.occurrence_count > 1 then
+      v_title := format('%s added %s events: %s', v_actor, rec.occurrence_count, rec.first_title);
+    else
+      v_title := format('%s added "%s"', v_actor, rec.first_title);
+    end if;
+
+    insert into public.notifications (
+      recipient_id, actor_id, group_id, category, title, body, event_id
+    )
+    select
+      gm.user_id,
+      rec.created_by,
+      rec.group_id,
+      'events',
+      v_title,
+      v_group_name,
+      rec.first_event_id
+    from public.group_members gm
+    where gm.group_id = rec.group_id
+      and gm.user_id <> rec.created_by
+      and public.user_wants_notification(gm.user_id, 'events');
+  end loop;
+
+  return null;
+end;
+$$;
+
+alter function public.notify_on_event_insert() owner to postgres;
+revoke all on function public.notify_on_event_insert() from public, anon;
 
 -- ---------------------------------------------------------------------------
 -- 3. Same-workspace & owner integrity trigger for public.events.sync_id
@@ -122,6 +178,7 @@ as $$
     from public.calendar_syncs s
     where s.id = p_sync_id
       and s.group_id = p_group_id
+      and (auth.uid() is null or s.user_id = auth.uid())
   );
 $$;
 
