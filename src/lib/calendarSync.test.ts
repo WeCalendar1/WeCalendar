@@ -6,6 +6,7 @@ import {
   clearLocalCalendarSyncs,
   detectCalendarProvider,
   extractIcsCalendarName,
+  isPrivateOrReservedIp,
   parseIcsEvents,
   readLocalCalendarSyncs,
   serializeEventsToIcs,
@@ -56,6 +57,17 @@ describe("validateExternalIcsUrl", () => {
       const result = validateExternalIcsUrl(input);
       expect(result.ok, `expected ${input} to be rejected`).toBe(false);
     }
+  });
+
+  it("allows public global unicast IPv6 addresses in isPrivateOrReservedIp for dual-stack DNS while blocking private/reserved IPv6", () => {
+    expect(isPrivateOrReservedIp("2607:f8b0:4005:805::200e")).toBe(false);
+    expect(isPrivateOrReservedIp("2a01:111:f400:5299::2")).toBe(false);
+    expect(isPrivateOrReservedIp("::1")).toBe(true);
+    expect(isPrivateOrReservedIp("fe80::1")).toBe(true);
+    expect(isPrivateOrReservedIp("fd00::1")).toBe(true);
+    expect(isPrivateOrReservedIp("2001:db8::1")).toBe(true);
+    expect(isPrivateOrReservedIp("::ffff:127.0.0.1")).toBe(true);
+    expect(isPrivateOrReservedIp("::ffff:8.8.8.8")).toBe(false);
   });
 });
 
@@ -169,6 +181,29 @@ describe("parseIcsEvents & extractIcsCalendarName", () => {
     expect(parsed).toHaveLength(2);
     expect(parsed[0]!.externalUid).not.toBe(parsed[1]!.externalUid);
     expect(PROVIDER_LABEL.google).toBe("Google Calendar");
+  });
+
+  it("ignores nested VALARM properties so alarm DESCRIPTION does not overwrite VEVENT DESCRIPTION", () => {
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VEVENT",
+      "UID:alarm-evt-1@example.com",
+      "SUMMARY:Team Standup",
+      "DESCRIPTION:Discuss weekly progress and blockers.",
+      "DTSTART:20261110T170000Z",
+      "DTEND:20261110T173000Z",
+      "BEGIN:VALARM",
+      "ACTION:DISPLAY",
+      "DESCRIPTION:Reminder",
+      "TRIGGER:-PT15M",
+      "END:VALARM",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    const parsed = parseIcsEvents(ics);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0]!.description).toBe("Discuss weekly progress and blockers.");
   });
 });
 

@@ -34,9 +34,16 @@ export function isPrivateOrReservedIp(rawHost: string): boolean {
       host === "::" ||
       host === "::1" ||
       host.startsWith("fe80:") ||
+      host.startsWith("fe9") ||
+      host.startsWith("fea") ||
+      host.startsWith("feb") ||
       host.startsWith("fc") ||
       host.startsWith("fd") ||
-      host.startsWith("ff")
+      host.startsWith("ff") ||
+      host.startsWith("100::") ||
+      host.startsWith("0100:") ||
+      host.startsWith("2001:db8:") ||
+      host.startsWith("2001:0db8:")
     ) {
       return true;
     }
@@ -44,8 +51,7 @@ export function isPrivateOrReservedIp(rawHost: string): boolean {
     if (v4Mapped) {
       return isPrivateOrReservedIp(v4Mapped[1]!);
     }
-    // Block raw IPv6 literals in URLs or non-global addresses
-    return true;
+    return false;
   }
 
   // IPv4 checks
@@ -104,6 +110,7 @@ export function validateExternalIcsUrl(
   const host = parsed.hostname.trim().toLowerCase().replace(/^\[|\]$/g, "");
   if (
     !host ||
+    host.includes(":") ||
     !host.includes(".") ||
     host === "localhost" ||
     host.endsWith(".localhost") ||
@@ -230,6 +237,7 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
   const usedUids = new Set<string>();
 
   let inEvent = false;
+  let subComponentDepth = 0;
   let uid = "";
   let recurrenceId = "";
   let summary = "";
@@ -243,9 +251,11 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
+    const upperLine = line.toUpperCase();
 
-    if (line.toUpperCase() === "BEGIN:VEVENT") {
+    if (upperLine === "BEGIN:VEVENT") {
       inEvent = true;
+      subComponentDepth = 0;
       uid = "";
       recurrenceId = "";
       summary = "";
@@ -258,7 +268,7 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
       continue;
     }
 
-    if (line.toUpperCase() === "END:VEVENT") {
+    if (upperLine === "END:VEVENT") {
       if (inEvent && status.toUpperCase() !== "CANCELLED" && dtStartVal) {
         const startParsed = parseIcsDateProperty(dtStartKey, dtStartVal);
         if (startParsed) {
@@ -326,6 +336,16 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
     }
 
     if (!inEvent) continue;
+    if (upperLine.startsWith("BEGIN:")) {
+      subComponentDepth++;
+      continue;
+    }
+    if (upperLine.startsWith("END:")) {
+      subComponentDepth = Math.max(0, subComponentDepth - 1);
+      continue;
+    }
+    if (subComponentDepth > 0) continue;
+
     const colonIdx = line.indexOf(":");
     if (colonIdx <= 0) continue;
 
