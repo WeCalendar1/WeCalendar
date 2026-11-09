@@ -72,6 +72,15 @@ describe("accountExport", () => {
           }),
         };
       }
+      if (table === "calendar_syncs") {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({ data: [], error: null }),
+            }),
+          }),
+        };
+      }
       throw new Error(`Unexpected query on ${table} when user has zero groups`);
     });
 
@@ -84,8 +93,9 @@ describe("accountExport", () => {
     expect(bundle.groups).toEqual([]);
     expect(bundle.events).toEqual([]);
     expect(bundle.eventRsvps).toEqual([]);
+    expect(bundle.calendarSyncs).toEqual([]);
     expect(bundle.notifications).toHaveLength(1);
-    expect(fromSpy).toHaveBeenCalledTimes(3);
+    expect(fromSpy).toHaveBeenCalledTimes(4);
 
     const parsed = JSON.parse(
       serializeAccountExport({
@@ -102,6 +112,8 @@ describe("accountExport", () => {
             has_conflict: false,
             recurrence_group_id: null,
             place_id: null,
+            sync_id: null,
+            external_uid: null,
             created_at: "2026-11-04T00:00:00Z",
             updated_at: "2026-11-04T00:00:00Z",
           },
@@ -134,6 +146,31 @@ describe("accountExport", () => {
           select: () => ({
             eq: () => ({
               order: async () => ({ data: [], error: null }),
+            }),
+          }),
+        };
+      }
+      if (table === "calendar_syncs") {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({
+                data: [
+                  {
+                    id: "cs1",
+                    group_id: "g1",
+                    user_id: "u1",
+                    provider: "ics_url",
+                    label: "Work",
+                    source_url: "https://example.com/work.ics",
+                    last_synced_at: "2026-11-04T00:00:00Z",
+                    synced_event_count: 3,
+                    created_at: "2026-11-04T00:00:00Z",
+                    updated_at: "2026-11-04T00:00:00Z",
+                  },
+                ],
+                error: null,
+              }),
             }),
           }),
         };
@@ -173,6 +210,8 @@ describe("accountExport", () => {
                   has_conflict: false,
                   recurrence_group_id: null,
                   place_id: null,
+                  sync_id: null,
+                  external_uid: null,
                   created_at: "2026-11-04T00:00:00Z",
                   updated_at: "2026-11-04T00:00:00Z",
                 },
@@ -269,6 +308,7 @@ describe("accountExport", () => {
     expect(bundle.events).toHaveLength(1);
     expect(bundle.eventTags).toEqual([{ event_id: "e1", tag_id: "t1" }]);
     expect(bundle.eventRsvps).toHaveLength(1);
+    expect(bundle.calendarSyncs).toHaveLength(1);
     expect(bundle.places).toEqual([]);
     expect(bundle.listItems[0]?.created_by).toBeNull();
   });
@@ -303,6 +343,18 @@ describe("accountExport", () => {
           }),
         };
       }
+      if (table === "calendar_syncs") {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({
+                data: null,
+                error: { code: "42P01", message: 'relation "calendar_syncs" does not exist' },
+              }),
+            }),
+          }),
+        };
+      }
       return { select: () => ({ in: async () => ({ data: [], error: null }) }) };
     });
 
@@ -312,6 +364,7 @@ describe("accountExport", () => {
     );
     expect(bundle.eventRsvps).toEqual([]);
     expect(bundle.notifications).toEqual([]);
+    expect(bundle.calendarSyncs).toEqual([]);
   });
 });
 

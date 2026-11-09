@@ -14,6 +14,8 @@ function ev(id: string, startsAt: Date): CalendarEvent {
     has_conflict: false,
     recurrence_group_id: null,
     place_id: null,
+    sync_id: null,
+    external_uid: null,
     created_at: startsAt.toISOString(),
     updated_at: startsAt.toISOString(),
   };

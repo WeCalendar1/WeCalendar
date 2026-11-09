@@ -33,6 +33,8 @@ function makeEvent(overrides: Partial<CalendarEvent>): CalendarEvent {
     has_conflict: false,
     recurrence_group_id: null,
     place_id: null,
+    sync_id: null,
+    external_uid: null,
     created_at: "2025-06-01T00:00:00Z",
     updated_at: "2025-06-01T00:00:00Z",
     ...overrides,
