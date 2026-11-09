@@ -160,7 +160,7 @@ describe("accountExport", () => {
                     id: "cs1",
                     group_id: "g1",
                     user_id: "u1",
-                    provider: "ics_url",
+                    provider: "google",
                     label: "Work",
                     source_url: "https://example.com/work.ics",
                     last_synced_at: "2026-11-04T00:00:00Z",

@@ -16,7 +16,7 @@ create table if not exists public.calendar_syncs (
   id                 uuid primary key default gen_random_uuid(),
   group_id           uuid not null references public.groups(id) on delete cascade,
   user_id            uuid not null references public.profiles(id) on delete cascade,
-  provider           text not null check (provider in ('ics_url', 'ics_file')),
+  provider           text not null default 'ics' check (provider in ('google', 'outlook', 'apple', 'ics')),
   label              text not null check (char_length(trim(label)) > 0),
   source_url         text,
   last_synced_at     timestamptz not null default now(),
@@ -24,8 +24,7 @@ create table if not exists public.calendar_syncs (
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now(),
   constraint calendar_syncs_source_url_check check (
-    (provider = 'ics_url' and source_url is not null and char_length(trim(source_url)) > 0)
-    or (provider = 'ics_file' and source_url is null)
+    source_url is null or char_length(trim(source_url)) > 0
   )
 );
 

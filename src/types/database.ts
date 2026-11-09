@@ -690,7 +690,7 @@ export type Database = {
           id: string;
           group_id: string;
           user_id: string;
-          provider: "ics_url" | "ics_file";
+          provider: "google" | "outlook" | "apple" | "ics";
           label: string;
           source_url: string | null;
           last_synced_at: string;
@@ -702,7 +702,7 @@ export type Database = {
           id?: string;
           group_id: string;
           user_id: string;
-          provider: "ics_url" | "ics_file";
+          provider?: "google" | "outlook" | "apple" | "ics";
           label: string;
           source_url?: string | null;
           last_synced_at?: string;
@@ -714,7 +714,7 @@ export type Database = {
           id?: string;
           group_id?: string;
           user_id?: string;
-          provider?: "ics_url" | "ics_file";
+          provider?: "google" | "outlook" | "apple" | "ics";
           label?: string;
           source_url?: string | null;
           last_synced_at?: string;
