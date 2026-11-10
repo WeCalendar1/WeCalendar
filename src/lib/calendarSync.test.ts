@@ -9,6 +9,7 @@ import {
   isPrivateOrReservedIp,
   parseIcsEvents,
   readLocalCalendarSyncs,
+  selectPinnedLookupAddresses,
   serializeEventsToIcs,
   validateExternalIcsUrl,
   writeLocalCalendarSyncs,
@@ -68,6 +69,38 @@ describe("validateExternalIcsUrl", () => {
     expect(isPrivateOrReservedIp("2001:db8::1")).toBe(true);
     expect(isPrivateOrReservedIp("::ffff:127.0.0.1")).toBe(true);
     expect(isPrivateOrReservedIp("::ffff:8.8.8.8")).toBe(false);
+  });
+
+  it("pins validated DNS addresses and blocks DNS responses containing any private/reserved IP", () => {
+    expect(selectPinnedLookupAddresses([])).toEqual({
+      ok: false,
+      code: "ENOTFOUND",
+      message: "Could not resolve calendar hostname.",
+    });
+
+    expect(
+      selectPinnedLookupAddresses([
+        { address: "142.250.189.206", family: 4 },
+        { address: "127.0.0.1", family: 4 },
+      ]),
+    ).toEqual({
+      ok: false,
+      code: "ESSRFBLOCKED",
+      message: "Calendar URL resolves to a restricted network address.",
+    });
+
+    expect(
+      selectPinnedLookupAddresses([
+        { address: "142.250.189.206", family: 4 },
+        { address: "2607:f8b0:4005:805::200e", family: 6 },
+      ]),
+    ).toEqual({
+      ok: true,
+      addresses: [
+        { address: "142.250.189.206", family: 4 },
+        { address: "2607:f8b0:4005:805::200e", family: 6 },
+      ],
+    });
   });
 });
 
@@ -205,6 +238,51 @@ describe("parseIcsEvents & extractIcsCalendarName", () => {
     expect(parsed).toHaveLength(1);
     expect(parsed[0]!.description).toBe("Discuss weekly progress and blockers.");
   });
+
+  it("converts timed DTSTART/DTEND with IANA or Windows TZID to exact UTC timestamps instead of browser local zone", () => {
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VEVENT",
+      "UID:tz-iana-1@example.com",
+      "SUMMARY:NYC Morning Standup (EST, UTC-5)",
+      "DTSTART;TZID=America/New_York:20261110T090000",
+      "DTEND;TZID=\"America/New_York\":20261110T103000",
+      "END:VEVENT",
+      "BEGIN:VEVENT",
+      "UID:tz-win-1@example.com",
+      "SUMMARY:NYC Summer Sync (EDT, UTC-4)",
+      "DTSTART;TZID=Eastern Standard Time:20260710T090000",
+      "DTEND;TZID=Eastern Standard Time:20260710T100000",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    const parsed = parseIcsEvents(ics);
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0]!.startsAt).toBe("2026-11-10T14:00:00.000Z");
+    expect(parsed[0]!.endsAt).toBe("2026-11-10T15:30:00.000Z");
+    expect(parsed[1]!.startsAt).toBe("2026-07-10T13:00:00.000Z");
+    expect(parsed[1]!.endsAt).toBe("2026-07-10T14:00:00.000Z");
+  });
+
+  it("falls back to calendar-level X-WR-TIMEZONE for timed events without per-property TZID or Z", () => {
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "X-WR-TIMEZONE:America/New_York",
+      "BEGIN:VEVENT",
+      "UID:tz-cal-level-1@example.com",
+      "SUMMARY:Calendar TZ Event",
+      "DTSTART:20261110T090000",
+      "DTEND:20261110T100000",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    const parsed = parseIcsEvents(ics);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0]!.startsAt).toBe("2026-11-10T14:00:00.000Z");
+    expect(parsed[0]!.endsAt).toBe("2026-11-10T15:00:00.000Z");
+  });
 });
 
 describe("serializeEventsToIcs", () => {
@@ -288,5 +366,13 @@ describe("local calendar sync fallback storage & migration invariants", () => {
     expect(sql).toMatch(/alter table public\.calendar_syncs replica identity full/i);
     expect(sql).toMatch(/create or replace function public\.unsync_my_calendars/i);
     expect(sql).toMatch(/create trigger events_enforce_sync_same_group/i);
+
+    const grantsSql = readFileSync(
+      resolve(process.cwd(), "supabase/migrations/20261109160000_calendar_syncs_grants.sql"),
+      "utf8",
+    );
+    expect(grantsSql).toMatch(
+      /grant\s+select,\s*insert,\s*update,\s*delete\s+on\s+(table\s+)?public\.calendar_syncs\s+to\s+authenticated/i,
+    );
   });
 });

@@ -1988,7 +1988,7 @@ export default function ProfilePage() {
                   External Calendar Sync (Google, Outlook, Apple &amp; .ics)
                 </p>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  Subscribe to an iCal (.ics) feed URL, import a .ics file into the active shared calendar, or export events as .ics
+                  Subscribe to an iCal (.ics) feed URL, import a .ics file into the active shared calendar (visible to workspace members), or export events as .ics
                 </p>
               </div>
               <div className="flex items-center gap-2">

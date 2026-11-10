@@ -79,6 +79,35 @@ export function isPrivateOrReservedIp(rawHost: string): boolean {
   return false;
 }
 
+export type ResolvedDnsEntry = {
+  address: string;
+  family: number;
+};
+
+export function selectPinnedLookupAddresses(
+  addresses: readonly ResolvedDnsEntry[] | undefined | null,
+):
+  | { ok: true; addresses: ResolvedDnsEntry[] }
+  | { ok: false; code: "ENOTFOUND" | "ESSRFBLOCKED"; message: string } {
+  if (!addresses || addresses.length === 0) {
+    return {
+      ok: false,
+      code: "ENOTFOUND",
+      message: "Could not resolve calendar hostname.",
+    };
+  }
+
+  if (addresses.some((entry) => isPrivateOrReservedIp(entry.address))) {
+    return {
+      ok: false,
+      code: "ESSRFBLOCKED",
+      message: "Calendar URL resolves to a restricted network address.",
+    };
+  }
+
+  return { ok: true, addresses: [...addresses] };
+}
+
 export function validateExternalIcsUrl(
   rawUrl: string,
 ): { ok: true; url: string } | { ok: false; error: string } {
@@ -166,9 +195,137 @@ function escapeIcsText(value: string): string {
     .replace(/;/g, "\\;");
 }
 
+const WINDOWS_TZID_TO_IANA: Record<string, string> = {
+  utc: "UTC",
+  "coordinated universal time": "UTC",
+  "gmt standard time": "Europe/London",
+  "greenwich standard time": "Atlantic/Reykjavik",
+  "w. europe standard time": "Europe/Berlin",
+  "central europe standard time": "Europe/Budapest",
+  "romance standard time": "Europe/Paris",
+  "central european standard time": "Europe/Warsaw",
+  "e. europe standard time": "Europe/Chisinau",
+  "fle standard time": "Europe/Kiev",
+  "gtb standard time": "Europe/Bucharest",
+  "russian standard time": "Europe/Moscow",
+  "israel standard time": "Asia/Jerusalem",
+  "arabian standard time": "Asia/Dubai",
+  "india standard time": "Asia/Kolkata",
+  "china standard time": "Asia/Shanghai",
+  "singapore standard time": "Asia/Singapore",
+  "taipei standard time": "Asia/Taipei",
+  "korea standard time": "Asia/Seoul",
+  "tokyo standard time": "Asia/Tokyo",
+  "aus eastern standard time": "Australia/Sydney",
+  "e. australia standard time": "Australia/Brisbane",
+  "cen. australia standard time": "Australia/Adelaide",
+  "w. australia standard time": "Australia/Perth",
+  "new zealand standard time": "Pacific/Auckland",
+  "hawaiian standard time": "Pacific/Honolulu",
+  "alaskan standard time": "America/Anchorage",
+  "pacific standard time": "America/Los_Angeles",
+  "pacific standard time (mexico)": "America/Tijuana",
+  "us mountain standard time": "America/Phoenix",
+  "mountain standard time": "America/Denver",
+  "central standard time": "America/Chicago",
+  "central standard time (mexico)": "America/Mexico_City",
+  "canada central standard time": "America/Regina",
+  "sa pacific standard time": "America/Bogota",
+  "eastern standard time": "America/New_York",
+  "us eastern standard time": "America/Indiana/Indianapolis",
+  "atlantic standard time": "America/Halifax",
+  "e. south america standard time": "America/Sao_Paulo",
+  "argentina standard time": "America/Buenos_Aires",
+};
+
+function normalizeTzid(rawTzid: string): string | null {
+  const cleaned = rawTzid.trim().replace(/^["']|["']$/g, "").trim();
+  if (!cleaned) return null;
+
+  const mapped = WINDOWS_TZID_TO_IANA[cleaned.toLowerCase()];
+  if (mapped) return mapped;
+
+  // Handle prefixed libical TZIDs like /freeassociation.sourceforge.net/America/New_York
+  if (cleaned.startsWith("/")) {
+    const parts = cleaned.split("/").filter(Boolean);
+    if (parts.length >= 2) {
+      return parts.slice(-2).join("/");
+    }
+  }
+
+  return cleaned;
+}
+
+function extractTzidFromPropKey(propKey: string): string | null {
+  const parts = propKey.split(";");
+  for (let i = 1; i < parts.length; i++) {
+    const param = parts[i]!.trim();
+    const eqIdx = param.indexOf("=");
+    if (eqIdx <= 0) continue;
+    const pName = param.slice(0, eqIdx).trim().toUpperCase();
+    if (pName === "TZID") {
+      return normalizeTzid(param.slice(eqIdx + 1));
+    }
+  }
+  return null;
+}
+
+function getTimeZoneOffsetMs(utcMs: number, timeZone: string): number | null {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    });
+    const parts = formatter.formatToParts(new Date(utcMs));
+    const map: Record<string, number> = {};
+    for (const part of parts) {
+      if (part.type !== "literal") {
+        map[part.type] = Number(part.value);
+      }
+    }
+    if (!map.year) return null;
+    const zonedWallAsUtc = Date.UTC(
+      map.year,
+      (map.month ?? 1) - 1,
+      map.day ?? 1,
+      (map.hour ?? 0) % 24,
+      map.minute ?? 0,
+      map.second ?? 0,
+      0,
+    );
+    return zonedWallAsUtc - utcMs;
+  } catch {
+    return null;
+  }
+}
+
+function zonedWallClockToUtcDate(
+  year: number,
+  monthIndex: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+  tzid: string,
+): Date | null {
+  const targetWallUtc = Date.UTC(year, monthIndex, day, hour, minute, second, 0);
+  const offset1 = getTimeZoneOffsetMs(targetWallUtc, tzid);
+  if (offset1 === null) return null;
+  const guess1 = targetWallUtc - offset1;
+  const offset2 = getTimeZoneOffsetMs(guess1, tzid) ?? offset1;
+  return new Date(targetWallUtc - offset2);
+}
+
 function parseIcsDateProperty(
   propKey: string,
   propValue: string,
+  defaultTzid: string | null = null,
 ): { date: Date; isDateOnly: boolean } | null {
   const upperKey = propKey.toUpperCase();
   const val = propValue.trim();
@@ -194,9 +351,21 @@ function parseIcsDateProperty(
     const minute = Number(dtMatch[5]);
     const second = Number(dtMatch[6]);
     const isUtc = Boolean(dtMatch[7]);
-    const date = isUtc
-      ? new Date(Date.UTC(year, month, day, hour, minute, second, 0))
-      : new Date(year, month, day, hour, minute, second, 0);
+    if (isUtc) {
+      const date = new Date(Date.UTC(year, month, day, hour, minute, second, 0));
+      if (Number.isNaN(date.getTime())) return null;
+      return { date, isDateOnly: false };
+    }
+
+    const tzid = extractTzidFromPropKey(propKey) ?? defaultTzid;
+    if (tzid) {
+      const zoned = zonedWallClockToUtcDate(year, month, day, hour, minute, second, tzid);
+      if (zoned && !Number.isNaN(zoned.getTime())) {
+        return { date: zoned, isDateOnly: false };
+      }
+    }
+
+    const date = new Date(year, month, day, hour, minute, second, 0);
     if (Number.isNaN(date.getTime())) return null;
     return { date, isDateOnly: false };
   }
@@ -236,6 +405,7 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
   const events: ParsedIcsEvent[] = [];
   const usedUids = new Set<string>();
 
+  let calendarTzid: string | null = null;
   let inEvent = false;
   let subComponentDepth = 0;
   let uid = "";
@@ -270,10 +440,12 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
 
     if (upperLine === "END:VEVENT") {
       if (inEvent && status.toUpperCase() !== "CANCELLED" && dtStartVal) {
-        const startParsed = parseIcsDateProperty(dtStartKey, dtStartVal);
+        const startParsed = parseIcsDateProperty(dtStartKey, dtStartVal, calendarTzid);
         if (startParsed) {
           let endDate: Date;
-          const endParsed = dtEndVal ? parseIcsDateProperty(dtEndKey, dtEndVal) : null;
+          const endParsed = dtEndVal
+            ? parseIcsDateProperty(dtEndKey, dtEndVal, calendarTzid)
+            : null;
 
           if (startParsed.isDateOnly) {
             if (endParsed && endParsed.date.getTime() > startParsed.date.getTime()) {
@@ -335,7 +507,16 @@ export function parseIcsEvents(icsText: string, maxEvents = 500): ParsedIcsEvent
       continue;
     }
 
-    if (!inEvent) continue;
+    if (!inEvent) {
+      const topColon = line.indexOf(":");
+      if (topColon > 0) {
+        const topKey = line.slice(0, topColon).split(";")[0]?.trim().toUpperCase();
+        if (topKey === "X-WR-TIMEZONE") {
+          calendarTzid = normalizeTzid(line.slice(topColon + 1));
+        }
+      }
+      continue;
+    }
     if (upperLine.startsWith("BEGIN:")) {
       subComponentDepth++;
       continue;
