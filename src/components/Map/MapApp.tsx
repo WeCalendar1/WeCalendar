@@ -459,8 +459,14 @@ function MapCanvas({
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const layerRef = useRef<import("leaflet").LayerGroup | null>(null);
+  const userLayerRef = useRef<import("leaflet").LayerGroup | null>(null);
+  const userDotRef = useRef<import("leaflet").Marker | null>(null);
+  const userAccuracyRef = useRef<import("leaflet").Circle | null>(null);
+  const userLatLngRef = useRef<import("leaflet").LatLng | null>(null);
+  const lastAccuracyRef = useRef<number | null>(null);
+  const userPinnedRef = useRef(false);
+  const refreshUserLocationRef = useRef<(center: boolean) => void>(() => {});
   const didFitRef = useRef(false);
-  const didLocateRef = useRef(false);
   const lastGroupIdRef = useRef<string | null>(groupId);
   const [mapReady, setMapReady] = useState(false);
   const onSelectRef = useRef(onSelectPlace);
@@ -483,32 +489,169 @@ function MapCanvas({
     if (!el) return;
     let cancelled = false;
     let map: import("leaflet").Map | null = null;
+    let watchId: number | null = null;
+    let pendingCenter = false;
 
     void (async () => {
       const L = await import("leaflet");
       if (cancelled || !hostRef.current) return;
       map = L.map(hostRef.current, { zoomControl: true }).setView([39.8283, -98.5795], 4);
-      map.on("locationfound", () => {
-        didLocateRef.current = true;
-      });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap",
       }).addTo(map);
       const layer = L.layerGroup().addTo(map);
+      const userLayer = L.layerGroup().addTo(map);
       mapRef.current = map;
       layerRef.current = layer;
+      userLayerRef.current = userLayer;
+
+      const geoOptions: PositionOptions = {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 60_000,
+      };
+
+      function upsertUserMarker(latlng: import("leaflet").LatLng, accuracyMeters: number) {
+        userLatLngRef.current = latlng;
+        lastAccuracyRef.current = accuracyMeters;
+        const haloMeters = Math.max(accuracyMeters, 24);
+
+        if (userAccuracyRef.current) {
+          userAccuracyRef.current.setLatLng(latlng).setRadius(haloMeters);
+        } else {
+          userAccuracyRef.current = L.circle(latlng, {
+            radius: haloMeters,
+            color: "#007aff",
+            weight: 1,
+            opacity: 0.45,
+            fillColor: "#007aff",
+            fillOpacity: 0.14,
+            interactive: false,
+          }).addTo(userLayer);
+        }
+
+        const label =
+          accuracyMeters >= 50
+            ? `You are here · about ${Math.round(accuracyMeters)} m`
+            : "You are here";
+
+        if (userDotRef.current) {
+          userDotRef.current.setLatLng(latlng);
+          userDotRef.current.setTooltipContent(label);
+        } else {
+          const marker = L.marker(latlng, {
+            draggable: true,
+            autoPan: true,
+            keyboard: false,
+            zIndexOffset: 1000,
+            icon: L.divIcon({
+              className: "leaflet-user-location-icon",
+              html: '<div class="leaflet-user-location"></div>',
+              iconSize: [18, 18],
+              iconAnchor: [9, 9],
+            }),
+            title: "You are here (drag to adjust)",
+          });
+          marker.bindTooltip(label, { direction: "top", offset: [0, -10] });
+          marker.on("click", (ev) => {
+            L.DomEvent.stopPropagation(ev);
+          });
+          marker.on("dragstart", (ev) => {
+            L.DomEvent.stopPropagation(ev);
+          });
+          marker.on("drag", () => {
+            const next = marker.getLatLng();
+            userLatLngRef.current = next;
+            userAccuracyRef.current?.setLatLng(next);
+          });
+          marker.on("dragend", () => {
+            userPinnedRef.current = true;
+            const next = marker.getLatLng();
+            userLatLngRef.current = next;
+            lastAccuracyRef.current = 20;
+            userAccuracyRef.current?.setLatLng(next).setRadius(20);
+            marker.setTooltipContent("You are here");
+          });
+          marker.addTo(userLayer);
+          userDotRef.current = marker;
+        }
+      }
+
+      function applyUserPosition(
+        coords: GeolocationCoordinates,
+        opts: { force?: boolean; center?: boolean } = {},
+      ) {
+        if (userPinnedRef.current && !opts.force) return;
+
+        const accuracy = Number.isFinite(coords.accuracy) ? coords.accuracy : 1000;
+        const latlng = L.latLng(coords.latitude, coords.longitude);
+        const previous = userLatLngRef.current;
+        const previousAccuracy = lastAccuracyRef.current;
+
+        if (!opts.force && previous && previousAccuracy != null) {
+          const movedMeters = previous.distanceTo(latlng);
+          const outsideOldFix = movedMeters > previousAccuracy;
+          const tighterFix = accuracy <= previousAccuracy;
+          if (!outsideOldFix && !tighterFix) return;
+        }
+
+        upsertUserMarker(latlng, accuracy);
+
+        if (opts.center || pendingCenter || !didFitRef.current) {
+          pendingCenter = false;
+          map?.setView(latlng, Math.max(map.getZoom(), 16));
+        }
+      }
+
+      function startWatch() {
+        if (!navigator.geolocation) return;
+        if (watchId != null) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+        }
+        watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            if (cancelled) return;
+            applyUserPosition(position.coords);
+          },
+          () => {},
+          geoOptions,
+        );
+      }
+
+      refreshUserLocationRef.current = (center) => {
+        userPinnedRef.current = false;
+        lastAccuracyRef.current = null;
+        pendingCenter = center;
+        startWatch();
+      };
+
       map.on("click", (e: import("leaflet").LeafletMouseEvent) => {
         onClickRef.current(e.latlng.lat, e.latlng.lng);
       });
+
+      startWatch();
+      if (cancelled && watchId != null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
       setMapReady(true);
     })();
 
     return () => {
       cancelled = true;
       setMapReady(false);
+      if (watchId != null) navigator.geolocation.clearWatch(watchId);
       map?.remove();
       mapRef.current = null;
       layerRef.current = null;
+      userLayerRef.current = null;
+      userDotRef.current = null;
+      userAccuracyRef.current = null;
+      userLatLngRef.current = null;
+      lastAccuracyRef.current = null;
+      userPinnedRef.current = false;
+      refreshUserLocationRef.current = () => {};
     };
   }, []);
 
@@ -546,9 +689,6 @@ function MapCanvas({
         didFitRef.current = true;
         const bounds = L.latLngBounds(places.map((p) => [p.lat, p.lng] as [number, number]));
         map.fitBounds(bounds.pad(0.35));
-      } else if (places.length === 0 && !didLocateRef.current) {
-        didLocateRef.current = true;
-        map.locate({ setView: true, maxZoom: 13, timeout: 8000, maximumAge: 300_000 });
       }
     });
   }, [mapReady, places, selectedId, draft]);
@@ -574,7 +714,7 @@ function MapCanvas({
           color: "var(--foreground)",
         }}
         onClick={() => {
-          mapRef.current?.locate({ setView: true, maxZoom: 14, timeout: 8000 });
+          refreshUserLocationRef.current(true);
         }}
       >
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

@@ -573,3 +573,18 @@ input[type="password"]::-ms-clear { display: none; }
   background: var(--surface-2);
   font-family: inherit;
 }
+
+.leaflet-user-location-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-user-location {
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #007aff;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px color-mix(in srgb, #000 28%, transparent);
+}
