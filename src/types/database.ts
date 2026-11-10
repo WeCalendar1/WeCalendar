@@ -125,6 +125,8 @@ export type Database = {
           has_conflict: boolean;
           recurrence_group_id: string | null;
           place_id: string | null;
+          sync_id: string | null;
+          external_uid: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -139,6 +141,8 @@ export type Database = {
           has_conflict?: boolean;
           recurrence_group_id?: string | null;
           place_id?: string | null;
+          sync_id?: string | null;
+          external_uid?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -153,10 +157,19 @@ export type Database = {
           has_conflict?: boolean;
           recurrence_group_id?: string | null;
           place_id?: string | null;
+          sync_id?: string | null;
+          external_uid?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "events_sync_id_fkey";
+            columns: ["sync_id"];
+            isOneToOne: false;
+            referencedRelation: "calendar_syncs";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "events_place_id_fkey";
             columns: ["place_id"];
@@ -672,9 +685,69 @@ export type Database = {
           },
         ];
       };
+      calendar_syncs: {
+        Row: {
+          id: string;
+          group_id: string;
+          user_id: string;
+          provider: "google" | "outlook" | "apple" | "ics";
+          label: string;
+          source_url: string | null;
+          last_synced_at: string;
+          synced_event_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          user_id: string;
+          provider?: "google" | "outlook" | "apple" | "ics";
+          label: string;
+          source_url?: string | null;
+          last_synced_at?: string;
+          synced_event_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          user_id?: string;
+          provider?: "google" | "outlook" | "apple" | "ics";
+          label?: string;
+          source_url?: string | null;
+          last_synced_at?: string;
+          synced_event_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "calendar_syncs_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calendar_syncs_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      unsync_my_calendars: {
+        Args: {
+          p_group_id?: string | null;
+        };
+        Returns: number;
+      };
       send_availability_nudge: {
         Args: {
           p_group_id: string;

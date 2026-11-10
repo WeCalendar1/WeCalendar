@@ -13,6 +13,21 @@ import {
 } from "@/lib/accountExport";
 import { useCalendarPrefs } from "@/lib/calendarPrefs";
 import {
+  PROVIDER_LABEL,
+  clearLocalCalendarSyncs,
+  detectCalendarProvider,
+  extractIcsCalendarName,
+  parseIcsEvents,
+  readLocalCalendarSyncs,
+  serializeEventsToIcs,
+  triggerIcsDownload,
+  validateExternalIcsUrl,
+  writeLocalCalendarSyncs,
+  type CalendarSyncProvider,
+  type LocalCalendarSync,
+  type ParsedIcsEvent,
+} from "@/lib/calendarSync";
+import {
   DEFAULT_NOTIFICATION_PREFS,
   isMissingColumnOrRelationError,
   normalizeNotificationPrefs,
@@ -628,6 +643,14 @@ export default function ProfilePage() {
   const [notifSaved, setNotifSaved] = useState(false);
   const [notifError, setNotifError] = useState<string | null>(null);
 
+  const icsFileInputRef = useRef<HTMLInputElement>(null);
+  const [calendarSyncs, setCalendarSyncs] = useState<LocalCalendarSync[]>([]);
+  const [syncUrlInput, setSyncUrlInput] = useState("");
+  const [syncLabelInput, setSyncLabelInput] = useState("");
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+
   const pwRules = validatePasswordRules(newPassword);
   const pwAllValid = isPasswordValid(newPassword);
   const canSubmitPassword = Boolean(
@@ -719,6 +742,22 @@ export default function ProfilePage() {
           ? storedGroupId
           : loadedGroups[0]?.id ?? null,
       );
+
+      const localSyncs = readLocalCalendarSyncs(user.id);
+      const { data: dbSyncs, error: dbSyncsErr } = await supabase
+        .from("calendar_syncs")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+
+      if (!mounted) return;
+      if (dbSyncsErr) {
+        setCalendarSyncs(localSyncs);
+      } else {
+        const merged: LocalCalendarSync[] = dbSyncs ?? [];
+        setCalendarSyncs(merged);
+        writeLocalCalendarSyncs(user.id, merged);
+      }
     }
 
     void loadUser();
@@ -934,6 +973,11 @@ export default function ProfilePage() {
         return;
       }
       const nextGroups = await reloadGroups();
+      setCalendarSyncs((prev) => {
+        const next = prev.filter((s) => s.group_id !== groupId);
+        if (userId) writeLocalCalendarSyncs(userId, next);
+        return next;
+      });
       if (activeGroupId === groupId || !nextGroups.some((g) => g.id === activeGroupId)) {
         const nextActive = nextGroups[0]?.id ?? null;
         setActiveGroupId(nextActive);
@@ -961,8 +1005,395 @@ export default function ProfilePage() {
       }
       setGroups([]);
       setActiveGroupId(null);
+      setCalendarSyncs([]);
+      if (userId) clearLocalCalendarSyncs(userId);
       window.localStorage.removeItem(ACTIVE_GROUP_KEY);
       setDangerNotice("Left all shared workspaces.");
+    } finally {
+      setDangerBusy(false);
+    }
+  }
+
+  async function syncEventsIntoWorkspace({
+    groupId,
+    provider,
+    label,
+    sourceUrl,
+    parsedEvents,
+    existingSyncId,
+  }: {
+    groupId: string;
+    provider: CalendarSyncProvider;
+    label: string;
+    sourceUrl: string | null;
+    parsedEvents: ParsedIcsEvent[];
+    existingSyncId?: string;
+  }): Promise<LocalCalendarSync> {
+    if (!userId) throw new Error("Please sign in again to sync calendars.");
+    const nowIso = new Date().toISOString();
+
+    const existing = calendarSyncs.find(
+      (s) =>
+        (existingSyncId && s.id === existingSyncId) ||
+        (sourceUrl !== null && s.group_id === groupId && s.source_url === sourceUrl),
+    );
+
+    const payload = {
+      group_id: groupId,
+      user_id: userId,
+      provider,
+      label: label.trim() || PROVIDER_LABEL[provider],
+      source_url: sourceUrl,
+      last_synced_at: nowIso,
+      synced_event_count: parsedEvents.length,
+    };
+
+    const { data: syncRow, error: syncRowErr } = existing
+      ? await supabase
+          .from("calendar_syncs")
+          .update(payload)
+          .eq("id", existing.id)
+          .select("*")
+          .single()
+      : await supabase.from("calendar_syncs").insert(payload).select("*").single();
+
+    if (!syncRowErr && syncRow) {
+      if (parsedEvents.length > 0) {
+        const rows = parsedEvents.map((ev) => ({
+          group_id: groupId,
+          title: ev.title,
+          description: ev.description,
+          starts_at: ev.startsAt,
+          ends_at: ev.endsAt,
+          created_by: userId,
+          sync_id: syncRow.id,
+          external_uid: ev.externalUid,
+        }));
+        const { error: upsertErr } = await supabase
+          .from("events")
+          .upsert(rows, { onConflict: "sync_id,external_uid" });
+        if (upsertErr) throw new Error(upsertErr.message);
+
+        const activeUids = parsedEvents.map((ev) => ev.externalUid);
+        const { data: existingSyncedEvents } = await supabase
+          .from("events")
+          .select("id, external_uid")
+          .eq("sync_id", syncRow.id);
+        const staleIds = (existingSyncedEvents ?? [])
+          .filter((row) => !row.external_uid || !activeUids.includes(row.external_uid))
+          .map((row) => row.id);
+        if (staleIds.length > 0) {
+          await supabase.from("events").delete().in("id", staleIds);
+        }
+      } else {
+        await supabase.from("events").delete().eq("sync_id", syncRow.id);
+      }
+
+      const nextSync: LocalCalendarSync = syncRow;
+      setCalendarSyncs((prev) => {
+        const filtered = prev.filter((s) => s.id !== nextSync.id);
+        const updated = [...filtered, nextSync];
+        writeLocalCalendarSyncs(userId, updated);
+        return updated;
+      });
+      return nextSync;
+    }
+
+    if (syncRowErr && !isMissingColumnOrRelationError(syncRowErr)) {
+      throw new Error(syncRowErr.message);
+    }
+
+    // Fallback when 20261108210000_calendar_sync.sql is not yet applied on hosted DB
+    if (existing?.imported_event_ids && existing.imported_event_ids.length > 0) {
+      await supabase.from("events").delete().in("id", existing.imported_event_ids);
+    }
+
+    let importedIds: string[] = [];
+    if (parsedEvents.length > 0) {
+      const fallbackRows = parsedEvents.map((ev) => ({
+        group_id: groupId,
+        title: ev.title,
+        description: ev.description,
+        starts_at: ev.startsAt,
+        ends_at: ev.endsAt,
+        created_by: userId,
+      }));
+      const { data: inserted, error: insertErr } = await supabase
+        .from("events")
+        .insert(fallbackRows)
+        .select("id");
+      if (insertErr) throw new Error(insertErr.message);
+      importedIds = (inserted ?? []).map((r) => r.id);
+    }
+
+    const fallbackSync: LocalCalendarSync = {
+      id: existing?.id ?? `local-${Date.now()}`,
+      group_id: groupId,
+      user_id: userId,
+      provider,
+      label: label.trim() || PROVIDER_LABEL[provider],
+      source_url: sourceUrl,
+      last_synced_at: nowIso,
+      synced_event_count: parsedEvents.length,
+      created_at: existing?.created_at ?? nowIso,
+      updated_at: nowIso,
+      imported_event_ids: importedIds,
+    };
+
+    setCalendarSyncs((prev) => {
+      const filtered = prev.filter((s) => s.id !== fallbackSync.id);
+      const updated = [...filtered, fallbackSync];
+      writeLocalCalendarSyncs(userId, updated);
+      return updated;
+    });
+    return fallbackSync;
+  }
+
+  async function handleSyncIcsUrl(e: React.FormEvent) {
+    e.preventDefault();
+    setSyncError(null);
+    setSyncNotice(null);
+
+    if (!activeGroupId) {
+      setSyncError("Select or create a shared calendar first.");
+      return;
+    }
+
+    const validation = validateExternalIcsUrl(syncUrlInput);
+    if (!validation.ok) {
+      setSyncError(validation.error);
+      return;
+    }
+
+    setSyncBusy(true);
+    try {
+      const res = await fetch("/api/calendar-sync/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: validation.url }),
+      });
+      const payload = (await res.json()) as { icsText?: string; error?: string };
+      if (!res.ok || !payload.icsText) {
+        setSyncError(payload.error || "Could not fetch external calendar feed.");
+        return;
+      }
+
+      const parsedEvents = parseIcsEvents(payload.icsText);
+      if (parsedEvents.length === 0) {
+        setSyncError("No upcoming or active VEVENT entries were found in that .ics feed.");
+        return;
+      }
+
+      const provider = detectCalendarProvider(validation.url);
+      const inferredName =
+        syncLabelInput.trim() ||
+        extractIcsCalendarName(payload.icsText) ||
+        PROVIDER_LABEL[provider];
+
+      await syncEventsIntoWorkspace({
+        groupId: activeGroupId,
+        provider,
+        label: inferredName,
+        sourceUrl: validation.url,
+        parsedEvents,
+      });
+
+      setSyncUrlInput("");
+      setSyncLabelInput("");
+      setSyncNotice(`Synced ${parsedEvents.length} event${parsedEvents.length === 1 ? "" : "s"} from "${inferredName}".`);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "Failed to sync external calendar.");
+    } finally {
+      setSyncBusy(false);
+    }
+  }
+
+  async function handleImportIcsFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setSyncError(null);
+    setSyncNotice(null);
+
+    if (!activeGroupId) {
+      setSyncError("Select or create a shared calendar first.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setSyncError("Calendar .ics file must be under 2 MB.");
+      return;
+    }
+
+    setSyncBusy(true);
+    try {
+      const icsText = await file.text();
+      if (!/BEGIN:VCALENDAR/i.test(icsText)) {
+        setSyncError("Selected file is not a valid iCalendar (.ics) file.");
+        return;
+      }
+
+      const parsedEvents = parseIcsEvents(icsText);
+      if (parsedEvents.length === 0) {
+        setSyncError("No VEVENT entries were found in the uploaded .ics file.");
+        return;
+      }
+
+      const baseName = file.name.replace(/\.ics$/i, "").trim();
+      const calName = extractIcsCalendarName(icsText) || syncLabelInput.trim() || baseName || "Imported .ics";
+      const provider = detectCalendarProvider(`${file.name} ${calName}`);
+
+      await syncEventsIntoWorkspace({
+        groupId: activeGroupId,
+        provider,
+        label: calName,
+        sourceUrl: null,
+        parsedEvents,
+      });
+
+      setSyncLabelInput("");
+      setSyncNotice(`Imported ${parsedEvents.length} event${parsedEvents.length === 1 ? "" : "s"} from "${calName}".`);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "Failed to import .ics file.");
+    } finally {
+      setSyncBusy(false);
+    }
+  }
+
+  async function handleRefreshSync(sync: LocalCalendarSync) {
+    if (!sync.source_url) return;
+    setSyncError(null);
+    setSyncNotice(null);
+    setSyncBusy(true);
+    try {
+      const res = await fetch("/api/calendar-sync/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: sync.source_url }),
+      });
+      const payload = (await res.json()) as { icsText?: string; error?: string };
+      if (!res.ok || !payload.icsText) {
+        setSyncError(payload.error || "Could not refresh external calendar feed.");
+        return;
+      }
+
+      const parsedEvents = parseIcsEvents(payload.icsText);
+      await syncEventsIntoWorkspace({
+        groupId: sync.group_id,
+        provider: sync.provider,
+        label: sync.label,
+        sourceUrl: sync.source_url,
+        parsedEvents,
+        existingSyncId: sync.id,
+      });
+      setSyncNotice(`Refreshed "${sync.label}" (${parsedEvents.length} event${parsedEvents.length === 1 ? "" : "s"}).`);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "Could not refresh calendar sync.");
+    } finally {
+      setSyncBusy(false);
+    }
+  }
+
+  async function handleDisconnectSync(sync: LocalCalendarSync) {
+    setSyncError(null);
+    setSyncNotice(null);
+    setSyncBusy(true);
+    try {
+      const { error } = await supabase.from("calendar_syncs").delete().eq("id", sync.id);
+      if (error && !isMissingColumnOrRelationError(error)) {
+        setSyncError(error.message);
+        return;
+      }
+      if (sync.imported_event_ids && sync.imported_event_ids.length > 0) {
+        await supabase.from("events").delete().in("id", sync.imported_event_ids);
+      }
+      setCalendarSyncs((prev) => {
+        const next = prev.filter((s) => s.id !== sync.id);
+        if (userId) writeLocalCalendarSyncs(userId, next);
+        return next;
+      });
+      setSyncNotice(`Disconnected "${sync.label}" and removed its synced events.`);
+    } finally {
+      setSyncBusy(false);
+    }
+  }
+
+  async function handleExportIcs() {
+    setSyncError(null);
+    setSyncNotice(null);
+    if (!activeGroupId) {
+      setSyncError("Select a shared calendar to export.");
+      return;
+    }
+    setSyncBusy(true);
+    try {
+      const { data: eventsData, error } = await supabase
+        .from("events")
+        .select("id, title, description, starts_at, ends_at, updated_at")
+        .eq("group_id", activeGroupId)
+        .order("starts_at", { ascending: true });
+      if (error) {
+        setSyncError(error.message);
+        return;
+      }
+      const activeGroup = groups.find((g) => g.id === activeGroupId);
+      const calName = activeGroup?.name ?? "WeCalendar";
+      const safeSlug = calName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "calendar";
+      const icsContent = serializeEventsToIcs(eventsData ?? [], calName);
+      triggerIcsDownload(`wecalendar-${safeSlug}.ics`, icsContent);
+      setSyncNotice(`Exported ${(eventsData ?? []).length} event${(eventsData ?? []).length === 1 ? "" : "s"} to .ics.`);
+    } finally {
+      setSyncBusy(false);
+    }
+  }
+
+  async function handleUnsyncCalendars() {
+    setDangerError(null);
+    setDangerNotice(null);
+    setSyncError(null);
+    setSyncNotice(null);
+    setDangerBusy(true);
+    try {
+      const localCount = calendarSyncs.length;
+      const fallbackEventIds = calendarSyncs.flatMap((s) => s.imported_event_ids ?? []);
+
+      let removedCount = 0;
+      const { data: rpcCount, error: rpcErr } = await supabase.rpc("unsync_my_calendars");
+
+      if (!rpcErr && typeof rpcCount === "number") {
+        removedCount = Math.max(rpcCount, localCount);
+      } else if (rpcErr && !isMissingColumnOrRelationError(rpcErr) && rpcErr.code !== "PGRST202") {
+        setDangerError(rpcErr.message);
+        return;
+      } else {
+        if (userId) {
+          const { error: delErr } = await supabase
+            .from("calendar_syncs")
+            .delete()
+            .eq("user_id", userId);
+          if (delErr && !isMissingColumnOrRelationError(delErr)) {
+            setDangerError(delErr.message);
+            return;
+          }
+        }
+        removedCount = localCount;
+      }
+
+      if (fallbackEventIds.length > 0) {
+        await supabase.from("events").delete().in("id", fallbackEventIds);
+      }
+
+      setCalendarSyncs([]);
+      if (userId) {
+        clearLocalCalendarSyncs(userId);
+      }
+
+      setDangerNotice(
+        removedCount > 0
+          ? `Disconnected ${removedCount} synced calendar${removedCount === 1 ? "" : "s"} and removed their imported events.`
+          : "All external calendar syncs are disconnected.",
+      );
     } finally {
       setDangerBusy(false);
     }
@@ -1545,6 +1976,179 @@ export default function ProfilePage() {
             checked={prefs.showWorkspaceInSidebar}
             onChange={setShowWorkspaceInSidebar}
           />
+
+          {/* External Calendar Sync (.ics URL, .ics upload, .ics export) */}
+          <div
+            className="space-y-4 px-6 py-5"
+            style={{ borderTop: "0.5px solid var(--separator)" }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                  External Calendar Sync (Google, Outlook, Apple &amp; .ics)
+                </p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  Subscribe to an iCal (.ics) feed URL, import a .ics file into the active shared calendar (visible to workspace members), or export events as .ics
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={icsFileInputRef}
+                  id="sync-ics-file-input"
+                  type="file"
+                  accept=".ics,text/calendar"
+                  className="hidden"
+                  onChange={(e) => {
+                    void handleImportIcsFile(e);
+                  }}
+                />
+                <button
+                  id="sync-ics-file-btn"
+                  type="button"
+                  disabled={syncBusy || !activeGroupId}
+                  onClick={() => icsFileInputRef.current?.click()}
+                  className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    borderRadius: "var(--radius-full)",
+                    border: "1.5px solid var(--border)",
+                    background: "var(--surface-2)",
+                    color: "var(--foreground)",
+                  }}
+                >
+                  Import .ics file
+                </button>
+                <button
+                  id="export-ics-btn"
+                  type="button"
+                  disabled={syncBusy || !activeGroupId}
+                  onClick={() => {
+                    void handleExportIcs();
+                  }}
+                  className="btn-bounce cursor-pointer px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    borderRadius: "var(--radius-full)",
+                    border: "1.5px solid var(--border)",
+                    background: "var(--surface-2)",
+                    color: "var(--foreground)",
+                  }}
+                >
+                  Export .ics
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleSyncIcsUrl} className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+              <div className="sm:col-span-4">
+                <TextInput
+                  id="sync-ics-label-input"
+                  placeholder="Label (e.g. Google Work)"
+                  value={syncLabelInput}
+                  onChange={setSyncLabelInput}
+                  maxLength={60}
+                />
+              </div>
+              <div className="sm:col-span-6">
+                <TextInput
+                  id="sync-ics-url-input"
+                  placeholder="https:// or webcal:// calendar .ics feed URL"
+                  value={syncUrlInput}
+                  onChange={(v) => {
+                    setSyncUrlInput(v);
+                    setSyncError(null);
+                  }}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <button
+                  id="sync-ics-url-btn"
+                  type="submit"
+                  disabled={syncBusy || !activeGroupId || !syncUrlInput.trim()}
+                  className="btn-bounce flex h-full w-full cursor-pointer items-center justify-center px-3 py-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    borderRadius: "var(--radius-lg)",
+                    background: "var(--accent)",
+                  }}
+                >
+                  {syncBusy ? "Syncing…" : "Sync URL"}
+                </button>
+              </div>
+            </form>
+
+            {syncError && (
+              <p role="alert" className="text-xs font-semibold" style={{ color: "var(--color-danger)" }}>
+                {syncError}
+              </p>
+            )}
+            {syncNotice && (
+              <p role="status" className="text-xs font-semibold" style={{ color: "var(--color-success)" }}>
+                {syncNotice}
+              </p>
+            )}
+
+            {calendarSyncs.length > 0 && (
+              <ul className="divide-y" style={{ borderColor: "var(--separator)" }}>
+                {calendarSyncs.map((sync) => {
+                  const groupName = groups.find((g) => g.id === sync.group_id)?.name ?? "Workspace";
+                  return (
+                    <li
+                      key={sync.id}
+                      className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold" style={{ color: "var(--foreground)" }}>
+                          {sync.label}{" "}
+                          <span className="font-normal" style={{ color: "var(--text-muted)" }}>
+                            ({PROVIDER_LABEL[sync.provider]} · {groupName} · {sync.synced_event_count} event{sync.synced_event_count === 1 ? "" : "s"})
+                          </span>
+                        </p>
+                        {sync.source_url && (
+                          <p className="truncate" style={{ color: "var(--text-muted)" }}>
+                            {sync.source_url}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {sync.source_url && (
+                          <button
+                            type="button"
+                            disabled={syncBusy}
+                            onClick={() => {
+                              void handleRefreshSync(sync);
+                            }}
+                            className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold disabled:opacity-50"
+                            style={{
+                              borderRadius: "var(--radius-full)",
+                              border: "1px solid var(--border)",
+                              background: "var(--surface)",
+                              color: "var(--foreground)",
+                            }}
+                          >
+                            Refresh
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          disabled={syncBusy}
+                          onClick={() => {
+                            void handleDisconnectSync(sync);
+                          }}
+                          className="btn-bounce cursor-pointer px-2.5 py-1 text-xs font-semibold disabled:opacity-50"
+                          style={{
+                            borderRadius: "var(--radius-full)",
+                            border: "1px solid #fca5a5",
+                            background: "#fff0f0",
+                            color: "#dc2626",
+                          }}
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </SectionCard>
 
         {/* ── Calendar Settings ───────────────────────────── */}
@@ -1602,7 +2206,7 @@ export default function ProfilePage() {
             />
             <DangerButton
               id="unsync-calendar-btn"
-              disabled={dangerBusy}
+              disabled={dangerBusy || syncBusy}
               icon={
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -1613,6 +2217,9 @@ export default function ProfilePage() {
               title="Unsync calendar"
               description="Disconnect your Google Calendar or Outlook sync"
               confirmLabel="Unsync"
+              onClick={() => {
+                void handleUnsyncCalendars();
+              }}
             />
             {/* ── Leave a specific group (selector) ── */}
             <LeaveGroupRow disabled={dangerBusy} groups={groups} onLeave={(id) => { void handleLeaveGroup(id); }} />

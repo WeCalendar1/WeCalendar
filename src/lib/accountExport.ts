@@ -13,6 +13,7 @@ export type AccountExportBundle = {
   tags: Tables<"tags">[];
   eventTags: Tables<"event_tags">[];
   eventRsvps: Tables<"event_rsvps">[];
+  calendarSyncs: Tables<"calendar_syncs">[];
   notifications: Tables<"notifications">[];
   places: Tables<"places">[];
   noteFolders: Tables<"note_folders">[];
@@ -54,7 +55,7 @@ export async function fetchAccountExportBundle(
   user: { id: string; email?: string | null },
   exportedAt: string = new Date().toISOString(),
 ): Promise<AccountExportBundle> {
-  const [profileRes, membershipsRes, notificationsRes] = await Promise.all([
+  const [profileRes, membershipsRes, notificationsRes, calendarSyncsRes] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("group_members").select("group_id").eq("user_id", user.id),
     supabase
@@ -62,6 +63,11 @@ export async function fetchAccountExportBundle(
       .select("*")
       .eq("recipient_id", user.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("calendar_syncs")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
   ]);
 
   if (profileRes.error) throw profileRes.error;
@@ -69,8 +75,12 @@ export async function fetchAccountExportBundle(
   if (notificationsRes.error && !isMissingRelationError(notificationsRes.error)) {
     throw notificationsRes.error;
   }
+  if (calendarSyncsRes.error && !isMissingRelationError(calendarSyncsRes.error)) {
+    throw calendarSyncsRes.error;
+  }
 
   const notifications = notificationsRes.error ? [] : (notificationsRes.data ?? []);
+  const calendarSyncs = calendarSyncsRes.error ? [] : (calendarSyncsRes.data ?? []);
   const groupIds = [...new Set((membershipsRes.data ?? []).map((m) => m.group_id))];
 
   if (groupIds.length === 0) {
@@ -83,6 +93,7 @@ export async function fetchAccountExportBundle(
       tags: [],
       eventTags: [],
       eventRsvps: [],
+      calendarSyncs,
       notifications,
       places: [],
       noteFolders: [],
@@ -146,6 +157,7 @@ export async function fetchAccountExportBundle(
     tags: tagsRes.data ?? [],
     eventTags: eventTagsRes.data ?? [],
     eventRsvps,
+    calendarSyncs,
     notifications,
     places,
     noteFolders: noteFoldersRes.data ?? [],
