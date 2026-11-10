@@ -1,16 +1,16 @@
-# Graph Report - WeCalendar  (2026-11-09)
+# Graph Report - WeCalendar  (2026-11-10)
 
 ## Corpus Check
-- 148 files · ~132,739 words
+- 148 files · ~133,116 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1264 nodes · 2098 edges · 95 communities (81 shown, 14 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 10 edges (avg confidence: 0.53)
+- 1396 nodes · 2284 edges · 108 communities (94 shown, 14 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 16 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `6ec308a5`
+- Built from commit: `dc06733b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -18,7 +18,7 @@
 - calendar.ts
 - WeCalendar — Full Project Context
 - dependencies
-- profile/page.tsx
+- calendarSync.ts
 - CalendarCell.tsx
 - Expo Animation Recipes
 - devDependencies
@@ -33,18 +33,18 @@
 - Write Swift
 - Apple Design
 - Workflow
-- notes.ts
+- NotesApp.tsx
 - Glossary
-- tags.ts
+- EventViewerPanel.tsx
 - 20261107013000_notifications_and_nudges.sql
 - eventPicker.ts
 - Finding Animation Opportunities
-- AppShell.tsx
+- AppShell
 - NoteToolbar.tsx
 - WeCalendar — project context
 - 20260830120000_notes.sql
 - Working With Sonner
-- ConflictToast.tsx
+- ConflictToast
 - 20260818000000_tags.sql
 - The list
 - Navbar.tsx
@@ -82,14 +82,14 @@
 - public.profiles
 - 20261105230000_event_rsvps.sql
 - Review Focus
-- EventViewerPanel.tsx
+- notes.ts
 - 20261108210000_calendar_sync.sql
 - Phase 3: Persisted Notifications & Availability Nudges — Design Spec
 - Phase 5: External Calendar Sync & Unsync Calendar — Design Spec
 - Review Focus
 - Review Focus
 - public.profiles
-- PanelResizeHandle.tsx
+- AppShell.tsx
 - Review Focus
 - 20261107210000_places_hardening.sql
 - public.places
@@ -98,39 +98,52 @@
 - public.notes
 - public.events
 - public.notes
+- Sidebar.tsx
+- profile/page.tsx
+- TimeGrid.tsx
+- NotesApp
+- NotesListPanel.tsx
+- database.ts
+- LoginForm.tsx
+- ProfilePage
+- NotesFolderDialog.tsx
+- fetch/route.ts
+- Calendar.tsx
+- parseIcsEvents
+- scheduling.ts
 
 ## God Nodes (most connected - your core abstractions)
-1. `AppShell()` - 30 edges
-2. `ProfilePage()` - 22 edges
-3. `CalendarEvent` - 21 edges
-4. `startOfDay()` - 20 edges
-5. `Apple Design` - 20 edges
-6. `Write Swift` - 18 edges
-7. `addDays()` - 17 edges
-8. `isSameDay()` - 16 edges
-9. `compilerOptions` - 16 edges
-10. `Design Engineering` - 16 edges
+1. `AppShell()` - 66 edges
+2. `ProfilePage()` - 27 edges
+3. `NotesApp()` - 21 edges
+4. `startOfDay()` - 21 edges
+5. `CalendarEvent` - 21 edges
+6. `Apple Design` - 20 edges
+7. `CreateEventModalContent()` - 19 edges
+8. `Write Swift` - 18 edges
+9. `addDays()` - 17 edges
+10. `isSameDay()` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `CalendarSettingsSection()` --calls--> `useCalendarPrefs()`  [EXTRACTED]
   src/app/profile/page.tsx → src/lib/calendarPrefs.ts
+- `handleCreateNoteFolder()` --calls--> `normalizeFolderColor()`  [EXTRACTED]
+  src/components/AppShell/AppShell.tsx → src/lib/notes.ts
+- `handleUpdateNoteFolder()` --calls--> `normalizeFolderColor()`  [EXTRACTED]
+  src/components/AppShell/AppShell.tsx → src/lib/notes.ts
 - `CalendarCell()` --indirect_call--> `isMultiDayEvent()`  [INFERRED]
   src/components/CalendarCell/CalendarCell.tsx → src/lib/events.ts
-- `GET()` --calls--> `createClient()`  [EXTRACTED]
-  src/app/auth/callback/route.ts → src/lib/supabase/server.ts
-- `ProfilePage()` --calls--> `useCalendarPrefs()`  [EXTRACTED]
-  src/app/profile/page.tsx → src/lib/calendarPrefs.ts
-- `ProfilePage()` --calls--> `isMissingColumnOrRelationError()`  [EXTRACTED]
-  src/app/profile/page.tsx → src/lib/notifications.ts
+- `createPinnedSsrfLookup()` --calls--> `selectPinnedLookupAddresses()`  [EXTRACTED]
+  src/app/api/calendar-sync/fetch/route.ts → src/lib/calendarSync.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (95 total, 14 thin omitted)
+## Communities (108 total, 14 thin omitted)
 
 ### Community 0 - "calendar.ts"
-Cohesion: 0.17
-Nodes (26): MiniCalendar(), MiniCalendarProps, Sidebar(), MiniMonth(), YearView(), YearViewProps, addDays(), addMonths() (+18 more)
+Cohesion: 0.21
+Nodes (20): MiniCalendar(), MiniCalendarProps, MiniMonth(), YearViewProps, addMonths(), addYears(), CalendarDay, DAY_HOURS (+12 more)
 
 ### Community 1 - "WeCalendar — Full Project Context"
 Cohesion: 0.04
@@ -140,13 +153,13 @@ Nodes (46): 10. Shared Lists / Tasks, 11. Calendar Interactions, 12. CI Pipeline
 Cohesion: 0.04
 Nodes (47): framer-motion, next, dependencies, framer-motion, html2canvas-pro, leaflet, next, react (+39 more)
 
-### Community 3 - "profile/page.tsx"
-Cohesion: 0.05
-Nodes (59): RFC-5545, createPinnedSsrfLookup(), fetchSingleHopPinned(), HopResult, POST(), REDIRECT_STATUS_CODES, GET(), CALENDAR_VIEWS (+51 more)
+### Community 3 - "calendarSync.ts"
+Cohesion: 0.13
+Nodes (23): RFC-5545, handleExportIcs(), handleLeaveAllGroups(), CalendarSync, CalendarSyncProvider, clearLocalCalendarSyncs(), escapeIcsText(), extractTzidFromPropKey() (+15 more)
 
 ### Community 4 - "CalendarCell.tsx"
-Cohesion: 0.21
-Nodes (15): barEdges(), barRadius(), CalendarCell(), CalendarCellProps, conflictBarShadow(), conflictOutline(), EventCreatorBadge(), getEventCreatorColor() (+7 more)
+Cohesion: 0.29
+Nodes (10): barEdges(), barRadius(), CalendarCell(), CalendarCellProps, conflictBarShadow(), conflictOutline(), eventsForDay(), eventsSpanningDay() (+2 more)
 
 ### Community 5 - "Expo Animation Recipes"
 Cohesion: 0.06
@@ -173,8 +186,8 @@ Cohesion: 0.07
 Nodes (25): Apply the migration, Option A — Supabase Dashboard (simplest), Option B — Supabase CLI, Out of scope (later phases), RPCs (use these from the app), Security, Smoke test (after auth exists), Tables (+17 more)
 
 ### Community 11 - "CreateEventModal.tsx"
-Cohesion: 0.12
-Nodes (23): CreateEventModal(), CreateEventModalContent(), CreateEventModalProps, DayPicker(), DayPickerProps, EventDraft, RSVP_OPTIONS, toDateInput() (+15 more)
+Cohesion: 0.10
+Nodes (16): CreateEventModal(), CreateEventModalContent(), buildDraft(), handleSubmit(), CreateEventModalProps, DayPicker(), DayPickerProps, EventDraft (+8 more)
 
 ### Community 12 - "Animation Audit Playbook"
 Cohesion: 0.09
@@ -200,37 +213,37 @@ Nodes (20): 10. Gesture design details (the "feel" checklist), 11. Frame-level s
 Cohesion: 0.10
 Nodes (18): Behavior contract, Markup, Reference wiring, Rules, Styles, The Picker, Hard Rules, Invocation Variants (+10 more)
 
-### Community 18 - "notes.ts"
-Cohesion: 0.06
-Nodes (71): NoteEditor(), NoteEditorProps, Commands, CustomBullet, LineHeight, @tiptap/core, NoteDraftContext, NotesApp() (+63 more)
+### Community 18 - "NotesApp.tsx"
+Cohesion: 0.11
+Nodes (16): NoteEditor(), NoteEditorProps, Commands, CustomBullet, LineHeight, @tiptap/core, NoteDraftContext, NotesAppProps (+8 more)
 
 ### Community 19 - "Glossary"
 Cohesion: 0.11
 Nodes (17): Animation Vocabulary, Easing — how speed changes over an animation, Entrances & Exits — how elements appear and disappear, Examples, Feedback & Interaction — responding to the user's actions, Glossary, Instructions, Looping & Ambient Motion — animations that run on their own (+9 more)
 
-### Community 20 - "tags.ts"
+### Community 20 - "EventViewerPanel.tsx"
 Cohesion: 0.14
-Nodes (17): Calendar(), CalendarProps, DayView(), DayViewProps, dayAsCalendarDay(), HOUR_HEIGHT_PX, WeekView(), WeekViewProps (+9 more)
+Nodes (18): BUCKET_META, BUCKET_ORDER, bucketEvents(), EventRow(), EventViewerPanel(), EventViewerPanelProps, TimeBucket, startOfWeek() (+10 more)
 
 ### Community 21 - "20261107013000_notifications_and_nudges.sql"
 Cohesion: 0.11
 Nodes (24): inserted_rows, public.event_rsvps, public.notify_on_event_insert, public.notify_on_list_activity, public.notify_on_member_join, public.notify_on_member_leave, events_notify_insert, group_members_notify_join (+16 more)
 
 ### Community 22 - "eventPicker.ts"
-Cohesion: 0.22
-Nodes (16): EventRow(), NoteMetaBar(), NotesLinkEventDialogContent(), NotesLinkEventDialogProps, EventPickerFilters, EventPickerGroup, filterAndGroupEventsForPicker(), filterEventsForPicker() (+8 more)
+Cohesion: 0.26
+Nodes (13): NoteMetaBar(), NotesLinkEventDialogContent(), NotesLinkEventDialogProps, EventPickerFilters, EventPickerGroup, filterAndGroupEventsForPicker(), filterEventsForPicker(), formatEventPickerTimeRange() (+5 more)
 
 ### Community 23 - "Finding Animation Opportunities"
 Cohesion: 0.12
 Nodes (15): 1. Frequency — how often will a user see this?, 2. Purpose — why does this animate?, 3. Speed — can it stay inside budget?, 4. Function — does motion help or hinder here?, Finding Animation Opportunities, Hard Rules, Operating Posture, Part 1 — Opportunities table (+7 more)
 
-### Community 24 - "AppShell.tsx"
-Cohesion: 0.23
-Nodes (9): AppShell(), emptySubscribe(), EventCreator, Group, Navbar(), executeSeriesReconciliation(), prepareBulkEventInserts(), filterNotesByTags() (+1 more)
+### Community 24 - "AppShell"
+Cohesion: 0.06
+Nodes (19): AppShell(), applyNotePatchLocally(), closeEventModal(), handleCreateMultipleEvents(), handleCreateNote(), handleCreateNoteFolder(), handleCreateNoteForEvent(), handleDeleteNote() (+11 more)
 
 ### Community 25 - "NoteToolbar.tsx"
-Cohesion: 0.13
-Nodes (9): BULLET_PRESETS, COLORS, FONT_OPTIONS, HIGHLIGHT_COLORS, LINE_SPACING_OPTIONS, normalizeHref(), NoteToolbar(), NoteToolbarProps (+1 more)
+Cohesion: 0.11
+Nodes (12): BULLET_PRESETS, BulletPicker(), COLORS, FONT_OPTIONS, HIGHLIGHT_COLORS, LINE_SPACING_OPTIONS, normalizeHref(), NoteToolbar() (+4 more)
 
 ### Community 26 - "WeCalendar — project context"
 Cohesion: 0.13
@@ -244,8 +257,8 @@ Nodes (14): public.validate_note_event_group, note_folders_set_updated_at, notes
 Cohesion: 0.17
 Nodes (10): Functions, Sonner API Reference, `toast()` options, `<Toaster />`, Picking the right call, Recipes, Setup, Styling — the escalation ladder (+2 more)
 
-### Community 29 - "ConflictToast.tsx"
-Cohesion: 0.50
+### Community 29 - "ConflictToast"
+Cohesion: 0.22
 Nodes (3): ConflictToast(), ConflictToastItem, ConflictToastProps
 
 ### Community 30 - "20260818000000_tags.sql"
@@ -257,12 +270,12 @@ Cohesion: 0.20
 Nodes (9): Charts, Common mismatches to catch, How to use this, Interaction & performance, Motion & visuals, Picking The Right Library, State & styling, The list (+1 more)
 
 ### Community 32 - "Navbar.tsx"
-Cohesion: 0.15
-Nodes (10): APPLE_ACCENTS, loadRecentColors(), MODES, NavbarProps, PRESET_COLORS, ProfileMenu(), SCREENS, SnapshotState (+2 more)
+Cohesion: 0.14
+Nodes (11): APPLE_ACCENTS, loadRecentColors(), MODES, Navbar(), NavbarProps, PRESET_COLORS, ProfileMenu(), handleSignOut() (+3 more)
 
 ### Community 33 - "events.ts"
-Cohesion: 0.23
-Nodes (18): CalendarGrid(), CalendarGridProps, computeMultiDaySlots(), TimeGrid(), startOfDay(), daySegmentMinutes(), effectiveEventEndDay(), EventLayout (+10 more)
+Cohesion: 0.21
+Nodes (21): CalendarGrid(), CalendarGridProps, computeMultiDaySlots(), addDays(), startOfDay(), daySegmentMinutes(), effectiveEventEndDay(), EventLayout (+13 more)
 
 ### Community 34 - "Design Engineering"
 Cohesion: 0.22
@@ -277,8 +290,8 @@ Cohesion: 0.25
 Nodes (8): Animate enter states with @starting-style, Buttons must feel responsive, Component Building Principles, Make popovers origin-aware, Never animate from scale(0), Tooltips: skip delay on subsequent hovers, Use blur to mask imperfect transitions, Use CSS transitions over keyframes for interruptible UI
 
 ### Community 37 - "MapApp.tsx"
-Cohesion: 0.22
-Nodes (13): DraftPin, MapApp(), MapAppProps, MapFilter, eventsForPlace(), filterPlaces(), isPlaceKind(), notesForPlace() (+5 more)
+Cohesion: 0.15
+Nodes (17): DraftPin, MapApp(), MapAppProps, MapCanvas(), applyUserPosition(), startWatch(), upsertUserMarker(), MapFilter (+9 more)
 
 ### Community 38 - "theme.ts"
 Cohesion: 0.39
@@ -306,7 +319,7 @@ Nodes (6): Damping at boundaries, Friction instead of hard stops, Gesture and Dr
 
 ### Community 44 - "rsvps.ts"
 Cohesion: 0.26
-Nodes (10): EventRsvp, filterConflictCandidateEvents(), filterVisibleEvents(), isRsvpStatus(), rsvpMapForUser(), RsvpMemberSummary, RsvpStatus, STATUS_ORDER (+2 more)
+Nodes (10): unansweredMemberIdsForEvent(), EventRsvp, filterConflictCandidateEvents(), filterVisibleEvents(), isRsvpStatus(), rsvpMapForUser(), RsvpMemberSummary, RsvpStatus (+2 more)
 
 ### Community 45 - "updateSession"
 Cohesion: 0.53
@@ -345,8 +358,8 @@ Cohesion: 0.21
 Nodes (14): CalendarMode, ALLOWED_VIEWS, CalendarPrefs, DEFAULTS, getPrefsSnapshot(), getServerPrefsSnapshot(), KEYS, loadBool() (+6 more)
 
 ### Community 62 - "notifications.ts"
-Cohesion: 0.23
-Nodes (14): NotificationBell(), AppNotification, consumePendingOpenTarget(), countUnreadNotifications(), DEFAULT_NOTIFICATION_PREFS, formatNotificationRelativeTime(), isMissingColumnOrRelationError(), normalizeNotificationPrefs() (+6 more)
+Cohesion: 0.15
+Nodes (20): handleToggleNotificationPref(), handleUnsyncCalendars(), loadUser(), handleClearNotifications(), handleDismissNotification(), handleMarkAllNotificationsRead(), NotificationBell(), AppNotification (+12 more)
 
 ### Community 75 - "20261105230000_event_rsvps.sql"
 Cohesion: 0.17
@@ -356,9 +369,9 @@ Nodes (11): public.reset_event_rsvps_on_reschedule, event_rsvps_set_updated_at, 
 Cohesion: 0.18
 Nodes (10): Core UX & Account Settings Implementation Plan, Global Constraints, Review Focus, Task 1: Password Validation Helper & Reactive Calendar Preferences, Task 2: Monday-First Calendar Math & Multi-Day Span / TimeGrid Helpers, Task 3: Multi-Day Event Draft Expansion, Validation & `CreateEventModal`, Task 4: Thread `weekStartsOnMonday`, `TimeGrid` Clipping & Interactive `MiniCalendar`, Task 5: Account & Group Lifecycle SQL Migration, Database Types & Data Export Helper (+2 more)
 
-### Community 77 - "EventViewerPanel.tsx"
-Cohesion: 0.24
-Nodes (6): BUCKET_META, BUCKET_ORDER, bucketEvents(), EventViewerPanel(), EventViewerPanelProps, TimeBucket
+### Community 77 - "notes.ts"
+Cohesion: 0.17
+Nodes (19): NotesMoveToFolderDialog(), NotesMoveToFolderDialogProps, bulkMoveFolderOptions(), BulkMoveFolderResult, filterNoOpNotePatch(), filterNotesByTags(), foldersForNote(), isEmptyNotePatch() (+11 more)
 
 ### Community 78 - "20261108210000_calendar_sync.sql"
 Cohesion: 0.18
@@ -384,9 +397,9 @@ Nodes (7): Global Constraints, Persisted Notifications & Availability Nudges Imp
 Cohesion: 0.25
 Nodes (8): public.list_items, public.lists, public.tags, public.events, public.groups, public.note_folders, public.notes, public.profiles
 
-### Community 84 - "PanelResizeHandle.tsx"
-Cohesion: 0.36
-Nodes (7): clamp(), loadWidth(), PANEL_DEFAULT_WIDTH, PANEL_MIN_WIDTH, PanelResizeHandle(), PanelResizeHandleProps, usePanelWidth()
+### Community 84 - "AppShell.tsx"
+Cohesion: 0.14
+Nodes (14): handleUpdateSeries(), emptySubscribe(), EventCreator, Group, clamp(), loadWidth(), PANEL_DEFAULT_WIDTH, PANEL_MIN_WIDTH (+6 more)
 
 ### Community 85 - "Review Focus"
 Cohesion: 0.29
@@ -404,6 +417,58 @@ Nodes (5): places_set_updated_at, public.places, public.groups, public.profiles,
 Cohesion: 0.50
 Nodes (3): public.leave_all_groups(), public.leave_group(), public.group_members
 
+### Community 95 - "Sidebar.tsx"
+Cohesion: 0.13
+Nodes (16): dropTargetStyle(), FolderDialogState, FolderRow(), Group, isFilterActive(), NotesSidebarContent(), acceptsNoteDrag(), handleFolderDragOver() (+8 more)
+
+### Community 96 - "profile/page.tsx"
+Cohesion: 0.16
+Nodes (11): CALENDAR_VIEWS, CalendarSettingsSection(), Group, LeaveGroupRow(), handleExportData(), AccountExportBundle, fetchAccountExportBundle(), formatExportFilename() (+3 more)
+
+### Community 97 - "TimeGrid.tsx"
+Cohesion: 0.22
+Nodes (13): DayView(), DayViewProps, EventCreatorBadge(), getEventCreatorColor(), EventTagStripes(), EventTagStripesProps, dayAsCalendarDay(), HOUR_HEIGHT_PX (+5 more)
+
+### Community 98 - "NotesApp"
+Cohesion: 0.13
+Nodes (7): NotesApp(), confirmBulkDelete(), confirmMoveNote(), exitSelectionMode(), handleMoveNoteToFolder(), canMoveNoteToFolder(), filterNotes()
+
+### Community 99 - "NotesListPanel.tsx"
+Cohesion: 0.21
+Nodes (14): Badge(), NotesListPanel(), NotesListPanelProps, filterLabel(), folderBadgeStyle(), folderForNote(), folderNameForNote(), formatNoteDate() (+6 more)
+
+### Community 100 - "database.ts"
+Cohesion: 0.16
+Nodes (7): Group, SharedWorkspace(), SharedWorkspaceProps, Database, Tables, TablesInsert, TablesUpdate
+
+### Community 101 - "LoginForm.tsx"
+Cohesion: 0.26
+Nodes (8): formatAuthError(), LoginForm(), handleSubmit(), Mode, getInitials(), isPasswordValid(), PasswordRules, validatePasswordRules()
+
+### Community 102 - "ProfilePage"
+Cohesion: 0.21
+Nodes (8): ProfilePage(), handleCreateGroup(), handleDisconnectSync(), handleJoinGroup(), handleLeaveGroup(), handleSelectGroup(), reloadGroups(), writeLocalCalendarSyncs()
+
+### Community 103 - "NotesFolderDialog.tsx"
+Cohesion: 0.20
+Nodes (9): FolderColorIcon(), NotesFolderDialog(), NotesFolderDialogForm(), NotesFolderDialogFormProps, NotesFolderDialogProps, DEFAULT_FOLDER_COLOR, FOLDER_COLOR_PALETTE, FolderColor (+1 more)
+
+### Community 104 - "fetch/route.ts"
+Cohesion: 0.31
+Nodes (8): createPinnedSsrfLookup(), fetchSingleHopPinned(), HopResult, POST(), REDIRECT_STATUS_CODES, GET(), validateExternalIcsUrl(), createClient()
+
+### Community 105 - "Calendar.tsx"
+Cohesion: 0.27
+Nodes (6): Calendar(), CalendarProps, WeekView(), WeekViewProps, YearView(), getWeekDays()
+
+### Community 106 - "parseIcsEvents"
+Cohesion: 0.33
+Nodes (10): handleImportIcsFile(), handleRefreshSync(), handleSyncIcsUrl(), syncEventsIntoWorkspace(), detectCalendarProvider(), deterministicUid(), extractIcsCalendarName(), parseIcsEvents() (+2 more)
+
+### Community 107 - "scheduling.ts"
+Cohesion: 0.38
+Nodes (7): conflictFingerprint(), ConflictGroup, conflictingEventGroups(), conflictingEventIds(), draftOverlapsExisting(), rangesOverlap(), SCHEDULING_CONFLICT_MESSAGE
+
 ## Knowledge Gaps
 - **540 isolated node(s):** `eslintConfig`, `nextConfig`, `name`, `version`, `private` (+535 more)
   These have ≤1 connection - possible missing edges or undocumented components.
@@ -412,17 +477,17 @@ Nodes (3): public.leave_all_groups(), public.leave_group(), public.group_members
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Tables` connect `rsvps.ts` to `events.ts`, `profile/page.tsx`, `MapApp.tsx`, `notes.ts`, `tags.ts`, `AppShell.tsx`, `notifications.ts`?**
+- **Why does `AppShell()` connect `AppShell` to `calendar.ts`, `events.ts`, `Navbar.tsx`, `LoginForm.tsx`, `theme.ts`, `scheduling.ts`, `rsvps.ts`, `notes.ts`, `AppShell.tsx`, `EventViewerPanel.tsx`, `calendarPrefs.ts`, `notifications.ts`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
+- **Why does `NotesApp()` connect `NotesApp` to `NotesApp.tsx`, `AppShell.tsx`, `notes.ts`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+- **Why does `ProfilePage()` connect `ProfilePage` to `profile/page.tsx`, `Navbar.tsx`, `calendarSync.ts`, `LoginForm.tsx`, `parseIcsEvents`, `calendarPrefs.ts`, `notifications.ts`?**
   _High betweenness centrality (0.009) - this node is a cross-community bridge._
-- **Why does `startOfDay()` connect `events.ts` to `AppShell.tsx`, `calendar.ts`, `EventViewerPanel.tsx`, `eventPicker.ts`?**
-  _High betweenness centrality (0.005) - this node is a cross-community bridge._
 - **What connects `eslintConfig`, `nextConfig`, `name` to the rest of the system?**
   _540 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `WeCalendar — Full Project Context` be split into smaller, more focused modules?**
   _Cohesion score 0.0425531914893617 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.0425531914893617 - nodes in this community are weakly interconnected._
-- **Should `profile/page.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.052160493827160495 - nodes in this community are weakly interconnected._
-- **Should `Expo Animation Recipes` be split into smaller, more focused modules?**
-  _Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected._
+- **Should `calendarSync.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.13 - nodes in this community are weakly interconnected._
