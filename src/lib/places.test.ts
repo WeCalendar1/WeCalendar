@@ -2,13 +2,16 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  bboxAround,
   eventsForPlace,
   filterPlaces,
   isPlaceKind,
+  isWithinSearchRadius,
   matchWorkspacePlaces,
   labelPhotonFeature,
   notesForPlace,
   photonReverseUrl,
+  photonSearchFocus,
   photonSearchUrl,
   type Place,
 } from "./places";
@@ -74,6 +77,7 @@ describe("places", () => {
     expect(photonSearchUrl("pho")).not.toMatch(/[?&]lat=/);
     expect(photonSearchUrl("pho", { lat: 33.74, lng: -117.87 })).toContain("lat=33.74");
     expect(photonSearchUrl("pho", { lat: 33.74, lng: -117.87 })).toContain("lon=-117.87");
+    expect(photonSearchUrl("pho", { lat: 33.74, lng: -117.87 })).toContain("location_bias_scale=0.6");
     expect(photonReverseUrl(33.74, -117.87)).toContain("lat=33.74");
     expect(photonReverseUrl(33.74, -117.87)).toContain("lon=-117.87");
 
@@ -87,6 +91,19 @@ describe("places", () => {
       name: "The Garden",
       address: "The Garden, Euclid St, Garden Grove, United States",
     });
+  });
+
+  it("keeps Photon search inside a local bbox around the user or map center", () => {
+    const gardenGrove = { lat: 33.77, lng: -117.94 };
+    const focus = photonSearchFocus(gardenGrove, {
+      center: gardenGrove,
+      bbox: { minLat: 20, minLng: -130, maxLat: 50, maxLng: -70 },
+    });
+    expect(focus?.bbox).toEqual(bboxAround(33.77, -117.94, 200));
+    expect(photonSearchUrl("pho", focus)).toContain("bbox=");
+    expect(isWithinSearchRadius(33.78, -117.9, gardenGrove)).toBe(true);
+    expect(isWithinSearchRadius(39.9, 116.4, gardenGrove)).toBe(false);
+    expect(isWithinSearchRadius(42.36, -71.06, gardenGrove)).toBe(false);
   });
 
   it("enforces REPLICA IDENTITY FULL and same-group place_id validation in a dedicated post-places migration", () => {

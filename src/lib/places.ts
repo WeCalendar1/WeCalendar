@@ -34,14 +34,79 @@ export type PhotonFeature = {
 };
 
 export type MapBias = { lat: number; lng: number };
+export type MapBBox = { minLat: number; minLng: number; maxLat: number; maxLng: number };
+export type MapView = { center: MapBias; bbox: MapBBox };
+export type PhotonSearchFocus = MapBias & { bbox?: MapBBox };
 
-export function photonSearchUrl(query: string, bias?: MapBias | null): string {
+export const PHOTON_SEARCH_RADIUS_KM = 200;
+
+export function bboxAround(lat: number, lng: number, radiusKm: number): MapBBox {
+  const dLat = radiusKm / 111;
+  const cos = Math.cos((lat * Math.PI) / 180);
+  const dLng = radiusKm / (111 * Math.max(Math.abs(cos), 0.2));
+  return {
+    minLat: lat - dLat,
+    maxLat: lat + dLat,
+    minLng: lng - dLng,
+    maxLng: lng + dLng,
+  };
+}
+
+export function tightenSearchBBox(
+  center: MapBias,
+  view?: MapBBox | null,
+  maxRadiusKm = PHOTON_SEARCH_RADIUS_KM,
+): MapBBox {
+  const cap = bboxAround(center.lat, center.lng, maxRadiusKm);
+  if (!view) return cap;
+  const next = {
+    minLat: Math.max(cap.minLat, view.minLat),
+    maxLat: Math.min(cap.maxLat, view.maxLat),
+    minLng: Math.max(cap.minLng, view.minLng),
+    maxLng: Math.min(cap.maxLng, view.maxLng),
+  };
+  if (next.minLat >= next.maxLat || next.minLng >= next.maxLng) return cap;
+  return next;
+}
+
+export function isWithinSearchRadius(
+  lat: number,
+  lng: number,
+  center: MapBias,
+  radiusKm = PHOTON_SEARCH_RADIUS_KM,
+): boolean {
+  const dLat = (lat - center.lat) * 111;
+  const dLng = (lng - center.lng) * 111 * Math.cos((center.lat * Math.PI) / 180);
+  return dLat * dLat + dLng * dLng <= radiusKm * radiusKm;
+}
+
+export function photonSearchFocus(
+  userBias?: MapBias | null,
+  mapView?: MapView | null,
+): PhotonSearchFocus | null {
+  const center = userBias ?? mapView?.center ?? null;
+  if (!center) return null;
+  return {
+    lat: center.lat,
+    lng: center.lng,
+    bbox: tightenSearchBBox(center, mapView?.bbox),
+  };
+}
+
+export function photonSearchUrl(query: string, focus?: PhotonSearchFocus | null): string {
   const url = new URL(`${PHOTON_BASE}/api/`);
   url.searchParams.set("q", query);
   url.searchParams.set("limit", "5");
-  if (bias) {
-    url.searchParams.set("lat", String(bias.lat));
-    url.searchParams.set("lon", String(bias.lng));
+  if (focus) {
+    url.searchParams.set("lat", String(focus.lat));
+    url.searchParams.set("lon", String(focus.lng));
+    url.searchParams.set("location_bias_scale", "0.6");
+    if (focus.bbox) {
+      url.searchParams.set(
+        "bbox",
+        `${focus.bbox.minLng},${focus.bbox.minLat},${focus.bbox.maxLng},${focus.bbox.maxLat}`,
+      );
+    }
   }
   return url.toString();
 }

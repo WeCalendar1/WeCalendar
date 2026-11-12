@@ -7,15 +7,18 @@ import { noteTitle, type Note } from "@/lib/notes";
 import {
   eventsForPlace,
   filterPlaces,
+  isWithinSearchRadius,
   labelPhotonFeature,
   matchWorkspacePlaces,
   notesForPlace,
   photonReverseUrl,
+  photonSearchFocus,
   photonSearchUrl,
   PLACE_KIND_COLOR,
   PLACE_KIND_LABEL,
   PLACE_KINDS,
   type MapBias,
+  type MapView,
   type PhotonFeature,
   type Place,
   type PlaceKind,
@@ -80,6 +83,7 @@ export function MapApp({
   const searchSeqRef = useRef(0);
   const reverseSeqRef = useRef(0);
   const userBiasRef = useRef<MapBias | null>(null);
+  const mapViewRef = useRef<MapView | null>(null);
   const [activeGroupKey, setActiveGroupKey] = useState<string | null>(groupId);
 
   if (groupId !== activeGroupKey) {
@@ -160,15 +164,19 @@ export function MapApp({
       return;
     }
     try {
-      const res = await fetch(photonSearchUrl(q, userBiasRef.current));
+      const focus = photonSearchFocus(userBiasRef.current, mapViewRef.current);
+      const res = await fetch(photonSearchUrl(q, focus));
       if (!res.ok || seq !== searchSeqRef.current) return;
       const json = (await res.json()) as { features?: PhotonFeature[] };
       if (seq !== searchSeqRef.current) return;
+      const center = focus ?? mapViewRef.current?.center ?? null;
       setHits(
-        (json.features ?? []).map((f) => {
-          const labeled = labelPhotonFeature(f);
-          return { ...labeled, label: labeled.address };
-        }),
+        (json.features ?? [])
+          .map((f) => {
+            const labeled = labelPhotonFeature(f);
+            return { ...labeled, label: labeled.address };
+          })
+          .filter((hit) => !center || isWithinSearchRadius(hit.lat, hit.lng, center)),
       );
     } catch {
       if (seq === searchSeqRef.current) {
@@ -346,6 +354,9 @@ export function MapApp({
             onMapClick={handleMapClick}
             onUserLocation={(bias) => {
               userBiasRef.current = bias;
+            }}
+            onMapView={(view) => {
+              mapViewRef.current = view;
             }}
             onLocationStatus={setLocationStatus}
             locationStatus={locationStatus}
@@ -535,6 +546,7 @@ function MapCanvas({
   onSelectPlace,
   onMapClick,
   onUserLocation,
+  onMapView,
   onLocationStatus,
   locationStatus,
   flyTo,
@@ -546,6 +558,7 @@ function MapCanvas({
   onSelectPlace: (id: string) => void;
   onMapClick: (lat: number, lng: number) => void;
   onUserLocation: (bias: MapBias) => void;
+  onMapView: (view: MapView) => void;
   onLocationStatus: (status: LocationStatus) => void;
   locationStatus: LocationStatus;
   flyTo: { lat: number; lng: number } | null;
@@ -566,6 +579,7 @@ function MapCanvas({
   const onSelectRef = useRef(onSelectPlace);
   const onClickRef = useRef(onMapClick);
   const onUserLocationRef = useRef(onUserLocation);
+  const onMapViewRef = useRef(onMapView);
   const onLocationStatusRef = useRef(onLocationStatus);
 
   useEffect(() => {
@@ -579,8 +593,9 @@ function MapCanvas({
     onSelectRef.current = onSelectPlace;
     onClickRef.current = onMapClick;
     onUserLocationRef.current = onUserLocation;
+    onMapViewRef.current = onMapView;
     onLocationStatusRef.current = onLocationStatus;
-  }, [onSelectPlace, onMapClick, onUserLocation, onLocationStatus]);
+  }, [onSelectPlace, onMapClick, onUserLocation, onMapView, onLocationStatus]);
 
   useEffect(() => {
     const el = hostRef.current;
@@ -732,6 +747,23 @@ function MapCanvas({
         pendingCenter = center;
         startWatch();
       };
+
+      const publishView = () => {
+        if (!map) return;
+        const center = map.getCenter();
+        const bounds = map.getBounds();
+        onMapViewRef.current({
+          center: { lat: center.lat, lng: center.lng },
+          bbox: {
+            minLat: bounds.getSouth(),
+            maxLat: bounds.getNorth(),
+            minLng: bounds.getWest(),
+            maxLng: bounds.getEast(),
+          },
+        });
+      };
+      map.on("moveend", publishView);
+      publishView();
 
       map.on("click", (e: import("leaflet").LeafletMouseEvent) => {
         onClickRef.current(e.latlng.lat, e.latlng.lng);
