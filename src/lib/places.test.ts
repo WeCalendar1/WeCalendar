@@ -8,6 +8,7 @@ import {
   isPlaceKind,
   isWithinSearchRadius,
   matchWorkspacePlaces,
+  hitsMatchingQuery,
   labelNominatimHit,
   labelPhotonFeature,
   mergePlaceSearchHits,
@@ -16,6 +17,10 @@ import {
   photonReverseUrl,
   photonSearchFocus,
   photonSearchUrl,
+  esriSuggestUrl,
+  suggestionsFromEsri,
+  labelEsriCandidate,
+  labelEsriReverse,
   type Place,
 } from "./places";
 
@@ -74,6 +79,42 @@ describe("places", () => {
     expect(matchWorkspacePlaces(places, "pho").map((p) => p.id)).toEqual(["pho79"]);
     expect(matchWorkspacePlaces(places, "WESTMINSTER").map((p) => p.id)).toEqual(["pho79"]);
     expect(matchWorkspacePlaces(places, "  ").map((p) => p.id)).toEqual([]);
+    expect(
+      hitsMatchingQuery(
+        [
+          { lat: 33.7, lng: -117.9, name: "Jack in the Box", address: "Westminster", label: "Westminster" },
+          { lat: 34, lng: -118, name: "In-N-Out", address: "Irvine", label: "Irvine" },
+        ],
+        "jack in the",
+      ).map((h) => h.name),
+    ).toEqual(["Jack in the Box"]);
+  });
+
+  it("completes a prefix to nearby places and skips the brand-only row", () => {
+    const url = esriSuggestUrl("jack in", { lat: 33.74, lng: -117.94 });
+    expect(url).toContain("/suggest?");
+    expect(url).toContain("text=jack+in");
+    expect(decodeURIComponent(url)).toContain("location=-117.94,33.74");
+    expect(url).toContain("searchExtent=");
+    expect(
+      suggestionsFromEsri({
+        suggestions: [
+          { text: "Jack in the Box", magicKey: "brand", isCollection: true },
+          { text: "Jack in the Box, 15521 Brookhurst St, Westminster, CA", magicKey: "store", isCollection: false },
+        ],
+      }),
+    ).toEqual([
+      { label: "Jack in the Box, 15521 Brookhurst St, Westminster, CA", magicKey: "store" },
+    ]);
+    expect(
+      labelEsriCandidate({
+        location: { x: -117.955083, y: 33.737212 },
+        attributes: { PlaceName: "Jack in the Box", Place_addr: "15521 Brookhurst St, Westminster, California, 92683" },
+      }),
+    ).toMatchObject({ name: "Jack in the Box", lat: 33.737212, lng: -117.955083 });
+    expect(
+      labelEsriReverse({ PlaceName: "Pho Lovers", LongLabel: "Pho Lovers, 9325 Bolsa Ave, Westminster, CA" }),
+    ).toEqual({ name: "Pho Lovers", address: "Pho Lovers, 9325 Bolsa Ave, Westminster, CA" });
   });
 
   it("biases Photon search to a lat/lon and reverse-geocodes a click", () => {
@@ -103,14 +144,15 @@ describe("places", () => {
       bbox: { minLat: 20, minLng: -130, maxLat: 50, maxLng: -70 },
     });
     expect(focus?.bbox).toEqual(bboxAround(33.77, -117.94, 200));
-    expect(photonSearchUrl("pho", focus)).toContain("bbox=");
+    expect(photonSearchUrl("pho", focus)).not.toContain("bbox=");
     expect(isWithinSearchRadius(33.78, -117.9, gardenGrove)).toBe(true);
     expect(isWithinSearchRadius(39.9, 116.4, gardenGrove)).toBe(false);
     expect(isWithinSearchRadius(42.36, -71.06, gardenGrove)).toBe(false);
 
     const nomiUrl = nominatimSearchUrl("pho lovers", focus?.bbox);
-    expect(nomiUrl).toContain("bounded=1");
+    expect(nomiUrl).not.toContain("bounded=");
     expect(nomiUrl).toContain("viewbox=");
+    expect(nomiUrl).toContain("limit=20");
 
     const phoLovers = labelNominatimHit({
       lat: "33.7451424",
@@ -128,6 +170,25 @@ describe("places", () => {
         gardenGrove,
       ),
     ).toEqual([phoLovers]);
+
+    const losAngeles = {
+      lat: 34.025,
+      lng: -118.278,
+      name: "Jack in the Box",
+      address: "Los Angeles",
+      label: "Los Angeles",
+    };
+    const westminster = {
+      lat: 33.737,
+      lng: -117.955,
+      name: "Jack in the Box",
+      address: "Westminster",
+      label: "Westminster",
+    };
+    expect(mergePlaceSearchHits([[losAngeles, westminster]], gardenGrove).map((h) => h.address)).toEqual([
+      "Westminster",
+      "Los Angeles",
+    ]);
   });
 
   it("enforces REPLICA IDENTITY FULL and same-group place_id validation in a dedicated post-places migration", () => {

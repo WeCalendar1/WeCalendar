@@ -5,22 +5,27 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CalendarEvent } from "@/lib/events";
 import { noteTitle, type Note } from "@/lib/notes";
 import {
+  esriCandidatesUrl,
+  esriReverseUrl,
+  esriSuggestUrl,
   eventsForPlace,
   filterPlaces,
-  labelPhotonFeature,
+  labelEsriCandidate,
+  labelEsriReverse,
   matchWorkspacePlaces,
   notesForPlace,
-  photonReverseUrl,
   photonSearchFocus,
   PLACE_KIND_COLOR,
   PLACE_KIND_LABEL,
   PLACE_KINDS,
+  suggestionsFromEsri,
+  type EsriAddress,
+  type EsriCandidate,
   type MapBias,
   type MapView,
-  type PhotonFeature,
-  type PlaceSearchHit,
   type Place,
   type PlaceKind,
+  type PlaceSuggestion,
 } from "@/lib/places";
 
 type LocationStatus = "unknown" | "ready" | "denied" | "unavailable";
@@ -34,6 +39,18 @@ type DraftPin = {
   address: string;
   kind: PlaceKind;
 };
+
+function cappedSignal(parent: AbortSignal, ms: number): AbortSignal {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  const stop = () => {
+    clearTimeout(timer);
+    controller.abort();
+  };
+  if (parent.aborted) stop();
+  else parent.addEventListener("abort", stop, { once: true });
+  return controller.signal;
+}
 
 type MapAppProps = {
   groupId: string | null;
@@ -74,7 +91,7 @@ export function MapApp({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftPin | null>(null);
   const [search, setSearch] = useState("");
-  const [hits, setHits] = useState<PlaceSearchHit[]>([]);
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [searching, setSearching] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +99,7 @@ export function MapApp({
   const [reversePending, setReversePending] = useState(false);
   const searchSeqRef = useRef(0);
   const searchAbortRef = useRef<AbortController | null>(null);
-  const searchCacheRef = useRef(new Map<string, PlaceSearchHit[]>());
+  const searchCacheRef = useRef(new Map<string, PlaceSuggestion[]>());
   const reverseSeqRef = useRef(0);
   const userBiasRef = useRef<MapBias | null>(null);
   const mapViewRef = useRef<MapView | null>(null);
@@ -93,7 +110,7 @@ export function MapApp({
     setSelectedId(null);
     setDraft(null);
     setError(null);
-    setHits([]);
+    setSuggestions([]);
   }
 
   const eventPlaceIds = useMemo(
@@ -117,12 +134,11 @@ export function MapApp({
     const seq = ++reverseSeqRef.current;
     setReversePending(true);
     try {
-      const res = await fetch(photonReverseUrl(lat, lng));
+      const res = await fetch(esriReverseUrl(lat, lng), { signal: AbortSignal.timeout(800) });
       if (!res.ok || seq !== reverseSeqRef.current) return;
-      const json = (await res.json()) as { features?: PhotonFeature[] };
-      const feature = json.features?.[0];
-      if (!feature || seq !== reverseSeqRef.current) return;
-      const labeled = labelPhotonFeature(feature);
+      const json = (await res.json()) as { address?: EsriAddress };
+      if (!json.address || seq !== reverseSeqRef.current) return;
+      const labeled = labelEsriReverse(json.address);
       setDraft((prev) => {
         if (!prev || prev.lat !== lat || prev.lng !== lng) return prev;
         return {
@@ -163,43 +179,78 @@ export function MapApp({
     const q = query.trim();
     searchAbortRef.current?.abort();
     if (q.length < 2) {
-      setHits([]);
+      setSuggestions([]);
       setSearching(false);
       return;
     }
 
     const focus = photonSearchFocus(userBiasRef.current, mapViewRef.current);
-    const cacheKey = `${q.toLowerCase()}|${focus ? `${focus.lat.toFixed(2)},${focus.lng.toFixed(2)}` : ""}`;
+    const loc = focus ? `${focus.lat.toFixed(2)},${focus.lng.toFixed(2)}` : "";
+    const cacheKey = `${q.toLowerCase()}|${loc}`;
     const cached = searchCacheRef.current.get(cacheKey);
     if (cached) {
-      setHits(cached);
+      setSuggestions(cached);
       setSearching(false);
       return;
     }
 
-    setSearching(true);
+    const qLower = q.toLowerCase();
+    let preview: PlaceSuggestion[] = [];
+    for (const [key, value] of searchCacheRef.current) {
+      const sep = key.lastIndexOf("|");
+      const cachedQuery = key.slice(0, sep);
+      if (key.slice(sep + 1) !== loc) continue;
+      if (!qLower.startsWith(cachedQuery) && !cachedQuery.startsWith(qLower)) continue;
+      const next = value.filter((item) => item.label.toLowerCase().includes(qLower));
+      if (next.length > preview.length) preview = next;
+    }
+    if (preview.length > 0) {
+      setSuggestions(preview.slice(0, 5));
+      setSearching(false);
+    } else {
+      setSuggestions([]);
+      setSearching(true);
+    }
+
     const abort = new AbortController();
     searchAbortRef.current = abort;
+    const signal = cappedSignal(abort.signal, 500);
     try {
-      const params = new URLSearchParams({ q });
-      if (focus) {
-        params.set("lat", String(focus.lat));
-        params.set("lng", String(focus.lng));
-      }
-      const res = await fetch(`/api/places/search?${params}`, { signal: abort.signal });
+      const res = await fetch(esriSuggestUrl(q, focus), { signal });
       if (!res.ok || seq !== searchSeqRef.current) return;
-      const json = (await res.json()) as { hits?: PlaceSearchHit[] };
+      const next = suggestionsFromEsri(
+        (await res.json()) as { suggestions?: { text?: string; magicKey?: string; isCollection?: boolean }[] },
+      );
       if (seq !== searchSeqRef.current) return;
-      const nextHits = json.hits ?? [];
-      searchCacheRef.current.set(cacheKey, nextHits);
-      setHits(nextHits);
+      if (next.length > 0) searchCacheRef.current.set(cacheKey, next);
+      setSuggestions(next);
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-      if (seq === searchSeqRef.current) {
-        setHits([]);
-      }
+      if (err instanceof DOMException && (err.name === "AbortError" || err.name === "TimeoutError")) return;
+      if (seq === searchSeqRef.current) setSuggestions([]);
     } finally {
       if (seq === searchSeqRef.current) setSearching(false);
+    }
+  }
+
+  async function chooseSuggestion(suggestion: PlaceSuggestion) {
+    setSearch(suggestion.label);
+    setSuggestions([]);
+    try {
+      const res = await fetch(esriCandidatesUrl(suggestion.magicKey), { signal: AbortSignal.timeout(800) });
+      if (!res.ok) return;
+      const json = (await res.json()) as { candidates?: EsriCandidate[] };
+      const hit = json.candidates?.[0] ? labelEsriCandidate(json.candidates[0]) : null;
+      if (!hit) return;
+      setSelectedId(null);
+      setDraft({
+        lat: hit.lat,
+        lng: hit.lng,
+        name: hit.name,
+        address: hit.address,
+        kind: "want_to_go",
+      });
+    } catch {
+      /* keep the typed label; the user can drop a pin from the map */
     }
   }
 
@@ -260,7 +311,7 @@ export function MapApp({
                 color: "var(--foreground)",
               }}
             />
-            {(pinHits.length > 0 || hits.length > 0 || searching) && (
+            {(pinHits.length > 0 || suggestions.length > 0 || searching) && (
               <ul
                 className="absolute z-[1000] mt-1 w-full overflow-hidden py-1 text-sm"
                 style={{
@@ -284,7 +335,7 @@ export function MapApp({
                       className="w-full px-3 py-1.5 text-left hover:bg-[var(--accent-muted)]"
                       onClick={() => {
                         setSearch(place.name);
-                        setHits([]);
+                        setSuggestions([]);
                         setDraft(null);
                         setFilter("all");
                         setSelectedId(place.id);
@@ -298,7 +349,7 @@ export function MapApp({
                     </button>
                   </li>
                 ))}
-                {hits.length > 0 && pinHits.length > 0 && (
+                {suggestions.length > 0 && pinHits.length > 0 && (
                   <li
                     className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide"
                     style={{ color: "var(--text-muted)" }}
@@ -306,34 +357,38 @@ export function MapApp({
                     Places
                   </li>
                 )}
-                {hits.map((hit) => (
-                  <li key={`${hit.lat},${hit.lng},${hit.label}`}>
-                    <button
-                      type="button"
-                      className="w-full px-3 py-1.5 text-left hover:bg-[var(--accent-muted)]"
-                      onClick={() => {
-                        setSearch(hit.label);
-                        setHits([]);
-                        setSelectedId(null);
-                        setDraft({
-                          lat: hit.lat,
-                          lng: hit.lng,
-                          name: hit.name,
-                          address: hit.label,
-                          kind: "want_to_go",
-                        });
-                      }}
-                    >
-                      {hit.label}
-                    </button>
+                {suggestions.map((suggestion) => {
+                  const comma = suggestion.label.indexOf(",");
+                  const title = comma === -1 ? suggestion.label : suggestion.label.slice(0, comma);
+                  const rest = comma === -1 ? "" : suggestion.label.slice(comma + 1).trim();
+                  return (
+                    <li key={suggestion.magicKey}>
+                      <button
+                        type="button"
+                        className="w-full px-3 py-1.5 text-left hover:bg-[var(--accent-muted)]"
+                        onClick={() => void chooseSuggestion(suggestion)}
+                      >
+                        <span className="block truncate font-medium">{title}</span>
+                        {rest && (
+                          <span className="block truncate text-xs" style={{ color: "var(--text-muted)" }}>
+                            {rest}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+                {suggestions.length > 0 && (
+                  <li className="px-3 pt-1 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                    © Esri
                   </li>
-                ))}
-                {searching && hits.length === 0 && pinHits.length === 0 && (
+                )}
+                {searching && suggestions.length === 0 && pinHits.length === 0 && (
                   <li className="px-3 py-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
                     Searching…
                   </li>
                 )}
-                {!searching && search.trim().length >= 2 && hits.length === 0 && pinHits.length === 0 && (
+                {!searching && search.trim().length >= 2 && suggestions.length === 0 && pinHits.length === 0 && (
                   <li className="px-3 py-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
                     No places found nearby.
                   </li>

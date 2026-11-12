@@ -93,20 +93,101 @@ export function photonSearchFocus(
   };
 }
 
+const ESRI_GEOCODE = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
+
+export type PlaceSuggestion = {
+  label: string;
+  magicKey: string;
+};
+
+export function esriSuggestUrl(query: string, focus?: MapBias | null, radiusKm = 80): string {
+  const url = new URL(`${ESRI_GEOCODE}/suggest`);
+  url.searchParams.set("text", query);
+  url.searchParams.set("f", "json");
+  url.searchParams.set("maxSuggestions", "6");
+  if (focus) {
+    url.searchParams.set("location", `${focus.lng},${focus.lat}`);
+    const box = bboxAround(focus.lat, focus.lng, radiusKm);
+    url.searchParams.set("searchExtent", `${box.minLng},${box.minLat},${box.maxLng},${box.maxLat}`);
+  }
+  return url.toString();
+}
+
+export function suggestionsFromEsri(json: {
+  suggestions?: { text?: string; magicKey?: string; isCollection?: boolean }[];
+}): PlaceSuggestion[] {
+  const rows: PlaceSuggestion[] = [];
+  for (const row of json.suggestions ?? []) {
+    if (row.isCollection) continue;
+    const label = row.text?.trim();
+    const magicKey = row.magicKey?.trim();
+    if (!label || !magicKey) continue;
+    rows.push({ label, magicKey });
+    if (rows.length >= 5) break;
+  }
+  return rows;
+}
+
+export function esriCandidatesUrl(magicKey: string): string {
+  const url = new URL(`${ESRI_GEOCODE}/findAddressCandidates`);
+  url.searchParams.set("magicKey", magicKey);
+  url.searchParams.set("f", "json");
+  url.searchParams.set("maxLocations", "1");
+  url.searchParams.set("outFields", "PlaceName,Place_addr");
+  return url.toString();
+}
+
+export type EsriCandidate = {
+  address?: string;
+  location?: { x?: number; y?: number };
+  attributes?: { PlaceName?: string; Place_addr?: string };
+};
+
+export function labelEsriCandidate(candidate: EsriCandidate): PlaceSearchHit | null {
+  const lat = candidate.location?.y;
+  const lng = candidate.location?.x;
+  if (typeof lat !== "number" || typeof lng !== "number" || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+  const name = candidate.attributes?.PlaceName?.trim() || candidate.address?.trim() || "Dropped pin";
+  const address = candidate.attributes?.Place_addr?.trim() || candidate.address?.trim() || name;
+  const label = address.toLowerCase().includes(name.toLowerCase()) ? address : `${name}, ${address}`;
+  return { lat, lng, name, address, label };
+}
+
+export type EsriAddress = {
+  PlaceName?: string;
+  ShortLabel?: string;
+  LongLabel?: string;
+  Address?: string;
+  City?: string;
+  Region?: string;
+};
+
+export function esriReverseUrl(lat: number, lng: number): string {
+  const url = new URL(`${ESRI_GEOCODE}/reverseGeocode`);
+  url.searchParams.set("location", `${lng},${lat}`);
+  url.searchParams.set("f", "json");
+  return url.toString();
+}
+
+export function labelEsriReverse(address: EsriAddress): { name: string; address: string } {
+  const name =
+    address.PlaceName?.trim() || address.ShortLabel?.trim() || address.Address?.trim() || "Dropped pin";
+  const line =
+    address.LongLabel?.trim() ||
+    [address.Address, address.City, address.Region].filter(Boolean).join(", ");
+  return { name, address: line || name };
+}
+
 export function photonSearchUrl(query: string, focus?: PhotonSearchFocus | null): string {
   const url = new URL(`${PHOTON_BASE}/api/`);
   url.searchParams.set("q", query);
-  url.searchParams.set("limit", "5");
+  url.searchParams.set("limit", "10");
   if (focus) {
     url.searchParams.set("lat", String(focus.lat));
     url.searchParams.set("lon", String(focus.lng));
     url.searchParams.set("location_bias_scale", "0.6");
-    if (focus.bbox) {
-      url.searchParams.set(
-        "bbox",
-        `${focus.bbox.minLng},${focus.bbox.minLat},${focus.bbox.maxLng},${focus.bbox.maxLat}`,
-      );
-    }
   }
   return url.toString();
 }
@@ -130,15 +211,20 @@ export function nominatimSearchUrl(query: string, bbox?: MapBBox | null): string
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", query);
   url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("limit", "5");
+  url.searchParams.set("limit", "20");
   if (bbox) {
     url.searchParams.set(
       "viewbox",
       `${bbox.minLng},${bbox.maxLat},${bbox.maxLng},${bbox.minLat}`,
     );
-    url.searchParams.set("bounded", "1");
   }
   return url.toString();
+}
+
+export function searchDistanceKm(lat: number, lng: number, center: MapBias): number {
+  const dLat = (lat - center.lat) * 111;
+  const dLng = (lng - center.lng) * 111 * Math.cos((center.lat * Math.PI) / 180);
+  return Math.hypot(dLat, dLng);
 }
 
 export function labelNominatimHit(hit: NominatimHit): PlaceSearchHit {
@@ -164,10 +250,19 @@ export function mergePlaceSearchHits(
       if (seen.has(key)) continue;
       seen.add(key);
       merged.push(hit);
-      if (merged.length >= limit) return merged;
     }
   }
-  return merged;
+  if (center) {
+    merged.sort(
+      (a, b) => searchDistanceKm(a.lat, a.lng, center) - searchDistanceKm(b.lat, b.lng, center),
+    );
+  }
+  return merged.slice(0, limit);
+}
+
+export function labelPhotonHit(feature: PhotonFeature): PlaceSearchHit {
+  const labeled = labelPhotonFeature(feature);
+  return { ...labeled, label: labeled.address };
 }
 
 export function photonReverseUrl(lat: number, lng: number): string {
@@ -234,4 +329,10 @@ export function matchWorkspacePlaces(
     if (matched.length >= limit) break;
   }
   return matched;
+}
+
+export function hitsMatchingQuery(hits: readonly PlaceSearchHit[], query: string): PlaceSearchHit[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return hits.filter((hit) => `${hit.name} ${hit.address}`.toLowerCase().includes(q));
 }

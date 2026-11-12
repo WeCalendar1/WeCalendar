@@ -16,19 +16,23 @@ const OSM_HEADERS = {
 const CACHE_TTL_MS = 5 * 60_000;
 const searchCache = new Map<string, { at: number; hits: PlaceSearchHit[] }>();
 
-async function fetchNominatim(url: string): Promise<NominatimHit[]> {
+async function fetchJson(url: string, timeoutMs: number): Promise<unknown> {
   try {
     const res = await fetch(url, {
       headers: OSM_HEADERS,
       cache: "no-store",
-      signal: AbortSignal.timeout(2_500),
+      signal: AbortSignal.timeout(timeoutMs),
     });
-    if (!res.ok) return [];
-    const json: unknown = await res.json();
-    return Array.isArray(json) ? (json as NominatimHit[]) : [];
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
-    return [];
+    return null;
   }
+}
+
+async function fetchNominatim(url: string): Promise<NominatimHit[]> {
+  const json = await fetchJson(url, 2_500);
+  return Array.isArray(json) ? (json as NominatimHit[]) : [];
 }
 
 export async function GET(request: Request) {
@@ -54,6 +58,6 @@ export async function GET(request: Request) {
     labelNominatimHit,
   );
   const hits = mergePlaceSearchHits([nominatimHits], focus, 5);
-  searchCache.set(cacheKey, { at: Date.now(), hits });
+  if (hits.length > 0) searchCache.set(cacheKey, { at: Date.now(), hits });
   return NextResponse.json({ hits });
 }
