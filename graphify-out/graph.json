@@ -4,6 +4,19 @@
   "graph": {},
   "nodes": [
     {
+      "id": "src_components_calendargrid_calendargrid_calendargridprops",
+      "label": "CalendarGridProps",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "calendargridprops",
+      "source_file": "src/components/CalendarGrid/CalendarGrid.tsx",
+      "source_location": "L6"
+    },
+    {
       "id": "src_components_sidebar_minicalendar_minicalendarprops",
       "label": "MiniCalendarProps",
       "_callable": true,
@@ -69,19 +82,6 @@
       "source_location": "L8"
     },
     {
-      "id": "src_types_database_database",
-      "label": "Database",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 100,
-      "community_name": "database.ts",
-      "file_type": "code",
-      "norm_label": "database",
-      "source_file": "src/types/database.ts",
-      "source_location": "L9"
-    },
-    {
       "id": "src_types_database_tables",
       "label": "Tables",
       "_callable": true,
@@ -127,7 +127,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "mode",
       "source_file": "src/components/Auth/LoginForm.tsx",
@@ -140,7 +140,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "passwordrules",
       "source_file": "src/lib/auth.ts",
@@ -199,30 +199,56 @@
       "source_location": "L15"
     },
     {
-      "id": "src_components_calendar_calendar_calendarprops",
-      "label": "CalendarProps",
+      "id": "src_types_database_database",
+      "label": "Database",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 105,
-      "community_name": "Calendar.tsx",
+      "community": 104,
+      "community_name": "fetch/route.ts",
       "file_type": "code",
-      "norm_label": "calendarprops",
-      "source_file": "src/components/Calendar/Calendar.tsx",
-      "source_location": "L11"
+      "norm_label": "database",
+      "source_file": "src/types/database.ts",
+      "source_location": "L9"
     },
     {
-      "id": "src_components_weekview_weekview_weekviewprops",
-      "label": "WeekViewProps",
+      "id": "src_components_appshell_appshell_eventcreator",
+      "label": "EventCreator",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 105,
-      "community_name": "Calendar.tsx",
+      "community_name": "AppShell.tsx",
       "file_type": "code",
-      "norm_label": "weekviewprops",
-      "source_file": "src/components/WeekView/WeekView.tsx",
-      "source_location": "L6"
+      "norm_label": "eventcreator",
+      "source_file": "src/components/AppShell/AppShell.tsx",
+      "source_location": "L57"
+    },
+    {
+      "id": "src_components_appshell_appshell_group",
+      "label": "Group",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 105,
+      "community_name": "AppShell.tsx",
+      "file_type": "code",
+      "norm_label": "group",
+      "source_file": "src/components/AppShell/AppShell.tsx",
+      "source_location": "L56"
+    },
+    {
+      "id": "src_lib_notifications_pendingopentarget",
+      "label": "PendingOpenTarget",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 105,
+      "community_name": "AppShell.tsx",
+      "file_type": "code",
+      "norm_label": "pendingopentarget",
+      "source_file": "src/lib/notifications.ts",
+      "source_location": "L206"
     },
     {
       "id": "src_lib_scheduling_conflictgroup",
@@ -275,19 +301,6 @@
       "norm_label": "eventdraft",
       "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
       "source_location": "L25"
-    },
-    {
-      "id": "src_components_tagcreatorinline_tagcreatorinline_tagcreatorinlineprops",
-      "label": "TagCreatorInlineProps",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "tagcreatorinlineprops",
-      "source_file": "src/components/TagCreatorInline/TagCreatorInline.tsx",
-      "source_location": "L6"
     },
     {
       "id": "src_components_notes_noteeditor_noteeditorprops",
@@ -368,6 +381,32 @@
       "source_location": "L1"
     },
     {
+      "id": "src_components_calendar_calendar_calendarprops",
+      "label": "CalendarProps",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "calendarprops",
+      "source_file": "src/components/Calendar/Calendar.tsx",
+      "source_location": "L11"
+    },
+    {
+      "id": "src_components_dayview_dayview_dayviewprops",
+      "label": "DayViewProps",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "dayviewprops",
+      "source_file": "src/components/DayView/DayView.tsx",
+      "source_location": "L5"
+    },
+    {
       "id": "src_components_eventviewerpanel_eventviewerpanel_eventviewerpanelprops",
       "label": "EventViewerPanelProps",
       "_callable": true,
@@ -392,6 +431,32 @@
       "norm_label": "timebucket",
       "source_file": "src/components/EventViewerPanel/EventViewerPanel.tsx",
       "source_location": "L13"
+    },
+    {
+      "id": "src_components_tagcreatorinline_tagcreatorinline_tagcreatorinlineprops",
+      "label": "TagCreatorInlineProps",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "tagcreatorinlineprops",
+      "source_file": "src/components/TagCreatorInline/TagCreatorInline.tsx",
+      "source_location": "L6"
+    },
+    {
+      "id": "src_components_weekview_weekview_weekviewprops",
+      "label": "WeekViewProps",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "weekviewprops",
+      "source_file": "src/components/WeekView/WeekView.tsx",
+      "source_location": "L6"
     },
     {
       "id": "src_lib_tags_eventtag",
@@ -602,17 +667,17 @@
       "source_location": "L178"
     },
     {
-      "id": "src_components_calendargrid_calendargrid_calendargridprops",
-      "label": "CalendarGridProps",
+      "id": "src_lib_calendar_screenview",
+      "label": "ScreenView",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 33,
-      "community_name": "events.ts",
+      "community": 32,
+      "community_name": "Navbar.tsx",
       "file_type": "code",
-      "norm_label": "calendargridprops",
-      "source_file": "src/components/CalendarGrid/CalendarGrid.tsx",
-      "source_location": "L6"
+      "norm_label": "screenview",
+      "source_file": "src/lib/calendar.ts",
+      "source_location": "L2"
     },
     {
       "id": "src_lib_events_eventlayout",
@@ -634,11 +699,24 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "draftpin",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L20"
+      "source_location": "L39"
+    },
+    {
+      "id": "src_components_map_mapapp_locationstatus",
+      "label": "LocationStatus",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "locationstatus",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L35"
     },
     {
       "id": "src_components_map_mapapp_mapappprops",
@@ -647,11 +725,11 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "mapappprops",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L28"
+      "source_location": "L59"
     },
     {
       "id": "src_components_map_mapapp_mapfilter",
@@ -660,11 +738,115 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "mapfilter",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L18"
+      "source_location": "L37"
+    },
+    {
+      "id": "src_lib_places_esriaddress",
+      "label": "EsriAddress",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "esriaddress",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L238"
+    },
+    {
+      "id": "src_lib_places_esricandidate",
+      "label": "EsriCandidate",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "esricandidate",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L220"
+    },
+    {
+      "id": "src_lib_places_mapbbox",
+      "label": "MapBBox",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "mapbbox",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L117"
+    },
+    {
+      "id": "src_lib_places_mapbias",
+      "label": "MapBias",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "mapbias",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L116"
+    },
+    {
+      "id": "src_lib_places_mapview",
+      "label": "MapView",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "mapview",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L118"
+    },
+    {
+      "id": "src_lib_places_nominatimhit",
+      "label": "NominatimHit",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "nominatimhit",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L275"
+    },
+    {
+      "id": "src_lib_places_photonfeature",
+      "label": "PhotonFeature",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "photonfeature",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L104"
+    },
+    {
+      "id": "src_lib_places_photonsearchfocus",
+      "label": "photonSearchFocus",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "photonsearchfocus",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L163"
     },
     {
       "id": "src_lib_places_place",
@@ -673,7 +855,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "place",
       "source_file": "src/lib/places.ts",
@@ -686,11 +868,37 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "placekind",
       "source_file": "src/lib/places.ts",
       "source_location": "L4"
+    },
+    {
+      "id": "src_lib_places_placesearchhit",
+      "label": "PlaceSearchHit",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "placesearchhit",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L282"
+    },
+    {
+      "id": "src_lib_places_placesuggestion",
+      "label": "PlaceSuggestion",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "placesuggestion",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L178"
     },
     {
       "id": "src_lib_theme_thememode",
@@ -704,32 +912,6 @@
       "norm_label": "thememode",
       "source_file": "src/lib/theme.ts",
       "source_location": "L5"
-    },
-    {
-      "id": "src_components_calendarcell_calendarcell_calendarcellprops",
-      "label": "CalendarCellProps",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "calendarcellprops",
-      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
-      "source_location": "L63"
-    },
-    {
-      "id": "src_lib_events_spanposition",
-      "label": "SpanPosition",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "spanposition",
-      "source_file": "src/lib/events.ts",
-      "source_location": "L97"
     },
     {
       "id": "src_lib_rsvps_eventrsvp",
@@ -862,19 +1044,6 @@
       "source_location": "L5"
     },
     {
-      "id": "src_lib_notifications_pendingopentarget",
-      "label": "PendingOpenTarget",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 62,
-      "community_name": "notifications.ts",
-      "file_type": "code",
-      "norm_label": "pendingopentarget",
-      "source_file": "src/lib/notifications.ts",
-      "source_location": "L206"
-    },
-    {
       "id": "src_components_notes_notesmovetofolderdialog_notesmovetofolderdialogprops",
       "label": "NotesMoveToFolderDialogProps",
       "_callable": true,
@@ -940,56 +1109,17 @@
       "source_location": "L5"
     },
     {
-      "id": "src_components_appshell_appshell_eventcreator",
-      "label": "EventCreator",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "eventcreator",
-      "source_file": "src/components/AppShell/AppShell.tsx",
-      "source_location": "L57"
-    },
-    {
-      "id": "src_components_appshell_appshell_group",
-      "label": "Group",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "group",
-      "source_file": "src/components/AppShell/AppShell.tsx",
-      "source_location": "L56"
-    },
-    {
       "id": "src_components_panelresizehandle_panelresizehandleprops",
       "label": "PanelResizeHandleProps",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 84,
-      "community_name": "AppShell.tsx",
+      "community_name": "PanelResizeHandle.tsx",
       "file_type": "code",
       "norm_label": "panelresizehandleprops",
       "source_file": "src/components/PanelResizeHandle.tsx",
       "source_location": "L40"
-    },
-    {
-      "id": "src_lib_calendar_screenview",
-      "label": "ScreenView",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "screenview",
-      "source_file": "src/lib/calendar.ts",
-      "source_location": "L2"
     },
     {
       "id": "src_components_sidebar_sidebar_folderdialogstate",
@@ -1057,17 +1187,17 @@
       "source_location": "L4"
     },
     {
-      "id": "src_components_dayview_dayview_dayviewprops",
-      "label": "DayViewProps",
+      "id": "src_components_calendarcell_calendarcell_calendarcellprops",
+      "label": "CalendarCellProps",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
-      "norm_label": "dayviewprops",
-      "source_file": "src/components/DayView/DayView.tsx",
-      "source_location": "L5"
+      "norm_label": "calendarcellprops",
+      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
+      "source_location": "L63"
     },
     {
       "id": "src_components_eventtagstripes_eventtagstripesprops",
@@ -1076,7 +1206,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "eventtagstripesprops",
       "source_file": "src/components/EventTagStripes.tsx",
@@ -1089,7 +1219,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "timegridprops",
       "source_file": "src/components/TimeGrid/TimeGrid.tsx",
@@ -1102,11 +1232,24 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "calendarevent",
       "source_file": "src/lib/events.ts",
       "source_location": "L5"
+    },
+    {
+      "id": "src_lib_events_spanposition",
+      "label": "SpanPosition",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "CalendarCell.tsx",
+      "file_type": "code",
+      "norm_label": "spanposition",
+      "source_file": "src/lib/events.ts",
+      "source_location": "L97"
     },
     {
       "id": "src_components_notes_noteslistpanel_noteslistpanelprops",
@@ -1148,6 +1291,42 @@
       "source_location": "L124"
     },
     {
+      "id": "src_components_calendargrid_calendargrid_calendargrid",
+      "label": "CalendarGrid()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "calendargrid()",
+      "source_file": "src/components/CalendarGrid/CalendarGrid.tsx",
+      "source_location": "L97"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_daypicker",
+      "label": "DayPicker()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "daypicker()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L102"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_daypicker_buildhint",
+      "label": "buildHint()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "buildhint()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L115"
+    },
+    {
       "id": "src_components_sidebar_minicalendar_minicalendar",
       "label": "MiniCalendar()",
       "_callable": true,
@@ -1158,6 +1337,42 @@
       "norm_label": "minicalendar()",
       "source_file": "src/components/Sidebar/MiniCalendar.tsx",
       "source_location": "L15"
+    },
+    {
+      "id": "src_components_sidebar_sidebar_sidebar",
+      "label": "Sidebar()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "sidebar()",
+      "source_file": "src/components/Sidebar/Sidebar.tsx",
+      "source_location": "L54"
+    },
+    {
+      "id": "src_components_sidebar_sidebar_sidebar_handledeletetagconfirm",
+      "label": "handleDeleteTagConfirm()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "handledeletetagconfirm()",
+      "source_file": "src/components/Sidebar/Sidebar.tsx",
+      "source_location": "L102"
+    },
+    {
+      "id": "src_components_sidebar_sidebar_sidebar_toggleall",
+      "label": "toggleAll()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "toggleall()",
+      "source_file": "src/components/Sidebar/Sidebar.tsx",
+      "source_location": "L94"
     },
     {
       "id": "src_components_yearview_yearview_minimonth",
@@ -1206,6 +1421,18 @@
       "norm_label": "formatdaylabel()",
       "source_file": "src/lib/calendar.ts",
       "source_location": "L91"
+    },
+    {
+      "id": "src_lib_calendar_formatmonthyear",
+      "label": "formatMonthYear()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "formatmonthyear()",
+      "source_file": "src/lib/calendar.ts",
+      "source_location": "L87"
     },
     {
       "id": "src_lib_calendar_formatviewlabel",
@@ -1268,6 +1495,18 @@
       "source_location": "L10"
     },
     {
+      "id": "src_lib_calendar_getweekdays",
+      "label": "getWeekDays()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "getweekdays()",
+      "source_file": "src/lib/calendar.ts",
+      "source_location": "L194"
+    },
+    {
       "id": "src_lib_calendar_isdateinview",
       "label": "isDateInView()",
       "_callable": true,
@@ -1326,6 +1565,18 @@
       "norm_label": "startofmonth()",
       "source_file": "src/lib/calendar.ts",
       "source_location": "L22"
+    },
+    {
+      "id": "src_lib_calendar_startofweek",
+      "label": "startOfWeek()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "startofweek()",
+      "source_file": "src/lib/calendar.ts",
+      "source_location": "L26"
     },
     {
       "id": "src_components_sharedworkspace_sharedworkspace_sharedworkspace",
@@ -1393,7 +1644,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "loginpage()",
       "source_file": "src/app/login/page.tsx",
@@ -1405,7 +1656,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "formatautherror()",
       "source_file": "src/components/Auth/LoginForm.tsx",
@@ -1417,7 +1668,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "loginform()",
       "source_file": "src/components/Auth/LoginForm.tsx",
@@ -1429,7 +1680,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "handlesubmit()",
       "source_file": "src/components/Auth/LoginForm.tsx",
@@ -1441,7 +1692,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "getinitials()",
       "source_file": "src/lib/auth.ts",
@@ -1453,7 +1704,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "ispasswordvalid()",
       "source_file": "src/lib/auth.ts",
@@ -1465,11 +1716,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "validatepasswordrules()",
       "source_file": "src/lib/auth.ts",
       "source_location": "L26"
+    },
+    {
+      "id": "src_lib_supabase_client_createclient",
+      "label": "createClient()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 101,
+      "community_name": "createClient",
+      "file_type": "code",
+      "norm_label": "createclient()",
+      "source_file": "src/lib/supabase/client.ts",
+      "source_location": "L4"
     },
     {
       "id": "src_app_profile_page_profilepage",
@@ -1760,16 +2023,16 @@
       "source_location": "L4"
     },
     {
-      "id": "src_lib_calendarsync_validateexternalicsurl",
-      "label": "validateExternalIcsUrl()",
+      "id": "src_lib_calendarsync_selectpinnedlookupaddresses",
+      "label": "selectPinnedLookupAddresses()",
       "_callable": true,
       "_origin": "ast",
       "community": 104,
       "community_name": "fetch/route.ts",
       "file_type": "code",
-      "norm_label": "validateexternalicsurl()",
+      "norm_label": "selectpinnedlookupaddresses()",
       "source_file": "src/lib/calendarSync.ts",
-      "source_location": "L111"
+      "source_location": "L87"
     },
     {
       "id": "src_lib_supabase_server_createclient",
@@ -1784,172 +2047,52 @@
       "source_location": "L5"
     },
     {
+      "id": "src_app_page_home",
+      "label": "Home()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 105,
+      "community_name": "AppShell.tsx",
+      "file_type": "code",
+      "norm_label": "home()",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L3"
+    },
+    {
+      "id": "src_components_appshell_appshell_emptysubscribe",
+      "label": "emptySubscribe()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 105,
+      "community_name": "AppShell.tsx",
+      "file_type": "code",
+      "norm_label": "emptysubscribe()",
+      "source_file": "src/components/AppShell/AppShell.tsx",
+      "source_location": "L60"
+    },
+    {
       "id": "src_components_calendar_calendar_calendar",
       "label": "Calendar()",
       "_callable": true,
       "_origin": "ast",
       "community": 105,
-      "community_name": "Calendar.tsx",
+      "community_name": "AppShell.tsx",
       "file_type": "code",
       "norm_label": "calendar()",
       "source_file": "src/components/Calendar/Calendar.tsx",
       "source_location": "L28"
     },
     {
-      "id": "src_components_weekview_weekview_weekview",
-      "label": "WeekView()",
+      "id": "src_components_eventviewerpanel_eventviewerpanel_eventviewerpanel",
+      "label": "EventViewerPanel()",
       "_callable": true,
       "_origin": "ast",
       "community": 105,
-      "community_name": "Calendar.tsx",
+      "community_name": "AppShell.tsx",
       "file_type": "code",
-      "norm_label": "weekview()",
-      "source_file": "src/components/WeekView/WeekView.tsx",
-      "source_location": "L19"
-    },
-    {
-      "id": "src_components_yearview_yearview_yearview",
-      "label": "YearView()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "Calendar.tsx",
-      "file_type": "code",
-      "norm_label": "yearview()",
-      "source_file": "src/components/YearView/YearView.tsx",
-      "source_location": "L119"
-    },
-    {
-      "id": "src_lib_calendar_getweekdays",
-      "label": "getWeekDays()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "Calendar.tsx",
-      "file_type": "code",
-      "norm_label": "getweekdays()",
-      "source_file": "src/lib/calendar.ts",
-      "source_location": "L194"
-    },
-    {
-      "id": "src_app_profile_page_profilepage_handleimporticsfile",
-      "label": "handleImportIcsFile()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "handleimporticsfile()",
-      "source_file": "src/app/profile/page.tsx",
-      "source_location": "L1211"
-    },
-    {
-      "id": "src_app_profile_page_profilepage_handlerefreshsync",
-      "label": "handleRefreshSync()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "handlerefreshsync()",
-      "source_file": "src/app/profile/page.tsx",
-      "source_location": "L1264"
-    },
-    {
-      "id": "src_app_profile_page_profilepage_handlesyncicsurl",
-      "label": "handleSyncIcsUrl()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "handlesyncicsurl()",
-      "source_file": "src/app/profile/page.tsx",
-      "source_location": "L1152"
-    },
-    {
-      "id": "src_app_profile_page_profilepage_synceventsintoworkspace",
-      "label": "syncEventsIntoWorkspace()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "synceventsintoworkspace()",
-      "source_file": "src/app/profile/page.tsx",
-      "source_location": "L1017"
-    },
-    {
-      "id": "src_lib_calendarsync_detectcalendarprovider",
-      "label": "detectCalendarProvider()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "detectcalendarprovider()",
-      "source_file": "src/lib/calendarSync.ts",
-      "source_location": "L156"
-    },
-    {
-      "id": "src_lib_calendarsync_deterministicuid",
-      "label": "deterministicUid()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "deterministicuid()",
-      "source_file": "src/lib/calendarSync.ts",
-      "source_location": "L380"
-    },
-    {
-      "id": "src_lib_calendarsync_extracticscalendarname",
-      "label": "extractIcsCalendarName()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "extracticscalendarname()",
-      "source_file": "src/lib/calendarSync.ts",
-      "source_location": "L390"
-    },
-    {
-      "id": "src_lib_calendarsync_parseicsevents",
-      "label": "parseIcsEvents()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "parseicsevents()",
-      "source_file": "src/lib/calendarSync.ts",
-      "source_location": "L403"
-    },
-    {
-      "id": "src_lib_calendarsync_unescapeicstext",
-      "label": "unescapeIcsText()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "unescapeicstext()",
-      "source_file": "src/lib/calendarSync.ts",
-      "source_location": "L181"
-    },
-    {
-      "id": "src_lib_calendarsync_unfoldicslines",
-      "label": "unfoldIcsLines()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 106,
-      "community_name": "parseIcsEvents",
-      "file_type": "code",
-      "norm_label": "unfoldicslines()",
-      "source_file": "src/lib/calendarSync.ts",
-      "source_location": "L176"
+      "norm_label": "eventviewerpanel()",
+      "source_file": "src/components/EventViewerPanel/EventViewerPanel.tsx",
+      "source_location": "L341"
     },
     {
       "id": "src_lib_scheduling_conflictfingerprint",
@@ -2036,138 +2179,6 @@
       "source_location": "L252"
     },
     {
-      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent",
-      "label": "CreateEventModalContent()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "createeventmodalcontent()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L261"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_builddraft",
-      "label": "buildDraft()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "builddraft()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L448"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handledelete",
-      "label": "handleDelete()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "handledelete()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L567"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handledeleteseriesaction",
-      "label": "handleDeleteSeriesAction()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "handledeleteseriesaction()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L597"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handlenudgeclick",
-      "label": "handleNudgeClick()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "handlenudgeclick()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L354"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handlersvpselect",
-      "label": "handleRsvpSelect()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "handlersvpselect()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L373"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handlesubmit",
-      "label": "handleSubmit()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "handlesubmit()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L474"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_toggleday",
-      "label": "toggleDay()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "toggleday()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L439"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_toggletag",
-      "label": "toggleTag()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "toggletag()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L433"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_daypicker",
-      "label": "DayPicker()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "daypicker()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L102"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_daypicker_buildhint",
-      "label": "buildHint()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "buildhint()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L115"
-    },
-    {
       "id": "src_components_createeventmodal_createeventmodal_todateinput",
       "label": "toDateInput()",
       "_callable": true,
@@ -2178,18 +2189,6 @@
       "norm_label": "todateinput()",
       "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
       "source_location": "L81"
-    },
-    {
-      "id": "src_components_createeventmodal_createeventmodal_totimeinput",
-      "label": "toTimeInput()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "totimeinput()",
-      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
-      "source_location": "L88"
     },
     {
       "id": "src_components_tagcreatorinline_tagcreatorinline_tagcreatorinline",
@@ -2226,42 +2225,6 @@
       "norm_label": "handlecancel()",
       "source_file": "src/components/TagCreatorInline/TagCreatorInline.tsx",
       "source_location": "L47"
-    },
-    {
-      "id": "src_lib_calendar_formatmonthyear",
-      "label": "formatMonthYear()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "formatmonthyear()",
-      "source_file": "src/lib/calendar.ts",
-      "source_location": "L87"
-    },
-    {
-      "id": "src_lib_events_builddraftinterval",
-      "label": "buildDraftInterval()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "builddraftinterval()",
-      "source_file": "src/lib/events.ts",
-      "source_location": "L370"
-    },
-    {
-      "id": "src_lib_events_validatedraftdategroups",
-      "label": "validateDraftDateGroups()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "validatedraftdategroups()",
-      "source_file": "src/lib/events.ts",
-      "source_location": "L403"
     },
     {
       "id": "src_components_notes_noteeditor_noteeditor",
@@ -2384,28 +2347,16 @@
       "source_location": "L100"
     },
     {
-      "id": "src_components_eventviewerpanel_bucketevents_test_ev",
-      "label": "ev()",
+      "id": "src_components_dayview_dayview_dayview",
+      "label": "DayView()",
       "_callable": true,
       "_origin": "ast",
       "community": 20,
       "community_name": "EventViewerPanel.tsx",
       "file_type": "code",
-      "norm_label": "ev()",
-      "source_file": "src/components/EventViewerPanel/bucketEvents.test.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "src_components_eventviewerpanel_eventviewerpanel_bucketevents",
-      "label": "bucketEvents()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "EventViewerPanel.tsx",
-      "file_type": "code",
-      "norm_label": "bucketevents()",
-      "source_file": "src/components/EventViewerPanel/EventViewerPanel.tsx",
-      "source_location": "L41"
+      "norm_label": "dayview()",
+      "source_file": "src/components/DayView/DayView.tsx",
+      "source_location": "L17"
     },
     {
       "id": "src_components_eventviewerpanel_eventviewerpanel_bucketsection",
@@ -2432,28 +2383,40 @@
       "source_location": "L196"
     },
     {
-      "id": "src_components_eventviewerpanel_eventviewerpanel_eventviewerpanel",
-      "label": "EventViewerPanel()",
+      "id": "src_components_timegrid_timegrid_dayascalendarday",
+      "label": "dayAsCalendarDay()",
       "_callable": true,
       "_origin": "ast",
       "community": 20,
       "community_name": "EventViewerPanel.tsx",
       "file_type": "code",
-      "norm_label": "eventviewerpanel()",
-      "source_file": "src/components/EventViewerPanel/EventViewerPanel.tsx",
-      "source_location": "L341"
+      "norm_label": "dayascalendarday()",
+      "source_file": "src/components/TimeGrid/TimeGrid.tsx",
+      "source_location": "L242"
     },
     {
-      "id": "src_lib_calendar_startofweek",
-      "label": "startOfWeek()",
+      "id": "src_components_weekview_weekview_weekview",
+      "label": "WeekView()",
       "_callable": true,
       "_origin": "ast",
       "community": 20,
       "community_name": "EventViewerPanel.tsx",
       "file_type": "code",
-      "norm_label": "startofweek()",
-      "source_file": "src/lib/calendar.ts",
-      "source_location": "L26"
+      "norm_label": "weekview()",
+      "source_file": "src/components/WeekView/WeekView.tsx",
+      "source_location": "L19"
+    },
+    {
+      "id": "src_components_yearview_yearview_yearview",
+      "label": "YearView()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "yearview()",
+      "source_file": "src/components/YearView/YearView.tsx",
+      "source_location": "L119"
     },
     {
       "id": "src_lib_tags_colorforevent",
@@ -2466,18 +2429,6 @@
       "norm_label": "colorforevent()",
       "source_file": "src/lib/tags.ts",
       "source_location": "L19"
-    },
-    {
-      "id": "src_lib_tags_colorsforevent",
-      "label": "colorsForEvent()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "EventViewerPanel.tsx",
-      "file_type": "code",
-      "norm_label": "colorsforevent()",
-      "source_file": "src/lib/tags.ts",
-      "source_location": "L34"
     },
     {
       "id": "src_lib_tags_tagidsforevent",
@@ -2636,18 +2587,6 @@
       "source_location": "L11"
     },
     {
-      "id": "src_app_page_home",
-      "label": "Home()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "AppShell",
-      "file_type": "code",
-      "norm_label": "home()",
-      "source_file": "src/app/page.tsx",
-      "source_location": "L3"
-    },
-    {
       "id": "src_components_appshell_appshell_appshell",
       "label": "AppShell()",
       "_callable": true,
@@ -2682,6 +2621,18 @@
       "norm_label": "closeeventmodal()",
       "source_file": "src/components/AppShell/AppShell.tsx",
       "source_location": "L1165"
+    },
+    {
+      "id": "src_components_appshell_appshell_appshell_handleclearnotifications",
+      "label": "handleClearNotifications()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 24,
+      "community_name": "AppShell",
+      "file_type": "code",
+      "norm_label": "handleclearnotifications()",
+      "source_file": "src/components/AppShell/AppShell.tsx",
+      "source_location": "L1022"
     },
     {
       "id": "src_components_appshell_appshell_appshell_handlecreateevent",
@@ -2852,6 +2803,18 @@
       "source_location": "L746"
     },
     {
+      "id": "src_components_appshell_appshell_appshell_handledismissnotification",
+      "label": "handleDismissNotification()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 24,
+      "community_name": "AppShell",
+      "file_type": "code",
+      "norm_label": "handledismissnotification()",
+      "source_file": "src/components/AppShell/AppShell.tsx",
+      "source_location": "L1008"
+    },
+    {
       "id": "src_components_appshell_appshell_appshell_handledropnoteonfolder",
       "label": "handleDropNoteOnFolder()",
       "_callable": true,
@@ -2898,6 +2861,18 @@
       "norm_label": "handlejoingroup()",
       "source_file": "src/components/AppShell/AppShell.tsx",
       "source_location": "L718"
+    },
+    {
+      "id": "src_components_appshell_appshell_appshell_handlemarkallnotificationsread",
+      "label": "handleMarkAllNotificationsRead()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 24,
+      "community_name": "AppShell",
+      "file_type": "code",
+      "norm_label": "handlemarkallnotificationsread()",
+      "source_file": "src/components/AppShell/AppShell.tsx",
+      "source_location": "L990"
     },
     {
       "id": "src_components_appshell_appshell_appshell_handlemarknotificationread",
@@ -3128,18 +3103,6 @@
       "source_location": "L1467"
     },
     {
-      "id": "src_lib_notifications_resolvenotificationnavigation",
-      "label": "resolveNotificationNavigation()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "AppShell",
-      "file_type": "code",
-      "norm_label": "resolvenotificationnavigation()",
-      "source_file": "src/lib/notifications.ts",
-      "source_location": "L132"
-    },
-    {
       "id": "src_components_notes_notetoolbar_bulletpicker",
       "label": "BulletPicker()",
       "_callable": true,
@@ -3368,6 +3331,18 @@
       "source_location": "L1322"
     },
     {
+      "id": "src_app_profile_page_profilepage_handleimporticsfile",
+      "label": "handleImportIcsFile()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "handleimporticsfile()",
+      "source_file": "src/app/profile/page.tsx",
+      "source_location": "L1211"
+    },
+    {
       "id": "src_app_profile_page_profilepage_handleleaveallgroups",
       "label": "handleLeaveAllGroups()",
       "_callable": true,
@@ -3378,6 +3353,42 @@
       "norm_label": "handleleaveallgroups()",
       "source_file": "src/app/profile/page.tsx",
       "source_location": "L996"
+    },
+    {
+      "id": "src_app_profile_page_profilepage_handlerefreshsync",
+      "label": "handleRefreshSync()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "handlerefreshsync()",
+      "source_file": "src/app/profile/page.tsx",
+      "source_location": "L1264"
+    },
+    {
+      "id": "src_app_profile_page_profilepage_handlesyncicsurl",
+      "label": "handleSyncIcsUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "handlesyncicsurl()",
+      "source_file": "src/app/profile/page.tsx",
+      "source_location": "L1152"
+    },
+    {
+      "id": "src_app_profile_page_profilepage_synceventsintoworkspace",
+      "label": "syncEventsIntoWorkspace()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "synceventsintoworkspace()",
+      "source_file": "src/app/profile/page.tsx",
+      "source_location": "L1017"
     },
     {
       "id": "src_lib_calendarsync_clearlocalcalendarsyncs",
@@ -3392,6 +3403,30 @@
       "source_location": "L632"
     },
     {
+      "id": "src_lib_calendarsync_detectcalendarprovider",
+      "label": "detectCalendarProvider()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "detectcalendarprovider()",
+      "source_file": "src/lib/calendarSync.ts",
+      "source_location": "L156"
+    },
+    {
+      "id": "src_lib_calendarsync_deterministicuid",
+      "label": "deterministicUid()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "deterministicuid()",
+      "source_file": "src/lib/calendarSync.ts",
+      "source_location": "L380"
+    },
+    {
       "id": "src_lib_calendarsync_escapeicstext",
       "label": "escapeIcsText()",
       "_callable": true,
@@ -3402,6 +3437,18 @@
       "norm_label": "escapeicstext()",
       "source_file": "src/lib/calendarSync.ts",
       "source_location": "L190"
+    },
+    {
+      "id": "src_lib_calendarsync_extracticscalendarname",
+      "label": "extractIcsCalendarName()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "extracticscalendarname()",
+      "source_file": "src/lib/calendarSync.ts",
+      "source_location": "L390"
     },
     {
       "id": "src_lib_calendarsync_extracttzidfrompropkey",
@@ -3476,6 +3523,18 @@
       "source_location": "L325"
     },
     {
+      "id": "src_lib_calendarsync_parseicsevents",
+      "label": "parseIcsEvents()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "parseicsevents()",
+      "source_file": "src/lib/calendarSync.ts",
+      "source_location": "L403"
+    },
+    {
       "id": "src_lib_calendarsync_readlocalcalendarsyncs",
       "label": "readLocalCalendarSyncs()",
       "_callable": true,
@@ -3486,18 +3545,6 @@
       "norm_label": "readlocalcalendarsyncs()",
       "source_file": "src/lib/calendarSync.ts",
       "source_location": "L608"
-    },
-    {
-      "id": "src_lib_calendarsync_selectpinnedlookupaddresses",
-      "label": "selectPinnedLookupAddresses()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "calendarSync.ts",
-      "file_type": "code",
-      "norm_label": "selectpinnedlookupaddresses()",
-      "source_file": "src/lib/calendarSync.ts",
-      "source_location": "L87"
     },
     {
       "id": "src_lib_calendarsync_serializeeventstoics",
@@ -3522,6 +3569,42 @@
       "norm_label": "triggericsdownload()",
       "source_file": "src/lib/calendarSync.ts",
       "source_location": "L596"
+    },
+    {
+      "id": "src_lib_calendarsync_unescapeicstext",
+      "label": "unescapeIcsText()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "unescapeicstext()",
+      "source_file": "src/lib/calendarSync.ts",
+      "source_location": "L181"
+    },
+    {
+      "id": "src_lib_calendarsync_unfoldicslines",
+      "label": "unfoldIcsLines()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "unfoldicslines()",
+      "source_file": "src/lib/calendarSync.ts",
+      "source_location": "L176"
+    },
+    {
+      "id": "src_lib_calendarsync_validateexternalicsurl",
+      "label": "validateExternalIcsUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "calendarSync.ts",
+      "file_type": "code",
+      "norm_label": "validateexternalicsurl()",
+      "source_file": "src/lib/calendarSync.ts",
+      "source_location": "L111"
     },
     {
       "id": "src_lib_calendarsync_zonedwallclocktoutcdate",
@@ -3644,28 +3727,16 @@
       "source_location": "L24"
     },
     {
-      "id": "src_lib_supabase_client_createclient",
-      "label": "createClient()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 32,
-      "community_name": "Navbar.tsx",
-      "file_type": "code",
-      "norm_label": "createclient()",
-      "source_file": "src/lib/supabase/client.ts",
-      "source_location": "L4"
-    },
-    {
-      "id": "src_components_calendargrid_calendargrid_calendargrid",
-      "label": "CalendarGrid()",
+      "id": "src_components_appshell_appshell_appshell_handleupdateseries",
+      "label": "handleUpdateSeries()",
       "_callable": true,
       "_origin": "ast",
       "community": 33,
       "community_name": "events.ts",
       "file_type": "code",
-      "norm_label": "calendargrid()",
-      "source_file": "src/components/CalendarGrid/CalendarGrid.tsx",
-      "source_location": "L97"
+      "norm_label": "handleupdateseries()",
+      "source_file": "src/components/AppShell/AppShell.tsx",
+      "source_location": "L859"
     },
     {
       "id": "src_components_calendargrid_calendargrid_computemultidayslots",
@@ -3678,6 +3749,150 @@
       "norm_label": "computemultidayslots()",
       "source_file": "src/components/CalendarGrid/CalendarGrid.tsx",
       "source_location": "L20"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent",
+      "label": "CreateEventModalContent()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "createeventmodalcontent()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L261"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_builddraft",
+      "label": "buildDraft()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "builddraft()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L448"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handledelete",
+      "label": "handleDelete()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "handledelete()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L567"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handledeleteseriesaction",
+      "label": "handleDeleteSeriesAction()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "handledeleteseriesaction()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L597"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handlenudgeclick",
+      "label": "handleNudgeClick()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "handlenudgeclick()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L354"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handlersvpselect",
+      "label": "handleRsvpSelect()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "handlersvpselect()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L373"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_handlesubmit",
+      "label": "handleSubmit()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "handlesubmit()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L474"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_toggleday",
+      "label": "toggleDay()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "toggleday()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L439"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_createeventmodalcontent_toggletag",
+      "label": "toggleTag()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "toggletag()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L433"
+    },
+    {
+      "id": "src_components_createeventmodal_createeventmodal_totimeinput",
+      "label": "toTimeInput()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "totimeinput()",
+      "source_file": "src/components/CreateEventModal/CreateEventModal.tsx",
+      "source_location": "L88"
+    },
+    {
+      "id": "src_components_eventviewerpanel_bucketevents_test_ev",
+      "label": "ev()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "ev()",
+      "source_file": "src/components/EventViewerPanel/bucketEvents.test.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "src_components_eventviewerpanel_eventviewerpanel_bucketevents",
+      "label": "bucketEvents()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "bucketevents()",
+      "source_file": "src/components/EventViewerPanel/EventViewerPanel.tsx",
+      "source_location": "L41"
     },
     {
       "id": "src_lib_calendar_adddays",
@@ -3702,6 +3917,18 @@
       "norm_label": "startofday()",
       "source_file": "src/lib/calendar.ts",
       "source_location": "L18"
+    },
+    {
+      "id": "src_lib_events_builddraftinterval",
+      "label": "buildDraftInterval()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "builddraftinterval()",
+      "source_file": "src/lib/events.ts",
+      "source_location": "L370"
     },
     {
       "id": "src_lib_events_daysegmentminutes",
@@ -3750,6 +3977,30 @@
       "norm_label": "eventsfortimegridday()",
       "source_file": "src/lib/events.ts",
       "source_location": "L53"
+    },
+    {
+      "id": "src_lib_events_eventsspanningday",
+      "label": "eventsSpanningDay()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "eventsspanningday()",
+      "source_file": "src/lib/events.ts",
+      "source_location": "L81"
+    },
+    {
+      "id": "src_lib_events_executeseriesreconciliation",
+      "label": "executeSeriesReconciliation()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "executeseriesreconciliation()",
+      "source_file": "src/lib/events.ts",
+      "source_location": "L601"
     },
     {
       "id": "src_lib_events_expandeventdatekeys",
@@ -3896,16 +4147,88 @@
       "source_location": "L318"
     },
     {
+      "id": "src_lib_events_validatedraftdategroups",
+      "label": "validateDraftDateGroups()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "events.ts",
+      "file_type": "code",
+      "norm_label": "validatedraftdategroups()",
+      "source_file": "src/lib/events.ts",
+      "source_location": "L403"
+    },
+    {
+      "id": "src_app_api_places_search_route_fetchjson",
+      "label": "fetchJson()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "fetchjson()",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L19"
+    },
+    {
+      "id": "src_app_api_places_search_route_fetchnominatim",
+      "label": "fetchNominatim()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "fetchnominatim()",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L33"
+    },
+    {
+      "id": "src_app_api_places_search_route_get",
+      "label": "GET()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "get()",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L38"
+    },
+    {
+      "id": "src_components_map_mapapp_cappedsignal",
+      "label": "cappedSignal()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "cappedsignal()",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L47"
+    },
+    {
       "id": "src_components_map_mapapp_mapapp",
       "label": "MapApp()",
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "mapapp()",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L49"
+      "source_location": "L81"
+    },
+    {
+      "id": "src_components_map_mapapp_mapapp_choosesuggestion",
+      "label": "chooseSuggestion()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "choosesuggestion()",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L241"
     },
     {
       "id": "src_components_map_mapapp_mapapp_handlemapclick",
@@ -3913,11 +4236,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "handlemapclick()",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L90"
+      "source_location": "L133"
+    },
+    {
+      "id": "src_components_map_mapapp_mapapp_reversegeocodeclick",
+      "label": "reverseGeocodeClick()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "reversegeocodeclick()",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L139"
     },
     {
       "id": "src_components_map_mapapp_mapapp_savedraft",
@@ -3925,11 +4260,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "savedraft()",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L95"
+      "source_location": "L163"
     },
     {
       "id": "src_components_map_mapapp_mapapp_searchplaces",
@@ -3937,11 +4272,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "searchplaces()",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L115"
+      "source_location": "L183"
     },
     {
       "id": "src_components_map_mapapp_mapcanvas",
@@ -3949,11 +4284,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "mapcanvas()",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L442"
+      "source_location": "L632"
     },
     {
       "id": "src_components_map_mapapp_mapcanvas_applyuserposition",
@@ -3961,11 +4296,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "applyuserposition()",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L580"
+      "source_location": "L795"
     },
     {
       "id": "src_components_map_mapapp_mapcanvas_startwatch",
@@ -3973,11 +4308,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "startwatch()",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L606"
+      "source_location": "L822"
     },
     {
       "id": "src_components_map_mapapp_mapcanvas_upsertusermarker",
@@ -3985,11 +4320,71 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "upsertusermarker()",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L514"
+      "source_location": "L725"
+    },
+    {
+      "id": "src_lib_places_bboxaround",
+      "label": "bboxAround()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "bboxaround()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L123"
+    },
+    {
+      "id": "src_lib_places_escapehtml",
+      "label": "escapeHtml()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "escapehtml()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L21"
+    },
+    {
+      "id": "src_lib_places_esricandidatesurl",
+      "label": "esriCandidatesUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "esricandidatesurl()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L211"
+    },
+    {
+      "id": "src_lib_places_esrireverseurl",
+      "label": "esriReverseUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "esrireverseurl()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L247"
+    },
+    {
+      "id": "src_lib_places_esrisuggesturl",
+      "label": "esriSuggestUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "esrisuggesturl()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L183"
     },
     {
       "id": "src_lib_places_eventsforplace",
@@ -3997,11 +4392,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "eventsforplace()",
       "source_file": "src/lib/places.ts",
-      "source_location": "L22"
+      "source_location": "L371"
     },
     {
       "id": "src_lib_places_filterplaces",
@@ -4009,11 +4404,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "filterplaces()",
       "source_file": "src/lib/places.ts",
-      "source_location": "L38"
+      "source_location": "L387"
+    },
+    {
+      "id": "src_lib_places_hitsmatchingquery",
+      "label": "hitsMatchingQuery()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "hitsmatchingquery()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L414"
     },
     {
       "id": "src_lib_places_isplacekind",
@@ -4021,11 +4428,119 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "isplacekind()",
       "source_file": "src/lib/places.ts",
-      "source_location": "L18"
+      "source_location": "L98"
+    },
+    {
+      "id": "src_lib_places_iswithinsearchradius",
+      "label": "isWithinSearchRadius()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "iswithinsearchradius()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L152"
+    },
+    {
+      "id": "src_lib_places_labelesricandidate",
+      "label": "labelEsriCandidate()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "labelesricandidate()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L226"
+    },
+    {
+      "id": "src_lib_places_labelesrireverse",
+      "label": "labelEsriReverse()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "labelesrireverse()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L254"
+    },
+    {
+      "id": "src_lib_places_labelnominatimhit",
+      "label": "labelNominatimHit()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "labelnominatimhit()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L310"
+    },
+    {
+      "id": "src_lib_places_labelphotonfeature",
+      "label": "labelPhotonFeature()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "labelphotonfeature()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L355"
+    },
+    {
+      "id": "src_lib_places_labelphotonhit",
+      "label": "labelPhotonHit()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "labelphotonhit()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L343"
+    },
+    {
+      "id": "src_lib_places_matchworkspaceplaces",
+      "label": "matchWorkspacePlaces()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "matchworkspaceplaces()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L397"
+    },
+    {
+      "id": "src_lib_places_mergeplacesearchhits",
+      "label": "mergePlaceSearchHits()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "mergeplacesearchhits()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L318"
+    },
+    {
+      "id": "src_lib_places_nominatimsearchurl",
+      "label": "nominatimSearchUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "nominatimsearchurl()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L290"
     },
     {
       "id": "src_lib_places_notesforplace",
@@ -4033,11 +4548,107 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "notesforplace()",
       "source_file": "src/lib/places.ts",
-      "source_location": "L29"
+      "source_location": "L378"
+    },
+    {
+      "id": "src_lib_places_photonreverseurl",
+      "label": "photonReverseUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "photonreverseurl()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L348"
+    },
+    {
+      "id": "src_lib_places_photonsearchurl",
+      "label": "photonSearchUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "photonsearchurl()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L263"
+    },
+    {
+      "id": "src_lib_places_photopinhtml",
+      "label": "photoPinHtml()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "photopinhtml()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L46"
+    },
+    {
+      "id": "src_lib_places_placetitlematches",
+      "label": "placeTitleMatches()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "placetitlematches()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L67"
+    },
+    {
+      "id": "src_lib_places_safepincolor",
+      "label": "safePinColor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "safepincolor()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L31"
+    },
+    {
+      "id": "src_lib_places_safepinimageurl",
+      "label": "safePinImageUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "safepinimageurl()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L35"
+    },
+    {
+      "id": "src_lib_places_searchdistancekm",
+      "label": "searchDistanceKm()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "searchdistancekm()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L304"
+    },
+    {
+      "id": "src_lib_places_suggestionsfromesri",
+      "label": "suggestionsFromEsri()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "suggestionsfromesri()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L196"
     },
     {
       "id": "src_lib_places_test_place",
@@ -4045,11 +4656,47 @@
       "_callable": true,
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "place()",
       "source_file": "src/lib/places.test.ts",
-      "source_location": "L12"
+      "source_location": "L30"
+    },
+    {
+      "id": "src_lib_places_thumbnailfromwikipedia",
+      "label": "thumbnailFromWikipedia()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "thumbnailfromwikipedia()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L87"
+    },
+    {
+      "id": "src_lib_places_tightensearchbbox",
+      "label": "tightenSearchBBox()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "tightensearchbbox()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L135"
+    },
+    {
+      "id": "src_lib_places_wikipediaimageurl",
+      "label": "wikipediaImageUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "wikipediaimageurl()",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L53"
     },
     {
       "id": "src_lib_theme_applytheme",
@@ -4122,102 +4769,6 @@
       "norm_label": "rootlayout()",
       "source_file": "src/app/layout.tsx",
       "source_location": "L38"
-    },
-    {
-      "id": "src_components_calendarcell_calendarcell_baredges",
-      "label": "barEdges()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "baredges()",
-      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
-      "source_location": "L52"
-    },
-    {
-      "id": "src_components_calendarcell_calendarcell_barradius",
-      "label": "barRadius()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "barradius()",
-      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
-      "source_location": "L37"
-    },
-    {
-      "id": "src_components_calendarcell_calendarcell_calendarcell",
-      "label": "CalendarCell()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "calendarcell()",
-      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
-      "source_location": "L102"
-    },
-    {
-      "id": "src_components_calendarcell_calendarcell_conflictbarshadow",
-      "label": "conflictBarShadow()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "conflictbarshadow()",
-      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
-      "source_location": "L83"
-    },
-    {
-      "id": "src_components_calendarcell_calendarcell_conflictoutline",
-      "label": "conflictOutline()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "conflictoutline()",
-      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
-      "source_location": "L78"
-    },
-    {
-      "id": "src_lib_events_eventsforday",
-      "label": "eventsForDay()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "eventsforday()",
-      "source_file": "src/lib/events.ts",
-      "source_location": "L39"
-    },
-    {
-      "id": "src_lib_events_eventsspanningday",
-      "label": "eventsSpanningDay()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "eventsspanningday()",
-      "source_file": "src/lib/events.ts",
-      "source_location": "L81"
-    },
-    {
-      "id": "src_lib_events_formateventtime",
-      "label": "formatEventTime()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "formateventtime()",
-      "source_file": "src/lib/events.ts",
-      "source_location": "L310"
     },
     {
       "id": "src_lib_notifications_unansweredmemberidsforevent",
@@ -4350,6 +4901,18 @@
       "norm_label": "rightpanel()",
       "source_file": "src/components/RightPanel/RightPanel.tsx",
       "source_location": "L7"
+    },
+    {
+      "id": "src_app_profile_page_calendarsettingssection",
+      "label": "CalendarSettingsSection()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "calendarPrefs.ts",
+      "file_type": "code",
+      "norm_label": "calendarsettingssection()",
+      "source_file": "src/app/profile/page.tsx",
+      "source_location": "L388"
     },
     {
       "id": "src_lib_calendarprefs_getprefssnapshot",
@@ -4496,42 +5059,6 @@
       "source_location": "L663"
     },
     {
-      "id": "src_components_appshell_appshell_appshell_handleclearnotifications",
-      "label": "handleClearNotifications()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 62,
-      "community_name": "notifications.ts",
-      "file_type": "code",
-      "norm_label": "handleclearnotifications()",
-      "source_file": "src/components/AppShell/AppShell.tsx",
-      "source_location": "L1022"
-    },
-    {
-      "id": "src_components_appshell_appshell_appshell_handledismissnotification",
-      "label": "handleDismissNotification()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 62,
-      "community_name": "notifications.ts",
-      "file_type": "code",
-      "norm_label": "handledismissnotification()",
-      "source_file": "src/components/AppShell/AppShell.tsx",
-      "source_location": "L1008"
-    },
-    {
-      "id": "src_components_appshell_appshell_appshell_handlemarkallnotificationsread",
-      "label": "handleMarkAllNotificationsRead()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 62,
-      "community_name": "notifications.ts",
-      "file_type": "code",
-      "norm_label": "handlemarkallnotificationsread()",
-      "source_file": "src/components/AppShell/AppShell.tsx",
-      "source_location": "L990"
-    },
-    {
       "id": "src_components_navbar_navbar_notificationbell",
       "label": "NotificationBell()",
       "_callable": true,
@@ -4626,6 +5153,18 @@
       "norm_label": "readlocalnotificationprefs()",
       "source_file": "src/lib/notifications.ts",
       "source_location": "L30"
+    },
+    {
+      "id": "src_lib_notifications_resolvenotificationnavigation",
+      "label": "resolveNotificationNavigation()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 62,
+      "community_name": "notifications.ts",
+      "file_type": "code",
+      "norm_label": "resolvenotificationnavigation()",
+      "source_file": "src/lib/notifications.ts",
+      "source_location": "L132"
     },
     {
       "id": "src_lib_notifications_writelocalnotificationprefs",
@@ -4844,36 +5383,12 @@
       "source_location": "L63"
     },
     {
-      "id": "src_components_appshell_appshell_appshell_handleupdateseries",
-      "label": "handleUpdateSeries()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "handleupdateseries()",
-      "source_file": "src/components/AppShell/AppShell.tsx",
-      "source_location": "L859"
-    },
-    {
-      "id": "src_components_appshell_appshell_emptysubscribe",
-      "label": "emptySubscribe()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "emptysubscribe()",
-      "source_file": "src/components/AppShell/AppShell.tsx",
-      "source_location": "L60"
-    },
-    {
       "id": "src_components_panelresizehandle_clamp",
       "label": "clamp()",
       "_callable": true,
       "_origin": "ast",
       "community": 84,
-      "community_name": "AppShell.tsx",
+      "community_name": "PanelResizeHandle.tsx",
       "file_type": "code",
       "norm_label": "clamp()",
       "source_file": "src/components/PanelResizeHandle.tsx",
@@ -4885,7 +5400,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 84,
-      "community_name": "AppShell.tsx",
+      "community_name": "PanelResizeHandle.tsx",
       "file_type": "code",
       "norm_label": "loadwidth()",
       "source_file": "src/components/PanelResizeHandle.tsx",
@@ -4897,7 +5412,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 84,
-      "community_name": "AppShell.tsx",
+      "community_name": "PanelResizeHandle.tsx",
       "file_type": "code",
       "norm_label": "panelresizehandle()",
       "source_file": "src/components/PanelResizeHandle.tsx",
@@ -4909,59 +5424,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 84,
-      "community_name": "AppShell.tsx",
+      "community_name": "PanelResizeHandle.tsx",
       "file_type": "code",
       "norm_label": "usepanelwidth()",
       "source_file": "src/components/PanelResizeHandle.tsx",
       "source_location": "L26"
-    },
-    {
-      "id": "src_components_sidebar_sidebar_sidebar",
-      "label": "Sidebar()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "sidebar()",
-      "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L54"
-    },
-    {
-      "id": "src_components_sidebar_sidebar_sidebar_handledeletetagconfirm",
-      "label": "handleDeleteTagConfirm()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "handledeletetagconfirm()",
-      "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L102"
-    },
-    {
-      "id": "src_components_sidebar_sidebar_sidebar_toggleall",
-      "label": "toggleAll()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "toggleall()",
-      "source_file": "src/components/Sidebar/Sidebar.tsx",
-      "source_location": "L94"
-    },
-    {
-      "id": "src_lib_events_executeseriesreconciliation",
-      "label": "executeSeriesReconciliation()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "executeseriesreconciliation()",
-      "source_file": "src/lib/events.ts",
-      "source_location": "L601"
     },
     {
       "id": "src_components_sidebar_sidebar_chevronicon",
@@ -5144,18 +5611,6 @@
       "source_location": "L264"
     },
     {
-      "id": "src_app_profile_page_calendarsettingssection",
-      "label": "CalendarSettingsSection()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 96,
-      "community_name": "profile/page.tsx",
-      "file_type": "code",
-      "norm_label": "calendarsettingssection()",
-      "source_file": "src/app/profile/page.tsx",
-      "source_location": "L388"
-    },
-    {
       "id": "src_app_profile_page_dangerbutton",
       "label": "DangerButton()",
       "_callable": true,
@@ -5312,16 +5767,64 @@
       "source_location": "L41"
     },
     {
-      "id": "src_components_dayview_dayview_dayview",
-      "label": "DayView()",
+      "id": "src_components_calendarcell_calendarcell_baredges",
+      "label": "barEdges()",
       "_callable": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
-      "norm_label": "dayview()",
-      "source_file": "src/components/DayView/DayView.tsx",
-      "source_location": "L17"
+      "norm_label": "baredges()",
+      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
+      "source_location": "L52"
+    },
+    {
+      "id": "src_components_calendarcell_calendarcell_barradius",
+      "label": "barRadius()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "CalendarCell.tsx",
+      "file_type": "code",
+      "norm_label": "barradius()",
+      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
+      "source_location": "L37"
+    },
+    {
+      "id": "src_components_calendarcell_calendarcell_calendarcell",
+      "label": "CalendarCell()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "CalendarCell.tsx",
+      "file_type": "code",
+      "norm_label": "calendarcell()",
+      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
+      "source_location": "L102"
+    },
+    {
+      "id": "src_components_calendarcell_calendarcell_conflictbarshadow",
+      "label": "conflictBarShadow()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "CalendarCell.tsx",
+      "file_type": "code",
+      "norm_label": "conflictbarshadow()",
+      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
+      "source_location": "L83"
+    },
+    {
+      "id": "src_components_calendarcell_calendarcell_conflictoutline",
+      "label": "conflictOutline()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "CalendarCell.tsx",
+      "file_type": "code",
+      "norm_label": "conflictoutline()",
+      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
+      "source_location": "L78"
     },
     {
       "id": "src_components_eventcreatorbadge_eventcreatorbadge",
@@ -5329,7 +5832,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "eventcreatorbadge()",
       "source_file": "src/components/EventCreatorBadge.tsx",
@@ -5341,7 +5844,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "geteventcreatorcolor()",
       "source_file": "src/components/EventCreatorBadge.tsx",
@@ -5353,23 +5856,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "eventtagstripes()",
       "source_file": "src/components/EventTagStripes.tsx",
       "source_location": "L24"
-    },
-    {
-      "id": "src_components_timegrid_timegrid_dayascalendarday",
-      "label": "dayAsCalendarDay()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 97,
-      "community_name": "TimeGrid.tsx",
-      "file_type": "code",
-      "norm_label": "dayascalendarday()",
-      "source_file": "src/components/TimeGrid/TimeGrid.tsx",
-      "source_location": "L242"
     },
     {
       "id": "src_components_timegrid_timegrid_timegrid",
@@ -5377,7 +5868,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "timegrid()",
       "source_file": "src/components/TimeGrid/TimeGrid.tsx",
@@ -5389,7 +5880,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "formathourlabel()",
       "source_file": "src/lib/calendar.ts",
@@ -5401,11 +5892,47 @@
       "_callable": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "getminutessincemidnight()",
       "source_file": "src/lib/calendar.ts",
       "source_location": "L211"
+    },
+    {
+      "id": "src_lib_events_eventsforday",
+      "label": "eventsForDay()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "CalendarCell.tsx",
+      "file_type": "code",
+      "norm_label": "eventsforday()",
+      "source_file": "src/lib/events.ts",
+      "source_location": "L39"
+    },
+    {
+      "id": "src_lib_events_formateventtime",
+      "label": "formatEventTime()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "CalendarCell.tsx",
+      "file_type": "code",
+      "norm_label": "formateventtime()",
+      "source_file": "src/lib/events.ts",
+      "source_location": "L310"
+    },
+    {
+      "id": "src_lib_tags_colorsforevent",
+      "label": "colorsForEvent()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "CalendarCell.tsx",
+      "file_type": "code",
+      "norm_label": "colorsforevent()",
+      "source_file": "src/lib/tags.ts",
+      "source_location": "L34"
     },
     {
       "id": "src_components_notes_notesapp_notesapp",
@@ -5742,6 +6269,28 @@
       "norm_label": "writenotedragdata()",
       "source_file": "src/lib/notes.ts",
       "source_location": "L256"
+    },
+    {
+      "id": "src_components_calendargrid_calendargrid",
+      "label": "CalendarGrid.tsx",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "calendargrid.tsx",
+      "source_file": "src/components/CalendarGrid/CalendarGrid.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_calendargrid_index",
+      "label": "CalendarGrid/index.ts",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "calendar.ts",
+      "file_type": "code",
+      "norm_label": "calendargrid/index.ts",
+      "source_file": "src/components/CalendarGrid/index.ts",
+      "source_location": "L1"
     },
     {
       "id": "src_components_sidebar_index",
@@ -6731,17 +7280,6 @@
       "source_location": "L1"
     },
     {
-      "id": "src_lib_supabase_client",
-      "label": "client.ts",
-      "_origin": "ast",
-      "community": 100,
-      "community_name": "database.ts",
-      "file_type": "code",
-      "norm_label": "client.ts",
-      "source_file": "src/lib/supabase/client.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "src_types_database",
       "label": "database.ts",
       "_origin": "ast",
@@ -6757,7 +7295,7 @@
       "label": "login/page.tsx",
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "login/page.tsx",
       "source_file": "src/app/login/page.tsx",
@@ -6768,7 +7306,7 @@
       "label": "Auth/index.ts",
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "auth/index.ts",
       "source_file": "src/components/Auth/index.ts",
@@ -6779,7 +7317,7 @@
       "label": "LoginForm.tsx",
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "loginform.tsx",
       "source_file": "src/components/Auth/LoginForm.tsx",
@@ -6790,7 +7328,7 @@
       "label": "auth.ts",
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "auth.ts",
       "source_file": "src/lib/auth.ts",
@@ -6801,10 +7339,21 @@
       "label": "auth.test.ts",
       "_origin": "ast",
       "community": 101,
-      "community_name": "LoginForm.tsx",
+      "community_name": "createClient",
       "file_type": "code",
       "norm_label": "auth.test.ts",
       "source_file": "src/lib/auth.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_lib_supabase_client",
+      "label": "client.ts",
+      "_origin": "ast",
+      "community": 101,
+      "community_name": "createClient",
+      "file_type": "code",
+      "norm_label": "client.ts",
+      "source_file": "src/lib/supabase/client.ts",
       "source_location": "L1"
     },
     {
@@ -6885,14 +7434,36 @@
       "source_location": "L1"
     },
     {
-      "id": "src_components_calendar_calendar",
-      "label": "Calendar.tsx",
+      "id": "src_app_page",
+      "label": "app/page.tsx",
       "_origin": "ast",
       "community": 105,
-      "community_name": "Calendar.tsx",
+      "community_name": "AppShell.tsx",
       "file_type": "code",
-      "norm_label": "calendar.tsx",
-      "source_file": "src/components/Calendar/Calendar.tsx",
+      "norm_label": "app/page.tsx",
+      "source_file": "src/app/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_appshell_appshell",
+      "label": "AppShell.tsx",
+      "_origin": "ast",
+      "community": 105,
+      "community_name": "AppShell.tsx",
+      "file_type": "code",
+      "norm_label": "appshell.tsx",
+      "source_file": "src/components/AppShell/AppShell.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_appshell_index",
+      "label": "AppShell/index.ts",
+      "_origin": "ast",
+      "community": 105,
+      "community_name": "AppShell.tsx",
+      "file_type": "code",
+      "norm_label": "appshell/index.ts",
+      "source_file": "src/components/AppShell/index.ts",
       "source_location": "L1"
     },
     {
@@ -6900,43 +7471,21 @@
       "label": "Calendar/index.ts",
       "_origin": "ast",
       "community": 105,
-      "community_name": "Calendar.tsx",
+      "community_name": "AppShell.tsx",
       "file_type": "code",
       "norm_label": "calendar/index.ts",
       "source_file": "src/components/Calendar/index.ts",
       "source_location": "L1"
     },
     {
-      "id": "src_components_weekview_index",
-      "label": "WeekView/index.ts",
+      "id": "src_components_eventviewerpanel_index",
+      "label": "EventViewerPanel/index.ts",
       "_origin": "ast",
       "community": 105,
-      "community_name": "Calendar.tsx",
+      "community_name": "AppShell.tsx",
       "file_type": "code",
-      "norm_label": "weekview/index.ts",
-      "source_file": "src/components/WeekView/index.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_weekview_weekview",
-      "label": "WeekView.tsx",
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "Calendar.tsx",
-      "file_type": "code",
-      "norm_label": "weekview.tsx",
-      "source_file": "src/components/WeekView/WeekView.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_yearview_index",
-      "label": "YearView/index.ts",
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "Calendar.tsx",
-      "file_type": "code",
-      "norm_label": "yearview/index.ts",
-      "source_file": "src/components/YearView/index.ts",
+      "norm_label": "eventviewerpanel/index.ts",
+      "source_file": "src/components/EventViewerPanel/index.ts",
       "source_location": "L1"
     },
     {
@@ -7014,17 +7563,6 @@
       "file_type": "code",
       "norm_label": "tagcreatorinline/index.ts",
       "source_file": "src/components/TagCreatorInline/index.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_tagcreatorinline_tagcreatorinline",
-      "label": "TagCreatorInline.tsx",
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "CreateEventModal.tsx",
-      "file_type": "code",
-      "norm_label": "tagcreatorinline.tsx",
-      "source_file": "src/components/TagCreatorInline/TagCreatorInline.tsx",
       "source_location": "L1"
     },
     {
@@ -9464,14 +10002,36 @@
       "source_location": "L31"
     },
     {
-      "id": "src_components_eventviewerpanel_bucketevents_test",
-      "label": "bucketEvents.test.ts",
+      "id": "src_components_calendar_calendar",
+      "label": "Calendar.tsx",
       "_origin": "ast",
       "community": 20,
       "community_name": "EventViewerPanel.tsx",
       "file_type": "code",
-      "norm_label": "bucketevents.test.ts",
-      "source_file": "src/components/EventViewerPanel/bucketEvents.test.ts",
+      "norm_label": "calendar.tsx",
+      "source_file": "src/components/Calendar/Calendar.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_dayview_dayview",
+      "label": "DayView.tsx",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "dayview.tsx",
+      "source_file": "src/components/DayView/DayView.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_dayview_index",
+      "label": "DayView/index.ts",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "dayview/index.ts",
+      "source_file": "src/components/DayView/index.ts",
       "source_location": "L1"
     },
     {
@@ -9508,14 +10068,69 @@
       "source_location": "L30"
     },
     {
-      "id": "src_components_eventviewerpanel_index",
-      "label": "EventViewerPanel/index.ts",
+      "id": "src_components_tagcreatorinline_tagcreatorinline",
+      "label": "TagCreatorInline.tsx",
       "_origin": "ast",
       "community": 20,
       "community_name": "EventViewerPanel.tsx",
       "file_type": "code",
-      "norm_label": "eventviewerpanel/index.ts",
-      "source_file": "src/components/EventViewerPanel/index.ts",
+      "norm_label": "tagcreatorinline.tsx",
+      "source_file": "src/components/TagCreatorInline/TagCreatorInline.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_timegrid_index",
+      "label": "TimeGrid/index.ts",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "timegrid/index.ts",
+      "source_file": "src/components/TimeGrid/index.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_timegrid_timegrid_hour_height_px",
+      "label": "HOUR_HEIGHT_PX",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "hour_height_px",
+      "source_file": "src/components/TimeGrid/TimeGrid.tsx",
+      "source_location": "L24"
+    },
+    {
+      "id": "src_components_weekview_index",
+      "label": "WeekView/index.ts",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "weekview/index.ts",
+      "source_file": "src/components/WeekView/index.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_weekview_weekview",
+      "label": "WeekView.tsx",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "weekview.tsx",
+      "source_file": "src/components/WeekView/WeekView.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_yearview_index",
+      "label": "YearView/index.ts",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "EventViewerPanel.tsx",
+      "file_type": "code",
+      "norm_label": "yearview/index.ts",
+      "source_file": "src/components/YearView/index.ts",
       "source_location": "L1"
     },
     {
@@ -10109,28 +10724,6 @@
       "norm_label": "workflow",
       "source_file": ".agents/skills/find-animation-opportunities/SKILL.md",
       "source_location": "L97"
-    },
-    {
-      "id": "src_app_page",
-      "label": "app/page.tsx",
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "AppShell",
-      "file_type": "code",
-      "norm_label": "app/page.tsx",
-      "source_file": "src/app/page.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_appshell_index",
-      "label": "AppShell/index.ts",
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "AppShell",
-      "file_type": "code",
-      "norm_label": "appshell/index.ts",
-      "source_file": "src/components/AppShell/index.ts",
-      "source_location": "L1"
     },
     {
       "id": "src_components_notes_notetoolbar",
@@ -11081,25 +11674,14 @@
       "source_location": "L51"
     },
     {
-      "id": "src_components_calendargrid_calendargrid",
-      "label": "CalendarGrid.tsx",
+      "id": "src_components_eventviewerpanel_bucketevents_test",
+      "label": "bucketEvents.test.ts",
       "_origin": "ast",
       "community": 33,
       "community_name": "events.ts",
       "file_type": "code",
-      "norm_label": "calendargrid.tsx",
-      "source_file": "src/components/CalendarGrid/CalendarGrid.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_calendargrid_index",
-      "label": "CalendarGrid/index.ts",
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "events.ts",
-      "file_type": "code",
-      "norm_label": "calendargrid/index.ts",
-      "source_file": "src/components/CalendarGrid/index.ts",
+      "norm_label": "bucketevents.test.ts",
+      "source_file": "src/components/EventViewerPanel/bucketEvents.test.ts",
       "source_location": "L1"
     },
     {
@@ -11573,11 +12155,44 @@
       "source_location": "L269"
     },
     {
+      "id": "src_app_api_places_search_route",
+      "label": "search/route.ts",
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "search/route.ts",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_api_places_search_route_osm_headers",
+      "label": "OSM_HEADERS",
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "osm_headers",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "src_app_api_places_search_route_searchcache",
+      "label": "searchCache",
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "searchcache",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L17"
+    },
+    {
       "id": "src_components_map_mapapp",
       "label": "MapApp.tsx",
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "mapapp.tsx",
       "source_file": "src/components/Map/MapApp.tsx",
@@ -11588,18 +12203,40 @@
       "label": "places.ts",
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "places.ts",
       "source_file": "src/lib/places.ts",
       "source_location": "L1"
     },
     {
+      "id": "src_lib_places_photon_search_radius_km",
+      "label": "PHOTON_SEARCH_RADIUS_KM",
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "photon_search_radius_km",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L121"
+    },
+    {
+      "id": "src_lib_places_place_face_zoom",
+      "label": "PLACE_FACE_ZOOM",
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "places.ts",
+      "file_type": "code",
+      "norm_label": "place_face_zoom",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L19"
+    },
+    {
       "id": "src_lib_places_place_kind_color",
       "label": "PLACE_KIND_COLOR",
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "place_kind_color",
       "source_file": "src/lib/places.ts",
@@ -11610,7 +12247,7 @@
       "label": "PLACE_KIND_LABEL",
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "place_kind_label",
       "source_file": "src/lib/places.ts",
@@ -11621,7 +12258,7 @@
       "label": "PLACE_KINDS",
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "place_kinds",
       "source_file": "src/lib/places.ts",
@@ -11632,7 +12269,7 @@
       "label": "places.test.ts",
       "_origin": "ast",
       "community": 37,
-      "community_name": "MapApp.tsx",
+      "community_name": "places.ts",
       "file_type": "code",
       "norm_label": "places.test.ts",
       "source_file": "src/lib/places.test.ts",
@@ -11725,28 +12362,6 @@
       "norm_label": "varelaround",
       "source_file": "src/app/layout.tsx",
       "source_location": "L5"
-    },
-    {
-      "id": "src_components_calendarcell_calendarcell",
-      "label": "CalendarCell.tsx",
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "calendarcell.tsx",
-      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_calendarcell_index",
-      "label": "CalendarCell/index.ts",
-      "_origin": "ast",
-      "community": 4,
-      "community_name": "CalendarCell.tsx",
-      "file_type": "code",
-      "norm_label": "calendarcell/index.ts",
-      "source_file": "src/components/CalendarCell/index.ts",
-      "source_location": "L1"
     },
     {
       "id": "agents_skills_emil_design_eng_skill_1_should_this_animate_at_all",
@@ -15551,22 +16166,11 @@
       "source_location": ""
     },
     {
-      "id": "src_components_appshell_appshell",
-      "label": "AppShell.tsx",
-      "_origin": "ast",
-      "community": 84,
-      "community_name": "AppShell.tsx",
-      "file_type": "code",
-      "norm_label": "appshell.tsx",
-      "source_file": "src/components/AppShell/AppShell.tsx",
-      "source_location": "L1"
-    },
-    {
       "id": "src_components_panelresizehandle",
       "label": "PanelResizeHandle.tsx",
       "_origin": "ast",
       "community": 84,
-      "community_name": "AppShell.tsx",
+      "community_name": "PanelResizeHandle.tsx",
       "file_type": "code",
       "norm_label": "panelresizehandle.tsx",
       "source_file": "src/components/PanelResizeHandle.tsx",
@@ -15577,7 +16181,7 @@
       "label": "PANEL_DEFAULT_WIDTH",
       "_origin": "ast",
       "community": 84,
-      "community_name": "AppShell.tsx",
+      "community_name": "PanelResizeHandle.tsx",
       "file_type": "code",
       "norm_label": "panel_default_width",
       "source_file": "src/components/PanelResizeHandle.tsx",
@@ -15588,7 +16192,7 @@
       "label": "PANEL_MIN_WIDTH",
       "_origin": "ast",
       "community": 84,
-      "community_name": "AppShell.tsx",
+      "community_name": "PanelResizeHandle.tsx",
       "file_type": "code",
       "norm_label": "panel_min_width",
       "source_file": "src/components/PanelResizeHandle.tsx",
@@ -16360,25 +16964,25 @@
       "source_location": "L1"
     },
     {
-      "id": "src_components_dayview_dayview",
-      "label": "DayView.tsx",
+      "id": "src_components_calendarcell_calendarcell",
+      "label": "CalendarCell.tsx",
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
-      "norm_label": "dayview.tsx",
-      "source_file": "src/components/DayView/DayView.tsx",
+      "norm_label": "calendarcell.tsx",
+      "source_file": "src/components/CalendarCell/CalendarCell.tsx",
       "source_location": "L1"
     },
     {
-      "id": "src_components_dayview_index",
-      "label": "DayView/index.ts",
+      "id": "src_components_calendarcell_index",
+      "label": "CalendarCell/index.ts",
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
-      "norm_label": "dayview/index.ts",
-      "source_file": "src/components/DayView/index.ts",
+      "norm_label": "calendarcell/index.ts",
+      "source_file": "src/components/CalendarCell/index.ts",
       "source_location": "L1"
     },
     {
@@ -16386,7 +16990,7 @@
       "label": "EventCreatorBadge.tsx",
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "eventcreatorbadge.tsx",
       "source_file": "src/components/EventCreatorBadge.tsx",
@@ -16397,21 +17001,10 @@
       "label": "EventTagStripes.tsx",
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "eventtagstripes.tsx",
       "source_file": "src/components/EventTagStripes.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_timegrid_index",
-      "label": "TimeGrid/index.ts",
-      "_origin": "ast",
-      "community": 97,
-      "community_name": "TimeGrid.tsx",
-      "file_type": "code",
-      "norm_label": "timegrid/index.ts",
-      "source_file": "src/components/TimeGrid/index.ts",
       "source_location": "L1"
     },
     {
@@ -16419,22 +17012,11 @@
       "label": "TimeGrid.tsx",
       "_origin": "ast",
       "community": 97,
-      "community_name": "TimeGrid.tsx",
+      "community_name": "CalendarCell.tsx",
       "file_type": "code",
       "norm_label": "timegrid.tsx",
       "source_file": "src/components/TimeGrid/TimeGrid.tsx",
       "source_location": "L1"
-    },
-    {
-      "id": "src_components_timegrid_timegrid_hour_height_px",
-      "label": "HOUR_HEIGHT_PX",
-      "_origin": "ast",
-      "community": 97,
-      "community_name": "TimeGrid.tsx",
-      "file_type": "code",
-      "norm_label": "hour_height_px",
-      "source_file": "src/components/TimeGrid/TimeGrid.tsx",
-      "source_location": "L24"
     },
     {
       "id": "src_components_notes_noteslistpanel",
@@ -16518,6 +17100,66 @@
       "context": "call",
       "source_file": "src/app/api/calendar-sync/fetch/route.ts",
       "source_location": "L221",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route_fetchnominatim",
+      "target": "src_app_api_places_search_route_fetchjson",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route_get",
+      "target": "src_lib_places_photonsearchfocus",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route_get",
+      "target": "src_app_api_places_search_route_fetchnominatim",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route_get",
+      "target": "src_lib_places_nominatimsearchurl",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route_get",
+      "target": "src_lib_places_mergeplacesearchhits",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -18190,6 +18832,30 @@
     },
     {
       "source": "src_components_map_mapapp_mapapp",
+      "target": "src_lib_places_filterplaces",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp",
+      "target": "src_lib_places_matchworkspaceplaces",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp",
       "target": "src_lib_places_eventsforplace",
       "relation": "calls",
       "_origin": "ast",
@@ -18197,7 +18863,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L173",
+      "source_location": "L286",
       "weight": 1.0
     },
     {
@@ -18209,7 +18875,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L174",
+      "source_location": "L287",
       "weight": 1.0
     },
     {
@@ -18221,19 +18887,151 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L386",
+      "source_location": "L576",
       "weight": 1.0
     },
     {
-      "source": "src_components_map_mapapp_mapapp",
-      "target": "src_lib_places_filterplaces",
+      "source": "src_components_map_mapapp_mapapp_choosesuggestion",
+      "target": "src_lib_places_esricandidatesurl",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L85",
+      "source_location": "L245",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp_choosesuggestion",
+      "target": "src_lib_places_labelesricandidate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L248",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp_handlemapclick",
+      "target": "src_components_map_mapapp_mapapp_reversegeocodeclick",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp_reversegeocodeclick",
+      "target": "src_lib_places_esrireverseurl",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp_reversegeocodeclick",
+      "target": "src_lib_places_labelesrireverse",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L147",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp_searchplaces",
+      "target": "src_lib_places_photonsearchfocus",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L193",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp_searchplaces",
+      "target": "src_components_map_mapapp_cappedsignal",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L223",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp_searchplaces",
+      "target": "src_lib_places_esrisuggesturl",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L225",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp_searchplaces",
+      "target": "src_lib_places_suggestionsfromesri",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L227",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapcanvas",
+      "target": "src_lib_places_photopinhtml",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L910",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapcanvas",
+      "target": "src_lib_places_wikipediaimageurl",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L937",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapcanvas",
+      "target": "src_lib_places_thumbnailfromwikipedia",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L940",
       "weight": 1.0
     },
     {
@@ -18245,7 +19043,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L598",
+      "source_location": "L813",
       "weight": 1.0
     },
     {
@@ -18257,7 +19055,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L615",
+      "source_location": "L834",
       "weight": 1.0
     },
     {
@@ -20157,6 +20955,138 @@
       "weight": 1.0
     },
     {
+      "source": "src_lib_places_esrisuggesturl",
+      "target": "src_lib_places_bboxaround",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_labelphotonhit",
+      "target": "src_lib_places_labelphotonfeature",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L344",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_mergeplacesearchhits",
+      "target": "src_lib_places_iswithinsearchradius",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L328",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_mergeplacesearchhits",
+      "target": "src_lib_places_searchdistancekm",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L337",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_photonsearchfocus",
+      "target": "src_lib_places_tightensearchbbox",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L172",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_photopinhtml",
+      "target": "src_lib_places_safepinimageurl",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_photopinhtml",
+      "target": "src_lib_places_escapehtml",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_photopinhtml",
+      "target": "src_lib_places_safepincolor",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_thumbnailfromwikipedia",
+      "target": "src_lib_places_placetitlematches",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_thumbnailfromwikipedia",
+      "target": "src_lib_places_safepinimageurl",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_tightensearchbbox",
+      "target": "src_lib_places_bboxaround",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/places.ts",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
       "source": "src_lib_rsvps_rsvpmapforuser",
       "target": "src_lib_rsvps_isrsvpstatus",
       "relation": "calls",
@@ -20554,18 +21484,6 @@
     },
     {
       "source": "src_components_map_mapapp_mapapp",
-      "target": "src_components_map_mapapp_mapapp_searchplaces",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L115",
-      "weight": 1.0
-    },
-    {
-      "source": "src_components_map_mapapp_mapapp",
       "target": "src_components_map_mapapp_mapapp_savedraft",
       "relation": "contains",
       "_origin": "ast",
@@ -20573,7 +21491,31 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L95",
+      "source_location": "L163",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp",
+      "target": "src_components_map_mapapp_mapapp_searchplaces",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L183",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp",
+      "target": "src_components_map_mapapp_mapapp_choosesuggestion",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -20585,7 +21527,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L606",
+      "source_location": "L822",
       "weight": 1.0
     },
     {
@@ -21750,6 +22692,78 @@
       "context": "import",
       "source_file": "src/app/api/calendar-sync/fetch/route.ts",
       "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_lib_places_labelnominatimhit",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_lib_places_mergeplacesearchhits",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_lib_places_nominatimhit",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_lib_places_nominatimsearchurl",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_lib_places_photonsearchfocus",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_lib_places_placesearchhit",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L2",
       "weight": 1.0
     },
     {
@@ -23746,6 +24760,66 @@
     },
     {
       "source": "src_components_map_mapapp",
+      "target": "src_lib_places_esriaddress",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_esricandidate",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_esricandidatesurl",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_esrireverseurl",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_esrisuggesturl",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
       "target": "src_lib_places_eventsforplace",
       "relation": "imports",
       "_origin": "ast",
@@ -23770,6 +24844,66 @@
     },
     {
       "source": "src_components_map_mapapp",
+      "target": "src_lib_places_labelesricandidate",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_labelesrireverse",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_mapbias",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_mapview",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_matchworkspaceplaces",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
       "target": "src_lib_places_notesforplace",
       "relation": "imports",
       "_origin": "ast",
@@ -23782,7 +24916,43 @@
     },
     {
       "source": "src_components_map_mapapp",
+      "target": "src_lib_places_photonsearchfocus",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_photopinhtml",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
       "target": "src_lib_places_place",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_place_face_zoom",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -23831,6 +25001,54 @@
     {
       "source": "src_components_map_mapapp",
       "target": "src_lib_places_placekind",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_placesuggestion",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_suggestionsfromesri",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_thumbnailfromwikipedia",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_lib_places_wikipediaimageurl",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -26542,6 +27760,30 @@
     },
     {
       "source": "src_lib_places_test",
+      "target": "src_lib_places_bboxaround",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_esrisuggesturl",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
       "target": "src_lib_places_eventsforplace",
       "relation": "imports",
       "_origin": "ast",
@@ -26566,7 +27808,115 @@
     },
     {
       "source": "src_lib_places_test",
+      "target": "src_lib_places_hitsmatchingquery",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
       "target": "src_lib_places_isplacekind",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_iswithinsearchradius",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_labelesricandidate",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_labelesrireverse",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_labelnominatimhit",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_labelphotonfeature",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_matchworkspaceplaces",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_mergeplacesearchhits",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_nominatimsearchurl",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -26590,7 +27940,91 @@
     },
     {
       "source": "src_lib_places_test",
+      "target": "src_lib_places_photonreverseurl",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_photonsearchfocus",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_photonsearchurl",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_photopinhtml",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
       "target": "src_lib_places_place",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_placetitlematches",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_suggestionsfromesri",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/lib/places.test.ts",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places_test",
+      "target": "src_lib_places_thumbnailfromwikipedia",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -26910,6 +28344,18 @@
       "context": "import",
       "source_file": "src/app/api/calendar-sync/fetch/route.ts",
       "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_lib_places",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L2",
       "weight": 1.0
     },
     {
@@ -34216,6 +35662,61 @@
       "weight": 1.0
     },
     {
+      "source": "src_app_api_places_search_route",
+      "target": "src_app_api_places_search_route_osm_headers",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_app_api_places_search_route_searchcache",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_app_api_places_search_route_fetchjson",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_app_api_places_search_route_fetchnominatim",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "src_app_api_places_search_route",
+      "target": "src_app_api_places_search_route_get",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
       "source": "src_app_auth_callback_route",
       "target": "src_app_auth_callback_route_get",
       "relation": "contains",
@@ -35526,13 +37027,24 @@
     },
     {
       "source": "src_components_map_mapapp",
+      "target": "src_components_map_mapapp_locationstatus",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
       "target": "src_components_map_mapapp_mapfilter",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L18",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -35543,7 +37055,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L20",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp",
+      "target": "src_components_map_mapapp_cappedsignal",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L47",
       "weight": 1.0
     },
     {
@@ -35554,7 +37077,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L28",
+      "source_location": "L59",
       "weight": 1.0
     },
     {
@@ -35565,7 +37088,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L442",
+      "source_location": "L632",
       "weight": 1.0
     },
     {
@@ -35576,7 +37099,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L49",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -35587,7 +37110,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L90",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_map_mapapp_mapapp",
+      "target": "src_components_map_mapapp_mapapp_reversegeocodeclick",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/Map/MapApp.tsx",
+      "source_location": "L139",
       "weight": 1.0
     },
     {
@@ -35598,7 +37132,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L514",
+      "source_location": "L725",
       "weight": 1.0
     },
     {
@@ -35609,7 +37143,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Map/MapApp.tsx",
-      "source_location": "L580",
+      "source_location": "L795",
       "weight": 1.0
     },
     {
@@ -38738,6 +40272,72 @@
     },
     {
       "source": "src_lib_places",
+      "target": "src_lib_places_photonfeature",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_mapbias",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_mapbbox",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L117",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_mapview",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L118",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_photon_search_radius_km",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_bboxaround",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
       "target": "src_lib_places_place_kind_color",
       "relation": "contains",
       "_origin": "ast",
@@ -38749,35 +40349,200 @@
     },
     {
       "source": "src_lib_places",
-      "target": "src_lib_places_isplacekind",
+      "target": "src_lib_places_tightensearchbbox",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/places.ts",
-      "source_location": "L18",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
       "source": "src_lib_places",
-      "target": "src_lib_places_eventsforplace",
+      "target": "src_lib_places_iswithinsearchradius",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/places.ts",
-      "source_location": "L22",
+      "source_location": "L152",
       "weight": 1.0
     },
     {
       "source": "src_lib_places",
-      "target": "src_lib_places_notesforplace",
+      "target": "src_lib_places_photonsearchfocus",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/places.ts",
-      "source_location": "L29",
+      "source_location": "L163",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_placesuggestion",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L178",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_esrisuggesturl",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L183",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_place_face_zoom",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_suggestionsfromesri",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L196",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_escapehtml",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_esricandidatesurl",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L211",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_esricandidate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L220",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_labelesricandidate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L226",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_esriaddress",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L238",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_esrireverseurl",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L247",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_labelesrireverse",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L254",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_photonsearchurl",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L263",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_nominatimhit",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_placesearchhit",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L282",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_nominatimsearchurl",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L290",
       "weight": 1.0
     },
     {
@@ -38793,13 +40558,134 @@
     },
     {
       "source": "src_lib_places",
+      "target": "src_lib_places_searchdistancekm",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L304",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_safepincolor",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_labelnominatimhit",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L310",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_mergeplacesearchhits",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_labelphotonhit",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L343",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_photonreverseurl",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L348",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_safepinimageurl",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_labelphotonfeature",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L355",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_eventsforplace",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L371",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_notesforplace",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L378",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
       "target": "src_lib_places_filterplaces",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/places.ts",
-      "source_location": "L38",
+      "source_location": "L387",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_matchworkspaceplaces",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L397",
       "weight": 1.0
     },
     {
@@ -38815,6 +40701,39 @@
     },
     {
       "source": "src_lib_places",
+      "target": "src_lib_places_hitsmatchingquery",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L414",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_photopinhtml",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_wikipediaimageurl",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
       "target": "src_lib_places_place_kinds",
       "relation": "contains",
       "_origin": "ast",
@@ -38822,6 +40741,17 @@
       "confidence_score": 1.0,
       "source_file": "src/lib/places.ts",
       "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_placetitlematches",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L67",
       "weight": 1.0
     },
     {
@@ -38836,6 +40766,28 @@
       "weight": 1.0
     },
     {
+      "source": "src_lib_places",
+      "target": "src_lib_places_thumbnailfromwikipedia",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_places",
+      "target": "src_lib_places_isplacekind",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/places.ts",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
       "source": "src_lib_places_test",
       "target": "src_lib_places_test_place",
       "relation": "contains",
@@ -38843,7 +40795,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/places.test.ts",
-      "source_location": "L12",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -42466,6 +44418,18 @@
       "weight": 1.0
     },
     {
+      "source": "src_app_api_places_search_route_get",
+      "target": "src_lib_places_labelnominatimhit",
+      "relation": "indirect_call",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "argument",
+      "source_file": "src/app/api/places/search/route.ts",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
       "source": "src_components_appshell_appshell_appshell",
       "target": "src_components_appshell_appshell_emptysubscribe",
       "relation": "indirect_call",
@@ -42659,5 +44623,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "dc06733be7bbe3825e6c51688065edcbdfc01638"
+  "built_at_commit": "dba348d97ef9004c2759ba864bf51b9f430047f4"
 }

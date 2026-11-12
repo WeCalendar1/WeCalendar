@@ -674,12 +674,6 @@ function MapCanvas({
   const [userMarkerTick, setUserMarkerTick] = useState(0);
   const [placeImages, setPlaceImages] = useState<Record<string, string | null>>({});
   const imageCacheRef = useRef(new Map<string, string | null>());
-  const userAvatarRef = useRef(userAvatarUrl);
-  const zoomRef = useRef(zoom);
-  const locationOpenRef = useRef(locationOpen);
-  userAvatarRef.current = userAvatarUrl;
-  zoomRef.current = zoom;
-  locationOpenRef.current = locationOpen;
   const onSelectRef = useRef(onSelectPlace);
   const onClickRef = useRef(onMapClick);
   const onUserLocationRef = useRef(onUserLocation);
@@ -911,8 +905,8 @@ function MapCanvas({
     void import("leaflet").then((L) => {
       const marker = userDotRef.current;
       if (!marker) return;
-      const avatar = userAvatarRef.current;
-      const show = Boolean(avatar) && (zoomRef.current >= PLACE_FACE_ZOOM || locationOpenRef.current);
+      const avatar = userAvatarUrl;
+      const show = Boolean(avatar) && (zoom >= PLACE_FACE_ZOOM || locationOpen);
       const html = show && avatar ? photoPinHtml({ color: "#007aff", imageUrl: avatar }) : "";
       marker.setIcon(
         html
