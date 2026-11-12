@@ -1615,6 +1615,7 @@ export function AppShell() {
           <MapApp
             groupId={activeGroupId}
             places={places}
+            userAvatarUrl={userAvatarUrl}
             events={filteredEvents}
             notes={filteredNotes}
             onCreatePlace={handleCreatePlace}
