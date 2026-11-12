@@ -869,7 +869,10 @@ function MapCanvas({
         });
       };
       map.on("moveend", publishView);
-      map.on("zoomend", () => setZoom(map.getZoom()));
+      map.on("zoomend", () => {
+        if (!map) return;
+        setZoom(map.getZoom());
+      });
       setZoom(map.getZoom());
       publishView();
 
