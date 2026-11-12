@@ -104,6 +104,7 @@ export function MapApp({
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("unknown");
   const [reversePending, setReversePending] = useState(false);
   const searchSeqRef = useRef(0);
+  const pickSeqRef = useRef(0);
   const searchAbortRef = useRef<AbortController | null>(null);
   const searchCacheRef = useRef(new Map<string, PlaceSuggestion[]>());
   const reverseSeqRef = useRef(0);
@@ -113,6 +114,7 @@ export function MapApp({
 
   if (groupId !== activeGroupKey) {
     setActiveGroupKey(groupId);
+    pickSeqRef.current += 1;
     setSelectedId(null);
     setDraft(null);
     setError(null);
@@ -131,6 +133,7 @@ export function MapApp({
   const selected = places.find((p) => p.id === selectedId) ?? null;
 
   function handleMapClick(lat: number, lng: number) {
+    pickSeqRef.current += 1;
     setSelectedId(null);
     setDraft({ lat, lng, name: "", address: "", kind: "favorite" });
     void reverseGeocodeClick(lat, lng);
@@ -220,7 +223,7 @@ export function MapApp({
 
     const abort = new AbortController();
     searchAbortRef.current = abort;
-    const signal = cappedSignal(abort.signal, 500);
+    const signal = cappedSignal(abort.signal, 2_500);
     try {
       const res = await fetch(esriSuggestUrl(q, focus), { signal });
       if (!res.ok || seq !== searchSeqRef.current) return;
@@ -239,14 +242,15 @@ export function MapApp({
   }
 
   async function chooseSuggestion(suggestion: PlaceSuggestion) {
+    const seq = ++pickSeqRef.current;
     setSearch(suggestion.label);
     setSuggestions([]);
     try {
       const res = await fetch(esriCandidatesUrl(suggestion.magicKey), { signal: AbortSignal.timeout(800) });
-      if (!res.ok) return;
+      if (!res.ok || seq !== pickSeqRef.current) return;
       const json = (await res.json()) as { candidates?: EsriCandidate[] };
       const hit = json.candidates?.[0] ? labelEsriCandidate(json.candidates[0]) : null;
-      if (!hit) return;
+      if (!hit || seq !== pickSeqRef.current) return;
       setSelectedId(null);
       setDraft({
         lat: hit.lat,
@@ -340,6 +344,7 @@ export function MapApp({
                       type="button"
                       className="w-full px-3 py-1.5 text-left hover:bg-[var(--accent-muted)]"
                       onClick={() => {
+                        pickSeqRef.current += 1;
                         setSearch(place.name);
                         setSuggestions([]);
                         setDraft(null);
@@ -439,6 +444,7 @@ export function MapApp({
             selectedId={selectedId}
             draft={draft}
             onSelectPlace={(id) => {
+              pickSeqRef.current += 1;
               setDraft(null);
               setSelectedId(id);
             }}
@@ -674,6 +680,7 @@ function MapCanvas({
   const [userMarkerTick, setUserMarkerTick] = useState(0);
   const [placeImages, setPlaceImages] = useState<Record<string, string | null>>({});
   const imageCacheRef = useRef(new Map<string, string | null>());
+  const imageInflightRef = useRef(new Set<string>());
   const onSelectRef = useRef(onSelectPlace);
   const onClickRef = useRef(onMapClick);
   const onUserLocationRef = useRef(onUserLocation);
@@ -815,6 +822,7 @@ function MapCanvas({
 
         if (opts.center || pendingCenter || !didFitRef.current) {
           pendingCenter = false;
+          didFitRef.current = true;
           map?.setView(latlng, Math.max(map.getZoom(), 16));
         }
       }
@@ -929,25 +937,39 @@ function MapCanvas({
   useEffect(() => {
     const revealAll = zoom >= PLACE_FACE_ZOOM;
     const targets = places.filter((place) => revealAll || place.id === selectedId);
-    let cancelled = false;
+    const fromCache: Record<string, string | null> = {};
     for (const place of targets) {
       const key = `${place.id}:${place.name}`;
-      if (imageCacheRef.current.has(key) || place.name.trim().length < 3) continue;
-      imageCacheRef.current.set(key, null);
+      if (place.name.trim().length < 3) continue;
+      if (imageCacheRef.current.has(key)) {
+        fromCache[place.id] = imageCacheRef.current.get(key) ?? null;
+        continue;
+      }
+      if (imageInflightRef.current.has(key)) continue;
+      imageInflightRef.current.add(key);
       void fetch(wikipediaImageUrl(place.name), { signal: AbortSignal.timeout(1200) })
         .then((res) => (res.ok ? res.json() : null))
         .then((json: unknown) => {
           const url = json ? thumbnailFromWikipedia(json, place.name) : null;
           imageCacheRef.current.set(key, url);
-          if (!cancelled) setPlaceImages((prev) => ({ ...prev, [place.id]: url }));
+          imageInflightRef.current.delete(key);
+          setPlaceImages((prev) => ({ ...prev, [place.id]: url }));
         })
         .catch(() => {
-          imageCacheRef.current.set(key, null);
+          imageInflightRef.current.delete(key);
         });
     }
-    return () => {
-      cancelled = true;
-    };
+    if (Object.keys(fromCache).length > 0) {
+      setPlaceImages((prev) => {
+        let next = prev;
+        for (const [id, url] of Object.entries(fromCache)) {
+          if (prev[id] === url) continue;
+          if (next === prev) next = { ...prev };
+          next[id] = url;
+        }
+        return next;
+      });
+    }
   }, [places, zoom, selectedId]);
 
   useEffect(() => {

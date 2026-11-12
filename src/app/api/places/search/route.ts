@@ -3,7 +3,7 @@ import {
   labelNominatimHit,
   mergePlaceSearchHits,
   nominatimSearchUrl,
-  photonSearchFocus,
+  parseSearchFocus,
   type NominatimHit,
   type PlaceSearchHit,
 } from "@/lib/places";
@@ -42,12 +42,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ hits: [] });
   }
 
-  const lat = Number(searchParams.get("lat"));
-  const lng = Number(searchParams.get("lng"));
-  const focus =
-    Number.isFinite(lat) && Number.isFinite(lng)
-      ? photonSearchFocus({ lat, lng }, null)
-      : null;
+  const focus = parseSearchFocus(searchParams.get("lat"), searchParams.get("lng"));
   const cacheKey = `${q.toLowerCase()}|${focus ? `${focus.lat.toFixed(2)},${focus.lng.toFixed(2)}` : ""}`;
   const cached = searchCache.get(cacheKey);
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) {

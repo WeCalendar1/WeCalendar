@@ -15,6 +15,7 @@ import {
   notesForPlace,
   nominatimSearchUrl,
   photonReverseUrl,
+  parseSearchFocus,
   photonSearchFocus,
   photonSearchUrl,
   photoPinHtml,
@@ -171,6 +172,17 @@ describe("places", () => {
       name: "The Garden",
       address: "The Garden, Euclid St, Garden Grove, United States",
     });
+  });
+
+  it("does not treat missing lat/lng as Null Island", () => {
+    expect(parseSearchFocus(null, null)).toBeNull();
+    expect(parseSearchFocus("", "-117.94")).toBeNull();
+    expect(parseSearchFocus("33.77", "")).toBeNull();
+    expect(parseSearchFocus("nope", "-117.94")).toBeNull();
+    expect(parseSearchFocus("33.77", "-117.94")).toEqual(
+      photonSearchFocus({ lat: 33.77, lng: -117.94 }),
+    );
+    expect(parseSearchFocus("0", "0")).toEqual(photonSearchFocus({ lat: 0, lng: 0 }));
   });
 
   it("keeps Photon search inside a local bbox around the user or map center", () => {

@@ -173,6 +173,23 @@ export function photonSearchFocus(
   };
 }
 
+export function parseSearchFocus(
+  latRaw: string | null,
+  lngRaw: string | null,
+  mapView?: MapView | null,
+): PhotonSearchFocus | null {
+  if (latRaw == null || lngRaw == null) return photonSearchFocus(null, mapView);
+  const lat = latRaw.trim();
+  const lng = lngRaw.trim();
+  if (!lat || !lng) return photonSearchFocus(null, mapView);
+  const parsedLat = Number(lat);
+  const parsedLng = Number(lng);
+  if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) {
+    return photonSearchFocus(null, mapView);
+  }
+  return photonSearchFocus({ lat: parsedLat, lng: parsedLng }, mapView);
+}
+
 const ESRI_GEOCODE = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
 
 export type PlaceSuggestion = {
