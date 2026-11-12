@@ -17,6 +17,9 @@ import {
   photonReverseUrl,
   photonSearchFocus,
   photonSearchUrl,
+  photoPinHtml,
+  placeTitleMatches,
+  thumbnailFromWikipedia,
   esriSuggestUrl,
   suggestionsFromEsri,
   labelEsriCandidate,
@@ -88,6 +91,39 @@ describe("places", () => {
         "jack in the",
       ).map((h) => h.name),
     ).toEqual(["Jack in the Box"]);
+  });
+
+  it("uses a place photo only when the article is that place", () => {
+    expect(placeTitleMatches("Jack in the Box", "Jack in the Box")).toBe(true);
+    expect(placeTitleMatches("Jack in the Box", "Jack in the Box (restaurant)")).toBe(true);
+    expect(placeTitleMatches("Pho Lovers", "Egg coffee")).toBe(false);
+    expect(placeTitleMatches("Test", "Test cricket")).toBe(false);
+    const html = photoPinHtml({
+      color: "#8b5cf6",
+      imageUrl: "https://example.com/jack.png",
+      selected: true,
+    });
+    expect(html).toContain("https://example.com/jack.png");
+    expect(html).toContain("is-selected");
+    expect(photoPinHtml({ color: "#8b5cf6", imageUrl: "javascript:alert(1)" })).toBe("");
+    expect(
+      thumbnailFromWikipedia(
+        { query: { pages: { "1": { title: "Egg coffee", thumbnail: { source: "https://example.com/egg.jpg" } } } } },
+        "Pho Lovers",
+      ),
+    ).toBeNull();
+    expect(
+      thumbnailFromWikipedia(
+        {
+          query: {
+            pages: {
+              "1": { title: "Jack in the Box", thumbnail: { source: "https://example.com/jack.png" } },
+            },
+          },
+        },
+        "Jack in the Box",
+      ),
+    ).toBe("https://example.com/jack.png");
   });
 
   it("completes a prefix to nearby places and skips the brand-only row", () => {

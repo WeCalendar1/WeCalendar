@@ -15,9 +15,13 @@ import {
   matchWorkspacePlaces,
   notesForPlace,
   photonSearchFocus,
+  PLACE_FACE_ZOOM,
   PLACE_KIND_COLOR,
   PLACE_KIND_LABEL,
   PLACE_KINDS,
+  photoPinHtml,
+  thumbnailFromWikipedia,
+  wikipediaImageUrl,
   suggestionsFromEsri,
   type EsriAddress,
   type EsriCandidate,
@@ -55,6 +59,7 @@ function cappedSignal(parent: AbortSignal, ms: number): AbortSignal {
 type MapAppProps = {
   groupId: string | null;
   places: Place[];
+  userAvatarUrl?: string | null;
   events: CalendarEvent[];
   notes: Note[];
   onCreatePlace: (input: {
@@ -76,6 +81,7 @@ type MapAppProps = {
 export function MapApp({
   groupId,
   places,
+  userAvatarUrl,
   events,
   notes,
   onCreatePlace,
@@ -429,6 +435,7 @@ export function MapApp({
           <MapCanvas
             groupId={groupId}
             places={visible}
+            userAvatarUrl={userAvatarUrl}
             selectedId={selectedId}
             draft={draft}
             onSelectPlace={(id) => {
@@ -625,6 +632,7 @@ export function MapApp({
 function MapCanvas({
   groupId,
   places,
+  userAvatarUrl,
   selectedId,
   draft,
   onSelectPlace,
@@ -637,6 +645,7 @@ function MapCanvas({
 }: {
   groupId: string | null;
   places: Place[];
+  userAvatarUrl?: string | null;
   selectedId: string | null;
   draft: DraftPin | null;
   onSelectPlace: (id: string) => void;
@@ -660,6 +669,17 @@ function MapCanvas({
   const didFitRef = useRef(false);
   const lastGroupIdRef = useRef<string | null>(groupId);
   const [mapReady, setMapReady] = useState(false);
+  const [zoom, setZoom] = useState(4);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [userMarkerTick, setUserMarkerTick] = useState(0);
+  const [placeImages, setPlaceImages] = useState<Record<string, string | null>>({});
+  const imageCacheRef = useRef(new Map<string, string | null>());
+  const userAvatarRef = useRef(userAvatarUrl);
+  const zoomRef = useRef(zoom);
+  const locationOpenRef = useRef(locationOpen);
+  userAvatarRef.current = userAvatarUrl;
+  zoomRef.current = zoom;
+  locationOpenRef.current = locationOpen;
   const onSelectRef = useRef(onSelectPlace);
   const onClickRef = useRef(onMapClick);
   const onUserLocationRef = useRef(onUserLocation);
@@ -752,6 +772,7 @@ function MapCanvas({
           marker.bindTooltip(label, { direction: "top", offset: [0, -10] });
           marker.on("click", (ev) => {
             L.DomEvent.stopPropagation(ev);
+            setLocationOpen((open) => !open);
           });
           marker.on("dragstart", (ev) => {
             L.DomEvent.stopPropagation(ev);
@@ -772,6 +793,7 @@ function MapCanvas({
           });
           marker.addTo(userLayer);
           userDotRef.current = marker;
+          setUserMarkerTick((tick) => tick + 1);
         }
         onUserLocationRef.current({ lat: latlng.lat, lng: latlng.lng });
       }
@@ -847,9 +869,12 @@ function MapCanvas({
         });
       };
       map.on("moveend", publishView);
+      map.on("zoomend", () => setZoom(map.getZoom()));
+      setZoom(map.getZoom());
       publishView();
 
       map.on("click", (e: import("leaflet").LeafletMouseEvent) => {
+        setLocationOpen(false);
         onClickRef.current(e.latlng.lat, e.latlng.lng);
       });
 
@@ -879,23 +904,92 @@ function MapCanvas({
   }, []);
 
   useEffect(() => {
+    if (!mapReady) return;
+    void import("leaflet").then((L) => {
+      const marker = userDotRef.current;
+      if (!marker) return;
+      const avatar = userAvatarRef.current;
+      const show = Boolean(avatar) && (zoomRef.current >= PLACE_FACE_ZOOM || locationOpenRef.current);
+      const html = show && avatar ? photoPinHtml({ color: "#007aff", imageUrl: avatar }) : "";
+      marker.setIcon(
+        html
+          ? L.divIcon({
+              className: "leaflet-place-pin",
+              html,
+              iconSize: [40, 40],
+              iconAnchor: [20, 20],
+            })
+          : L.divIcon({
+              className: "leaflet-user-location-icon",
+              html: '<div class="leaflet-user-location"></div>',
+              iconSize: [18, 18],
+              iconAnchor: [9, 9],
+            }),
+      );
+    });
+  }, [mapReady, zoom, locationOpen, userAvatarUrl, userMarkerTick]);
+
+  useEffect(() => {
+    const revealAll = zoom >= PLACE_FACE_ZOOM;
+    const targets = places.filter((place) => revealAll || place.id === selectedId);
+    let cancelled = false;
+    for (const place of targets) {
+      const key = `${place.id}:${place.name}`;
+      if (imageCacheRef.current.has(key) || place.name.trim().length < 3) continue;
+      imageCacheRef.current.set(key, null);
+      void fetch(wikipediaImageUrl(place.name), { signal: AbortSignal.timeout(1200) })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json: unknown) => {
+          const url = json ? thumbnailFromWikipedia(json, place.name) : null;
+          imageCacheRef.current.set(key, url);
+          if (!cancelled) setPlaceImages((prev) => ({ ...prev, [place.id]: url }));
+        })
+        .catch(() => {
+          imageCacheRef.current.set(key, null);
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [places, zoom, selectedId]);
+
+  useEffect(() => {
     const map = mapRef.current;
     const layer = layerRef.current;
     if (!mapReady || !map || !layer) return;
     void import("leaflet").then((L) => {
       layer.clearLayers();
       for (const place of places) {
-        const marker = L.circleMarker([place.lat, place.lng], {
-          radius: place.id === selectedId ? 11 : 8,
+        const selected = place.id === selectedId;
+        const image = placeImages[place.id];
+        const showPhoto = Boolean(image) && (zoom >= PLACE_FACE_ZOOM || selected);
+        const photo = showPhoto && image ? photoPinHtml({
           color: PLACE_KIND_COLOR[place.kind],
-          fillColor: PLACE_KIND_COLOR[place.kind],
-          fillOpacity: 0.9,
-          weight: 2,
-        });
+          imageUrl: image,
+          selected,
+        }) : "";
+        const marker = photo
+          ? L.marker([place.lat, place.lng], {
+              keyboard: false,
+              zIndexOffset: selected ? 500 : 0,
+              icon: L.divIcon({
+                className: "leaflet-place-pin",
+                html: photo,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20],
+              }),
+            })
+          : L.circleMarker([place.lat, place.lng], {
+              radius: selected ? 11 : 8,
+              color: PLACE_KIND_COLOR[place.kind],
+              fillColor: PLACE_KIND_COLOR[place.kind],
+              fillOpacity: 0.9,
+              weight: 2,
+            });
         marker.bindTooltip(place.name, {
-          permanent: place.id === selectedId,
+          permanent: selected,
           direction: "top",
-          offset: [0, -12],
+          offset: [0, photo ? -24 : -12],
           className: "leaflet-place-label",
           opacity: 1,
         });
@@ -931,7 +1025,7 @@ function MapCanvas({
         map.fitBounds(bounds.pad(0.35));
       }
     });
-  }, [mapReady, places, selectedId, draft]);
+  }, [mapReady, places, placeImages, selectedId, draft, zoom]);
 
   useEffect(() => {
     if (!flyTo || !mapRef.current) return;

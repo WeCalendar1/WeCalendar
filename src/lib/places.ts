@@ -15,6 +15,86 @@ export const PLACE_KIND_COLOR: Record<PlaceKind, string> = {
   want_to_go: "#8b5cf6",
 };
 
+/** Street-level zoom. Above this, photos can replace the circle. */
+export const PLACE_FACE_ZOOM = 15;
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (ch) => {
+    if (ch === "&") return "&amp;";
+    if (ch === "<") return "&lt;";
+    if (ch === ">") return "&gt;";
+    if (ch === '"') return "&quot;";
+    return "&#39;";
+  });
+}
+
+function safePinColor(color: string): string {
+  return /^#[0-9a-f]{6}$/i.test(color) ? color : "#64748b";
+}
+
+export function safePinImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function photoPinHtml(input: { color: string; imageUrl: string; selected?: boolean }): string {
+  const image = safePinImageUrl(input.imageUrl);
+  if (!image) return "";
+  const selected = input.selected ? " is-selected" : "";
+  return `<div class="map-place-pin${selected}" style="--pin:${safePinColor(input.color)}"><img src="${escapeHtml(image)}" alt="" onerror="this.remove()" /></div>`;
+}
+
+export function wikipediaImageUrl(placeName: string): string {
+  const url = new URL("https://en.wikipedia.org/w/api.php");
+  url.searchParams.set("action", "query");
+  url.searchParams.set("generator", "search");
+  url.searchParams.set("gsrsearch", placeName);
+  url.searchParams.set("gsrlimit", "1");
+  url.searchParams.set("prop", "pageimages");
+  url.searchParams.set("piprop", "thumbnail");
+  url.searchParams.set("pithumbsize", "96");
+  url.searchParams.set("format", "json");
+  url.searchParams.set("origin", "*");
+  return url.toString();
+}
+
+export function placeTitleMatches(placeName: string, title: string): boolean {
+  const words = (value: string) =>
+    value
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+  const placeWords = words(placeName);
+  const titleWords = words(title);
+  if (placeWords.length === 0 || titleWords.length === 0) return false;
+  const place = placeWords.join(" ");
+  const page = titleWords.join(" ");
+  if (place === page) return true;
+  const specific = placeWords.length >= 2 || place.length >= 8;
+  if (!specific) return false;
+  return page.startsWith(`${place} `) || place.startsWith(`${page} `);
+}
+
+export function thumbnailFromWikipedia(json: unknown, placeName: string): string | null {
+  if (!json || typeof json !== "object" || !("query" in json)) return null;
+  const pages = (json as { query?: { pages?: Record<string, { title?: string; thumbnail?: { source?: string } }> } })
+    .query?.pages;
+  const page = pages ? Object.values(pages)[0] : undefined;
+  const title = page?.title?.trim();
+  const source = page?.thumbnail?.source;
+  if (!title || !source || !placeTitleMatches(placeName, title)) return null;
+  return safePinImageUrl(source);
+}
+
 export function isPlaceKind(value: string): value is PlaceKind {
   return (PLACE_KINDS as readonly string[]).includes(value);
 }
