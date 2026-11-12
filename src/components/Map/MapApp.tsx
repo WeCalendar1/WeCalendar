@@ -7,19 +7,18 @@ import { noteTitle, type Note } from "@/lib/notes";
 import {
   eventsForPlace,
   filterPlaces,
-  isWithinSearchRadius,
   labelPhotonFeature,
   matchWorkspacePlaces,
   notesForPlace,
   photonReverseUrl,
   photonSearchFocus,
-  photonSearchUrl,
   PLACE_KIND_COLOR,
   PLACE_KIND_LABEL,
   PLACE_KINDS,
   type MapBias,
   type MapView,
   type PhotonFeature,
+  type PlaceSearchHit,
   type Place,
   type PlaceKind,
 } from "@/lib/places";
@@ -75,12 +74,15 @@ export function MapApp({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftPin | null>(null);
   const [search, setSearch] = useState("");
-  const [hits, setHits] = useState<{ label: string; lat: number; lng: number; name: string }[]>([]);
+  const [hits, setHits] = useState<PlaceSearchHit[]>([]);
+  const [searching, setSearching] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("unknown");
   const [reversePending, setReversePending] = useState(false);
   const searchSeqRef = useRef(0);
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const searchCacheRef = useRef(new Map<string, PlaceSearchHit[]>());
   const reverseSeqRef = useRef(0);
   const userBiasRef = useRef<MapBias | null>(null);
   const mapViewRef = useRef<MapView | null>(null);
@@ -159,29 +161,45 @@ export function MapApp({
   async function searchPlaces(query: string) {
     const seq = ++searchSeqRef.current;
     const q = query.trim();
+    searchAbortRef.current?.abort();
     if (q.length < 2) {
       setHits([]);
+      setSearching(false);
       return;
     }
+
+    const focus = photonSearchFocus(userBiasRef.current, mapViewRef.current);
+    const cacheKey = `${q.toLowerCase()}|${focus ? `${focus.lat.toFixed(2)},${focus.lng.toFixed(2)}` : ""}`;
+    const cached = searchCacheRef.current.get(cacheKey);
+    if (cached) {
+      setHits(cached);
+      setSearching(false);
+      return;
+    }
+
+    setSearching(true);
+    const abort = new AbortController();
+    searchAbortRef.current = abort;
     try {
-      const focus = photonSearchFocus(userBiasRef.current, mapViewRef.current);
-      const res = await fetch(photonSearchUrl(q, focus));
+      const params = new URLSearchParams({ q });
+      if (focus) {
+        params.set("lat", String(focus.lat));
+        params.set("lng", String(focus.lng));
+      }
+      const res = await fetch(`/api/places/search?${params}`, { signal: abort.signal });
       if (!res.ok || seq !== searchSeqRef.current) return;
-      const json = (await res.json()) as { features?: PhotonFeature[] };
+      const json = (await res.json()) as { hits?: PlaceSearchHit[] };
       if (seq !== searchSeqRef.current) return;
-      const center = focus ?? mapViewRef.current?.center ?? null;
-      setHits(
-        (json.features ?? [])
-          .map((f) => {
-            const labeled = labelPhotonFeature(f);
-            return { ...labeled, label: labeled.address };
-          })
-          .filter((hit) => !center || isWithinSearchRadius(hit.lat, hit.lng, center)),
-      );
-    } catch {
+      const nextHits = json.hits ?? [];
+      searchCacheRef.current.set(cacheKey, nextHits);
+      setHits(nextHits);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       if (seq === searchSeqRef.current) {
         setHits([]);
       }
+    } finally {
+      if (seq === searchSeqRef.current) setSearching(false);
     }
   }
 
@@ -222,15 +240,16 @@ export function MapApp({
         }}
       >
         <div
-          className="flex flex-wrap items-center gap-2 px-3 py-2"
+          className="relative z-20 flex flex-wrap items-center gap-2 px-3 py-2"
           style={{ borderBottom: "0.5px solid var(--separator)", background: "var(--surface-2)" }}
         >
           <div className="relative min-w-[12rem] flex-1">
             <input
               value={search}
               onChange={(e) => {
-                setSearch(e.target.value);
-                void searchPlaces(e.target.value);
+                const value = e.target.value;
+                setSearch(value);
+                void searchPlaces(value);
               }}
               placeholder="Search pins or a place…"
               className="w-full px-3 py-1.5 text-sm outline-none"
@@ -241,9 +260,9 @@ export function MapApp({
                 color: "var(--foreground)",
               }}
             />
-            {(pinHits.length > 0 || hits.length > 0) && (
+            {(pinHits.length > 0 || hits.length > 0 || searching) && (
               <ul
-                className="absolute z-20 mt-1 w-full overflow-hidden py-1 text-sm"
+                className="absolute z-[1000] mt-1 w-full overflow-hidden py-1 text-sm"
                 style={{
                   borderRadius: "var(--radius-lg)",
                   background: "var(--surface)",
@@ -309,6 +328,16 @@ export function MapApp({
                     </button>
                   </li>
                 ))}
+                {searching && hits.length === 0 && pinHits.length === 0 && (
+                  <li className="px-3 py-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                    Searching…
+                  </li>
+                )}
+                {!searching && search.trim().length >= 2 && hits.length === 0 && pinHits.length === 0 && (
+                  <li className="px-3 py-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                    No places found nearby.
+                  </li>
+                )}
               </ul>
             )}
           </div>

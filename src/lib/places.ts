@@ -111,6 +111,65 @@ export function photonSearchUrl(query: string, focus?: PhotonSearchFocus | null)
   return url.toString();
 }
 
+export type NominatimHit = {
+  lat: string;
+  lon: string;
+  name?: string;
+  display_name?: string;
+};
+
+export type PlaceSearchHit = {
+  lat: number;
+  lng: number;
+  name: string;
+  address: string;
+  label: string;
+};
+
+export function nominatimSearchUrl(query: string, bbox?: MapBBox | null): string {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("q", query);
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("limit", "5");
+  if (bbox) {
+    url.searchParams.set(
+      "viewbox",
+      `${bbox.minLng},${bbox.maxLat},${bbox.maxLng},${bbox.minLat}`,
+    );
+    url.searchParams.set("bounded", "1");
+  }
+  return url.toString();
+}
+
+export function labelNominatimHit(hit: NominatimHit): PlaceSearchHit {
+  const lat = Number(hit.lat);
+  const lng = Number(hit.lon);
+  const name = hit.name?.trim() || hit.display_name?.split(",")[0]?.trim() || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  const address = hit.display_name?.trim() || name;
+  return { lat, lng, name, address, label: address };
+}
+
+export function mergePlaceSearchHits(
+  batches: PlaceSearchHit[][],
+  center: MapBias | null,
+  limit = 5,
+): PlaceSearchHit[] {
+  const seen = new Set<string>();
+  const merged: PlaceSearchHit[] = [];
+  for (const batch of batches) {
+    for (const hit of batch) {
+      if (!Number.isFinite(hit.lat) || !Number.isFinite(hit.lng)) continue;
+      if (center && !isWithinSearchRadius(hit.lat, hit.lng, center)) continue;
+      const key = `${hit.lat.toFixed(4)},${hit.lng.toFixed(4)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(hit);
+      if (merged.length >= limit) return merged;
+    }
+  }
+  return merged;
+}
+
 export function photonReverseUrl(lat: number, lng: number): string {
   const url = new URL(`${PHOTON_BASE}/reverse`);
   url.searchParams.set("lat", String(lat));

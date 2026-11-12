@@ -8,8 +8,11 @@ import {
   isPlaceKind,
   isWithinSearchRadius,
   matchWorkspacePlaces,
+  labelNominatimHit,
   labelPhotonFeature,
+  mergePlaceSearchHits,
   notesForPlace,
+  nominatimSearchUrl,
   photonReverseUrl,
   photonSearchFocus,
   photonSearchUrl,
@@ -104,6 +107,27 @@ describe("places", () => {
     expect(isWithinSearchRadius(33.78, -117.9, gardenGrove)).toBe(true);
     expect(isWithinSearchRadius(39.9, 116.4, gardenGrove)).toBe(false);
     expect(isWithinSearchRadius(42.36, -71.06, gardenGrove)).toBe(false);
+
+    const nomiUrl = nominatimSearchUrl("pho lovers", focus?.bbox);
+    expect(nomiUrl).toContain("bounded=1");
+    expect(nomiUrl).toContain("viewbox=");
+
+    const phoLovers = labelNominatimHit({
+      lat: "33.7451424",
+      lon: "-117.9665028",
+      name: "Phở Lovers",
+      display_name: "Phở Lovers, 9325, Bolsa Avenue, Westminster, California, United States",
+    });
+    expect(phoLovers.name).toBe("Phở Lovers");
+    expect(
+      mergePlaceSearchHits(
+        [
+          [phoLovers],
+          [{ lat: 39.9, lng: 116.4, name: "Beijing", address: "China", label: "China" }],
+        ],
+        gardenGrove,
+      ),
+    ).toEqual([phoLovers]);
   });
 
   it("enforces REPLICA IDENTITY FULL and same-group place_id validation in a dedicated post-places migration", () => {
