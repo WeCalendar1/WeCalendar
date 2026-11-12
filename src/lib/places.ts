@@ -94,3 +94,20 @@ export function filterPlaces(
   if (filter === "events") return places.filter((place) => eventPlaceIds.has(place.id));
   return places.filter((place) => place.kind === filter);
 }
+
+export function matchWorkspacePlaces(
+  places: readonly Place[],
+  query: string,
+  limit = 5,
+): Place[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const matched: Place[] = [];
+  for (const place of places) {
+    const haystack = `${place.name} ${place.address ?? ""}`.toLowerCase();
+    if (!haystack.includes(q)) continue;
+    matched.push(place);
+    if (matched.length >= limit) break;
+  }
+  return matched;
+}

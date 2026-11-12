@@ -5,6 +5,7 @@ import {
   eventsForPlace,
   filterPlaces,
   isPlaceKind,
+  matchWorkspacePlaces,
   labelPhotonFeature,
   notesForPlace,
   photonReverseUrl,
@@ -57,6 +58,16 @@ describe("places", () => {
     expect(filterPlaces(places, "favorite", new Set()).map((p) => p.id)).toEqual(["cafe"]);
     expect(filterPlaces(places, "events", new Set(["hike"])).map((p) => p.id)).toEqual(["hike"]);
     expect(filterPlaces(places, "all", new Set()).map((p) => p.id)).toEqual(["cafe", "hike"]);
+  });
+
+  it("matches workspace pins by name or address before Photon", () => {
+    const places = [
+      place({ id: "pho79", name: "Pho 79", address: "Westminster Blvd", kind: "favorite" }),
+      place({ id: "hike", name: "Black Star Canyon", kind: "want_to_go" }),
+    ];
+    expect(matchWorkspacePlaces(places, "pho").map((p) => p.id)).toEqual(["pho79"]);
+    expect(matchWorkspacePlaces(places, "WESTMINSTER").map((p) => p.id)).toEqual(["pho79"]);
+    expect(matchWorkspacePlaces(places, "  ").map((p) => p.id)).toEqual([]);
   });
 
   it("biases Photon search to a lat/lon and reverse-geocodes a click", () => {

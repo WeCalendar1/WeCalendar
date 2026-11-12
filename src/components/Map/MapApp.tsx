@@ -8,6 +8,7 @@ import {
   eventsForPlace,
   filterPlaces,
   labelPhotonFeature,
+  matchWorkspacePlaces,
   notesForPlace,
   photonReverseUrl,
   photonSearchUrl,
@@ -97,6 +98,7 @@ export function MapApp({
     () => filterPlaces(places, filter, eventPlaceIds),
     [places, filter, eventPlaceIds],
   );
+  const pinHits = useMemo(() => matchWorkspacePlaces(places, search), [places, search]);
   const selected = places.find((p) => p.id === selectedId) ?? null;
 
   function handleMapClick(lat: number, lng: number) {
@@ -222,7 +224,7 @@ export function MapApp({
                 setSearch(e.target.value);
                 void searchPlaces(e.target.value);
               }}
-              placeholder="Search a place…"
+              placeholder="Search pins or a place…"
               className="w-full px-3 py-1.5 text-sm outline-none"
               style={{
                 borderRadius: "var(--radius-full)",
@@ -231,7 +233,7 @@ export function MapApp({
                 color: "var(--foreground)",
               }}
             />
-            {hits.length > 0 && (
+            {(pinHits.length > 0 || hits.length > 0) && (
               <ul
                 className="absolute z-20 mt-1 w-full overflow-hidden py-1 text-sm"
                 style={{
@@ -240,6 +242,43 @@ export function MapApp({
                   boxShadow: "var(--shadow-md)",
                 }}
               >
+                {pinHits.length > 0 && (
+                  <li
+                    className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Your pins
+                  </li>
+                )}
+                {pinHits.map((place) => (
+                  <li key={place.id}>
+                    <button
+                      type="button"
+                      className="w-full px-3 py-1.5 text-left hover:bg-[var(--accent-muted)]"
+                      onClick={() => {
+                        setSearch(place.name);
+                        setHits([]);
+                        setDraft(null);
+                        setFilter("all");
+                        setSelectedId(place.id);
+                      }}
+                    >
+                      <span className="block truncate font-medium">{place.name}</span>
+                      <span className="block truncate text-xs" style={{ color: "var(--text-muted)" }}>
+                        {PLACE_KIND_LABEL[place.kind]}
+                        {place.address ? ` · ${place.address}` : ""}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+                {hits.length > 0 && pinHits.length > 0 && (
+                  <li
+                    className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Places
+                  </li>
+                )}
                 {hits.map((hit) => (
                   <li key={`${hit.lat},${hit.lng},${hit.label}`}>
                     <button
@@ -737,6 +776,13 @@ function MapCanvas({
           fillOpacity: 0.9,
           weight: 2,
         });
+        marker.bindTooltip(place.name, {
+          permanent: place.id === selectedId,
+          direction: "top",
+          offset: [0, -12],
+          className: "leaflet-place-label",
+          opacity: 1,
+        });
         marker.on("click", (e) => {
           L.DomEvent.stopPropagation(e);
           onSelectRef.current(place.id);
@@ -744,14 +790,24 @@ function MapCanvas({
         marker.addTo(layer);
       }
       if (draft) {
-        L.circleMarker([draft.lat, draft.lng], {
+        const draftMarker = L.circleMarker([draft.lat, draft.lng], {
           radius: 9,
           color: "#111",
           fillColor: PLACE_KIND_COLOR[draft.kind],
           fillOpacity: 1,
           weight: 2,
           dashArray: "2 4",
-        }).addTo(layer);
+        });
+        if (draft.name.trim()) {
+          draftMarker.bindTooltip(draft.name.trim(), {
+            permanent: true,
+            direction: "top",
+            offset: [0, -12],
+            className: "leaflet-place-label",
+            opacity: 1,
+          });
+        }
+        draftMarker.addTo(layer);
       }
       if (places.length > 0 && !didFitRef.current) {
         didFitRef.current = true;

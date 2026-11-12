@@ -588,3 +588,18 @@ input[type="password"]::-ms-clear { display: none; }
   border: 3px solid #fff;
   box-shadow: 0 1px 4px color-mix(in srgb, #000 28%, transparent);
 }
+
+.leaflet-place-label {
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+}
+
+.leaflet-place-label::before {
+  display: none;
+}
