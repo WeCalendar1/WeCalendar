@@ -114,12 +114,15 @@ export function MapApp({
 
   if (groupId !== activeGroupKey) {
     setActiveGroupKey(groupId);
-    pickSeqRef.current += 1;
     setSelectedId(null);
     setDraft(null);
     setError(null);
     setSuggestions([]);
   }
+
+  useEffect(() => {
+    pickSeqRef.current += 1;
+  }, [groupId]);
 
   const eventPlaceIds = useMemo(
     () => new Set(events.map((e) => e.place_id).filter((id): id is string => Boolean(id))),
@@ -937,15 +940,10 @@ function MapCanvas({
   useEffect(() => {
     const revealAll = zoom >= PLACE_FACE_ZOOM;
     const targets = places.filter((place) => revealAll || place.id === selectedId);
-    const fromCache: Record<string, string | null> = {};
     for (const place of targets) {
       const key = `${place.id}:${place.name}`;
       if (place.name.trim().length < 3) continue;
-      if (imageCacheRef.current.has(key)) {
-        fromCache[place.id] = imageCacheRef.current.get(key) ?? null;
-        continue;
-      }
-      if (imageInflightRef.current.has(key)) continue;
+      if (imageCacheRef.current.has(key) || imageInflightRef.current.has(key)) continue;
       imageInflightRef.current.add(key);
       void fetch(wikipediaImageUrl(place.name), { signal: AbortSignal.timeout(1200) })
         .then((res) => (res.ok ? res.json() : null))
@@ -958,17 +956,6 @@ function MapCanvas({
         .catch(() => {
           imageInflightRef.current.delete(key);
         });
-    }
-    if (Object.keys(fromCache).length > 0) {
-      setPlaceImages((prev) => {
-        let next = prev;
-        for (const [id, url] of Object.entries(fromCache)) {
-          if (prev[id] === url) continue;
-          if (next === prev) next = { ...prev };
-          next[id] = url;
-        }
-        return next;
-      });
     }
   }, [places, zoom, selectedId]);
 
