@@ -7,13 +7,20 @@ import { noteTitle, type Note } from "@/lib/notes";
 import {
   eventsForPlace,
   filterPlaces,
+  labelPhotonFeature,
   notesForPlace,
+  photonReverseUrl,
+  photonSearchUrl,
   PLACE_KIND_COLOR,
   PLACE_KIND_LABEL,
   PLACE_KINDS,
+  type MapBias,
+  type PhotonFeature,
   type Place,
   type PlaceKind,
 } from "@/lib/places";
+
+type LocationStatus = "unknown" | "ready" | "denied" | "unavailable";
 
 type MapFilter = "all" | PlaceKind | "events";
 
@@ -64,10 +71,14 @@ export function MapApp({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftPin | null>(null);
   const [search, setSearch] = useState("");
-  const [hits, setHits] = useState<{ label: string; lat: number; lng: number }[]>([]);
+  const [hits, setHits] = useState<{ label: string; lat: number; lng: number; name: string }[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>("unknown");
+  const [reversePending, setReversePending] = useState(false);
   const searchSeqRef = useRef(0);
+  const reverseSeqRef = useRef(0);
+  const userBiasRef = useRef<MapBias | null>(null);
   const [activeGroupKey, setActiveGroupKey] = useState<string | null>(groupId);
 
   if (groupId !== activeGroupKey) {
@@ -75,6 +86,7 @@ export function MapApp({
     setSelectedId(null);
     setDraft(null);
     setError(null);
+    setHits([]);
   }
 
   const eventPlaceIds = useMemo(
@@ -90,6 +102,32 @@ export function MapApp({
   function handleMapClick(lat: number, lng: number) {
     setSelectedId(null);
     setDraft({ lat, lng, name: "", address: "", kind: "favorite" });
+    void reverseGeocodeClick(lat, lng);
+  }
+
+  async function reverseGeocodeClick(lat: number, lng: number) {
+    const seq = ++reverseSeqRef.current;
+    setReversePending(true);
+    try {
+      const res = await fetch(photonReverseUrl(lat, lng));
+      if (!res.ok || seq !== reverseSeqRef.current) return;
+      const json = (await res.json()) as { features?: PhotonFeature[] };
+      const feature = json.features?.[0];
+      if (!feature || seq !== reverseSeqRef.current) return;
+      const labeled = labelPhotonFeature(feature);
+      setDraft((prev) => {
+        if (!prev || prev.lat !== lat || prev.lng !== lng) return prev;
+        return {
+          ...prev,
+          name: prev.name.trim() ? prev.name : labeled.name,
+          address: prev.address.trim() ? prev.address : labeled.address,
+        };
+      });
+    } catch {
+      /* leave the draft blank so the user can name it */
+    } finally {
+      if (seq === reverseSeqRef.current) setReversePending(false);
+    }
   }
 
   async function saveDraft() {
@@ -120,24 +158,14 @@ export function MapApp({
       return;
     }
     try {
-      const res = await fetch(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5`,
-      );
+      const res = await fetch(photonSearchUrl(q, userBiasRef.current));
       if (!res.ok || seq !== searchSeqRef.current) return;
-      const json = (await res.json()) as {
-        features?: {
-          geometry: { coordinates: [number, number] };
-          properties: { name?: string; street?: string; city?: string; country?: string };
-        }[];
-      };
+      const json = (await res.json()) as { features?: PhotonFeature[] };
       if (seq !== searchSeqRef.current) return;
       setHits(
         (json.features ?? []).map((f) => {
-          const [lng, lat] = f.geometry.coordinates;
-          const label = [f.properties.name, f.properties.street, f.properties.city, f.properties.country]
-            .filter(Boolean)
-            .join(", ");
-          return { label: label || `${lat.toFixed(3)}, ${lng.toFixed(3)}`, lat, lng };
+          const labeled = labelPhotonFeature(f);
+          return { ...labeled, label: labeled.address };
         }),
       );
     } catch {
@@ -224,7 +252,7 @@ export function MapApp({
                         setDraft({
                           lat: hit.lat,
                           lng: hit.lng,
-                          name: hit.label.split(",")[0] ?? hit.label,
+                          name: hit.name,
                           address: hit.label,
                           kind: "want_to_go",
                         });
@@ -257,6 +285,13 @@ export function MapApp({
               </button>
             ))}
           </div>
+          {(locationStatus === "denied" || locationStatus === "unavailable") && (
+            <p className="basis-full text-xs" style={{ color: "var(--text-muted)" }}>
+              {locationStatus === "denied"
+                ? "Location is off. Allow it in the browser to show where you are."
+                : "Couldn't find your location. Try the locate button again."}
+            </p>
+          )}
         </div>
 
         <div className="relative min-h-0 flex-1">
@@ -270,6 +305,11 @@ export function MapApp({
               setSelectedId(id);
             }}
             onMapClick={handleMapClick}
+            onUserLocation={(bias) => {
+              userBiasRef.current = bias;
+            }}
+            onLocationStatus={setLocationStatus}
+            locationStatus={locationStatus}
             flyTo={draft ? { lat: draft.lat, lng: draft.lng } : selected}
           />
         </div>
@@ -305,6 +345,15 @@ export function MapApp({
                     background: "var(--surface)",
                   }}
                 />
+                {draft.address ? (
+                  <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                    {draft.address}
+                  </p>
+                ) : reversePending ? (
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    Looking up address…
+                  </p>
+                ) : null}
                 <div className="flex gap-2">
                   {PLACE_KINDS.map((kind) => (
                     <button
@@ -446,6 +495,9 @@ function MapCanvas({
   draft,
   onSelectPlace,
   onMapClick,
+  onUserLocation,
+  onLocationStatus,
+  locationStatus,
   flyTo,
 }: {
   groupId: string | null;
@@ -454,6 +506,9 @@ function MapCanvas({
   draft: DraftPin | null;
   onSelectPlace: (id: string) => void;
   onMapClick: (lat: number, lng: number) => void;
+  onUserLocation: (bias: MapBias) => void;
+  onLocationStatus: (status: LocationStatus) => void;
+  locationStatus: LocationStatus;
   flyTo: { lat: number; lng: number } | null;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -471,6 +526,8 @@ function MapCanvas({
   const [mapReady, setMapReady] = useState(false);
   const onSelectRef = useRef(onSelectPlace);
   const onClickRef = useRef(onMapClick);
+  const onUserLocationRef = useRef(onUserLocation);
+  const onLocationStatusRef = useRef(onLocationStatus);
 
   useEffect(() => {
     if (lastGroupIdRef.current !== groupId) {
@@ -482,7 +539,9 @@ function MapCanvas({
   useEffect(() => {
     onSelectRef.current = onSelectPlace;
     onClickRef.current = onMapClick;
-  }, [onSelectPlace, onMapClick]);
+    onUserLocationRef.current = onUserLocation;
+    onLocationStatusRef.current = onLocationStatus;
+  }, [onSelectPlace, onMapClick, onUserLocation, onLocationStatus]);
 
   useEffect(() => {
     const el = hostRef.current;
@@ -571,10 +630,12 @@ function MapCanvas({
             lastAccuracyRef.current = 20;
             userAccuracyRef.current?.setLatLng(next).setRadius(20);
             marker.setTooltipContent("You are here");
+            onUserLocationRef.current({ lat: next.lat, lng: next.lng });
           });
           marker.addTo(userLayer);
           userDotRef.current = marker;
         }
+        onUserLocationRef.current({ lat: latlng.lat, lng: latlng.lng });
       }
 
       function applyUserPosition(
@@ -596,6 +657,7 @@ function MapCanvas({
         }
 
         upsertUserMarker(latlng, accuracy);
+        onLocationStatusRef.current("ready");
 
         if (opts.center || pendingCenter || !didFitRef.current) {
           pendingCenter = false;
@@ -604,7 +666,10 @@ function MapCanvas({
       }
 
       function startWatch() {
-        if (!navigator.geolocation) return;
+        if (!navigator.geolocation) {
+          onLocationStatusRef.current("unavailable");
+          return;
+        }
         if (watchId != null) {
           navigator.geolocation.clearWatch(watchId);
           watchId = null;
@@ -614,7 +679,10 @@ function MapCanvas({
             if (cancelled) return;
             applyUserPosition(position.coords);
           },
-          () => {},
+          (err) => {
+            if (cancelled || userLatLngRef.current) return;
+            onLocationStatusRef.current(err.code === 1 ? "denied" : "unavailable");
+          },
           geoOptions,
         );
       }
@@ -705,7 +773,9 @@ function MapCanvas({
       <div ref={hostRef} className="h-full w-full" />
       <button
         type="button"
-        aria-label="Center on my location"
+        aria-label={
+          locationStatus === "denied" ? "Location is off" : "Center on my location"
+        }
         className="pressable absolute right-3 bottom-10 z-[500] flex h-9 w-9 items-center justify-center"
         style={{
           borderRadius: "var(--radius-full)",

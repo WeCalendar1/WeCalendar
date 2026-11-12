@@ -5,7 +5,10 @@ import {
   eventsForPlace,
   filterPlaces,
   isPlaceKind,
+  labelPhotonFeature,
   notesForPlace,
+  photonReverseUrl,
+  photonSearchUrl,
   type Place,
 } from "./places";
 
@@ -54,6 +57,25 @@ describe("places", () => {
     expect(filterPlaces(places, "favorite", new Set()).map((p) => p.id)).toEqual(["cafe"]);
     expect(filterPlaces(places, "events", new Set(["hike"])).map((p) => p.id)).toEqual(["hike"]);
     expect(filterPlaces(places, "all", new Set()).map((p) => p.id)).toEqual(["cafe", "hike"]);
+  });
+
+  it("biases Photon search to a lat/lon and reverse-geocodes a click", () => {
+    expect(photonSearchUrl("pho")).not.toMatch(/[?&]lat=/);
+    expect(photonSearchUrl("pho", { lat: 33.74, lng: -117.87 })).toContain("lat=33.74");
+    expect(photonSearchUrl("pho", { lat: 33.74, lng: -117.87 })).toContain("lon=-117.87");
+    expect(photonReverseUrl(33.74, -117.87)).toContain("lat=33.74");
+    expect(photonReverseUrl(33.74, -117.87)).toContain("lon=-117.87");
+
+    const labeled = labelPhotonFeature({
+      geometry: { coordinates: [-117.87, 33.74] },
+      properties: { name: "The Garden", street: "Euclid St", city: "Garden Grove", country: "United States" },
+    });
+    expect(labeled).toEqual({
+      lat: 33.74,
+      lng: -117.87,
+      name: "The Garden",
+      address: "The Garden, Euclid St, Garden Grove, United States",
+    });
   });
 
   it("enforces REPLICA IDENTITY FULL and same-group place_id validation in a dedicated post-places migration", () => {

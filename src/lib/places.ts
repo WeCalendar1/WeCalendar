@@ -19,6 +19,56 @@ export function isPlaceKind(value: string): value is PlaceKind {
   return (PLACE_KINDS as readonly string[]).includes(value);
 }
 
+const PHOTON_BASE = "https://photon.komoot.io";
+
+export type PhotonFeature = {
+  geometry: { coordinates: [number, number] };
+  properties: {
+    name?: string;
+    street?: string;
+    housenumber?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+  };
+};
+
+export type MapBias = { lat: number; lng: number };
+
+export function photonSearchUrl(query: string, bias?: MapBias | null): string {
+  const url = new URL(`${PHOTON_BASE}/api/`);
+  url.searchParams.set("q", query);
+  url.searchParams.set("limit", "5");
+  if (bias) {
+    url.searchParams.set("lat", String(bias.lat));
+    url.searchParams.set("lon", String(bias.lng));
+  }
+  return url.toString();
+}
+
+export function photonReverseUrl(lat: number, lng: number): string {
+  const url = new URL(`${PHOTON_BASE}/reverse`);
+  url.searchParams.set("lat", String(lat));
+  url.searchParams.set("lon", String(lng));
+  return url.toString();
+}
+
+export function labelPhotonFeature(feature: PhotonFeature): {
+  lat: number;
+  lng: number;
+  name: string;
+  address: string;
+} {
+  const [lng, lat] = feature.geometry.coordinates;
+  const props = feature.properties;
+  const street = [props.housenumber, props.street].filter(Boolean).join(" ");
+  const address = [props.name, street, props.city, props.state, props.country]
+    .filter(Boolean)
+    .join(", ");
+  const name = props.name || street || props.city || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  return { lat, lng, name, address };
+}
+
 export function eventsForPlace<T extends { place_id?: string | null }>(
   events: readonly T[],
   placeId: string,
